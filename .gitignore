@@ -5,13 +5,14 @@ dist/
 server/dist/
 web/dist/
 server/src/generated/
-# env
+# env (bỏ qua mọi file .env, kể cả .env.example)
 .env
 .env.*
-!.env.example
 # logs
 *.log
 *.tsbuildinfo
 # os
 .DS_Store
 Thumbs.db
+# docs (tài liệu nội bộ — không đẩy lên git)
+docs/

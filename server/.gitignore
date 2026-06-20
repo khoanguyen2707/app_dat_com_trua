@@ -4,6 +4,5 @@ coverage
 *.log
 .env
 .env.*
-!.env.example
 src/generated
 *.tsbuildinfo
