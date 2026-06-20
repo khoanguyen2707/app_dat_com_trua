@@ -71,12 +71,6 @@ export function Login() {
         <button className="btn primary block" disabled={busy}>
           {busy ? 'Đang xử lý…' : mode === 'login' ? 'Đăng nhập' : 'Tạo tài khoản'}
         </button>
-
-        {mode === 'login' && (
-          <p className="center muted small" style={{ marginTop: 14 }}>
-            Demo admin: <b>admin@comtrua.vn</b> / <b>admin123</b>
-          </p>
-        )}
       </form>
     </div>
   );
