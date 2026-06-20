@@ -10,6 +10,10 @@ services:
     dockerfilePath: Dockerfile
     plan: free
     healthCheckPath: /health
+    # Chỉ deploy lại API khi có thay đổi trong server/ (đường dẫn tính từ gốc repo).
+    buildFilter:
+      paths:
+        - server/**
     envVars:
       - key: NODE_ENV
         value: production
@@ -45,6 +49,10 @@ services:
     rootDir: web
     buildCommand: npm install && npm run build
     staticPublishPath: dist
+    # Chỉ deploy lại Web khi có thay đổi trong web/.
+    buildFilter:
+      paths:
+        - web/**
     envVars:
       # Đặt = URL của API ở trên (vd https://com-trua-api.onrender.com)
       - key: VITE_API_URL
