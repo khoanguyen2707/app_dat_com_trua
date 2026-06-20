@@ -1,0 +1,94 @@
+// Prisma 7 — generator client mới, output ra src/generated/prisma (giống convention repo mẫu)
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+// Prisma 7: connection URL chuyển sang prisma.config.ts (datasource.url).
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+/// Tài khoản đăng nhập = thành viên ăn cơm
+model User {
+  id         String   @id @default(cuid())
+  email      String   @unique @db.VarChar(150)
+  password   String   @db.VarChar(255)
+  fullName   String   @db.VarChar(150)
+  role       Role     @default(USER)
+  active     Boolean  @default(true)
+  color      String?  @db.VarChar(20)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  orders     Order[]
+
+  @@map("users")
+}
+
+/// Mỗi tuần đặt cơm (tuần hiện tại + lịch sử)
+model Week {
+  id        String   @id @default(cuid())
+  label     String   @db.VarChar(100) // "15/6/2026 - 20/6/2026"
+  unitPrice Int      @default(25000)
+  dayMenu   Json? // { "mon": dishId, "tue": dishId, ... }
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orders    Order[]
+
+  @@map("weeks")
+}
+
+/// Đăng ký ăn của 1 user trong 1 tuần (tích ngày)
+model Order {
+  id        String   @id @default(cuid())
+  weekId    String
+  userId    String
+  mon       Boolean  @default(false)
+  tue       Boolean  @default(false)
+  wed       Boolean  @default(false)
+  thu       Boolean  @default(false)
+  fri       Boolean  @default(false)
+  sat       Boolean  @default(false)
+  sun       Boolean  @default(false)
+  paid      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  week      Week     @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([weekId, userId])
+  @@map("orders")
+}
+
+/// Thực đơn món ăn (admin quản lý)
+model Dish {
+  id          String   @id @default(cuid())
+  name        String   @db.VarChar(150)
+  description String?  @db.VarChar(255)
+  emoji       String?  @db.VarChar(10)
+  price       Int      @default(25000)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("dishes")
+}
+
+/// Thông tin thanh toán (singleton, admin chỉnh sửa)
+model PaymentConfig {
+  id            String   @id @default("default")
+  groupName     String   @default("Nhóm văn phòng") @db.VarChar(150)
+  bankName      String   @default("TPBank") @db.VarChar(100)
+  bankBin       String   @default("970423") @db.VarChar(20)
+  accountNumber String   @default("10001002966") @db.VarChar(50)
+  accountHolder String   @default("NGUYEN ANH KHOA") @db.VarChar(150)
+  updatedAt     DateTime @updatedAt
+
+  @@map("payment_config")
+}

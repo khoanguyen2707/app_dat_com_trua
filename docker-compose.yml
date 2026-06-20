@@ -1,0 +1,59 @@
+# Chạy full-stack 1 lệnh:  docker compose up --build
+# Mở web tại http://localhost:8080  |  API/Swagger tại http://localhost:3000/docs
+name: com-trua
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-com_trua}
+    # Không public cổng ra host: api nối Postgres qua mạng nội bộ (postgres:5432).
+    # Máy này đã có Postgres chạy ở 5432/5433 nên publish ra host sẽ đụng cổng.
+    # Muốn xem DB từ host thì mở dòng dưới và đổi sang cổng còn trống, vd '5434:5432'.
+    # ports:
+    #   - '5434:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./server
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-com_trua}?schema=public
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      JWT_ACCESS_TOKEN_SECRET: ${JWT_ACCESS_TOKEN_SECRET:-doi_secret_access}
+      JWT_ACCESS_TOKEN_EXPIRATION_TIME: 7d
+      JWT_REFRESH_TOKEN_SECRET: ${JWT_REFRESH_TOKEN_SECRET:-doi_secret_refresh}
+      JWT_REFRESH_TOKEN_EXPIRATION_TIME: 30d
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@comtrua.vn}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      DEFAULT_PASSWORD: ${DEFAULT_PASSWORD:-123456}
+      SEED_DEMO: ${SEED_DEMO:-true}
+    ports:
+      - '3000:3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./web
+      args:
+        VITE_API_URL: '' # cùng origin, nginx proxy /api -> api:3000
+    ports:
+      # Host 8088 vì 8080 đã bị dịch vụ khác (AgentService) chiếm trên máy này.
+      - '8088:80'
+    depends_on:
+      - api
+
+volumes:
+  pgdata:

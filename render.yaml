@@ -1,0 +1,55 @@
+# Render Blueprint — deploy FREE (kết hợp Postgres free của Neon)
+# Cách dùng: đẩy repo lên GitHub -> Render -> New -> Blueprint -> chọn repo.
+# Sau đó set thủ công: DATABASE_URL (từ Neon) và CORS_ORIGIN / VITE_API_URL (URL thật).
+services:
+  # ---- Backend API (Docker, free) ----
+  - type: web
+    name: com-trua-api
+    runtime: docker
+    rootDir: server
+    dockerfilePath: Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      # Dán Connection String của Neon vào đây (Dashboard sau khi tạo):
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_ACCESS_TOKEN_SECRET
+        generateValue: true
+      - key: JWT_ACCESS_TOKEN_EXPIRATION_TIME
+        value: 7d
+      - key: JWT_REFRESH_TOKEN_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_TOKEN_EXPIRATION_TIME
+        value: 30d
+      - key: ADMIN_EMAIL
+        value: admin@comtrua.vn
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: DEFAULT_PASSWORD
+        value: '123456'
+      - key: SEED_DEMO
+        value: 'true'
+      # Đặt = URL của web tĩnh bên dưới (vd https://com-trua-web.onrender.com)
+      - key: CORS_ORIGIN
+        sync: false
+
+  # ---- Frontend React (static, free) ----
+  - type: web
+    name: com-trua-web
+    runtime: static
+    rootDir: web
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      # Đặt = URL của API ở trên (vd https://com-trua-api.onrender.com)
+      - key: VITE_API_URL
+        sync: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

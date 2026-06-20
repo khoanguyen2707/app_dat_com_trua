@@ -1,0 +1,17 @@
+# deps
+node_modules/
+# build
+dist/
+server/dist/
+web/dist/
+server/src/generated/
+# env
+.env
+.env.*
+!.env.example
+# logs
+*.log
+*.tsbuildinfo
+# os
+.DS_Store
+Thumbs.db
