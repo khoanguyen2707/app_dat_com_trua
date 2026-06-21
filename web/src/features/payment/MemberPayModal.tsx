@@ -1,15 +1,17 @@
 import { api } from '@/services/api';
-import type { GridMember, PaymentConfig } from '@/types';
+import type { GridMember, PaymentConfig, PaymentStatus } from '@/types';
 import { t } from '@/constants/strings';
-import { noAccent, vnd, weekShort } from '@/lib/format';
+import { hhmm, noAccent, vnd, weekShort } from '@/lib/format';
 import { vietqr } from '@/lib/vietqr';
 import { Button, Modal, toast } from '@/components/ui';
+import { PaymentStatusChip } from './PaymentStatusChip';
 
 export function MemberPayModal({
   member,
   unitPrice,
   weekId,
   weekLabel,
+  meId,
   payment,
   isAdmin,
   onClose,
@@ -19,6 +21,7 @@ export function MemberPayModal({
   unitPrice: number;
   weekId: string;
   weekLabel: string;
+  meId: string;
   payment: PaymentConfig;
   isAdmin: boolean;
   onClose: () => void;
@@ -27,13 +30,28 @@ export function MemberPayModal({
   const foodTotal = member.foodTotal ?? member.servings * unitPrice;
   const drinksTotal = member.drinksTotal ?? 0;
   const amount = member.total ?? foodTotal + drinksTotal;
+  const status = member.paymentStatus;
+  const isMine = member.userId === meId;
   // Nội dung CK: tên người chuyển (không dấu) + tuần (bỏ năm), vd "Chuong - 22/6 - 27/6"
   const info = t.payment.qrInfoMember(noAccent(member.fullName), weekShort(weekLabel));
 
-  const togglePaid = async () => {
-    await api.setPaid(weekId, member.userId, !member.paid);
-    toast(member.paid ? t.payment.unmarked : t.payment.marked, member.paid ? '↩️' : '✅');
-    onPaid();
+  const report = async (r: boolean) => {
+    try {
+      await api.reportMyPayment(weekId, r);
+      toast(r ? t.payment.reportedToast : t.payment.reportCancelledToast, r ? '📤' : '↩️');
+      onPaid();
+    } catch (e: any) {
+      toast(e.message || t.errors.short, '⚠️');
+    }
+  };
+  const setStatus = async (s: PaymentStatus) => {
+    try {
+      await api.setPaymentStatus(weekId, member.userId, s);
+      toast(s === 'PAID' ? t.payment.confirmedToast : t.payment.rejectedToast, s === 'PAID' ? '✅' : '↩️');
+      onPaid();
+    } catch (e: any) {
+      toast(e.message || t.errors.short, '⚠️');
+    }
   };
 
   return (
@@ -72,13 +90,41 @@ export function MemberPayModal({
             </div>
           </div>
         </div>
-        {isAdmin && (
+        <div className="pay-status-row">
+          <PaymentStatusChip status={status} />
+          {status === 'PENDING' && member.reportedAt && (
+            <span className="small muted">{t.payment.reportedAt(hhmm(member.reportedAt))}</span>
+          )}
+          {status === 'PAID' && member.paidAt && (
+            <span className="small muted">{t.payment.paidAt(hhmm(member.paidAt))}</span>
+          )}
+        </div>
+
+        {isAdmin ? (
           <div className="modal-actions">
-            <Button variant={member.paid ? 'default' : 'success'} onClick={togglePaid}>
-              {member.paid ? t.payment.unmark : t.payment.markPaid}
-            </Button>
+            {status !== 'PAID' && (
+              <Button variant="success" onClick={() => setStatus('PAID')}>
+                {t.payment.confirmBtn}
+              </Button>
+            )}
+            {status !== 'UNPAID' && <Button onClick={() => setStatus('UNPAID')}>{t.payment.rejectBtn}</Button>}
           </div>
-        )}
+        ) : isMine ? (
+          status === 'PAID' ? (
+            <div className="pay-note done">{t.payment.paidDone}</div>
+          ) : status === 'PENDING' ? (
+            <div className="modal-actions">
+              <span className="pay-note wait">{t.payment.reportWaiting}</span>
+              <Button onClick={() => report(false)}>{t.payment.reportCancel}</Button>
+            </div>
+          ) : (
+            <div className="modal-actions">
+              <Button variant="primary" onClick={() => report(true)}>
+                {t.payment.reportBtn}
+              </Button>
+            </div>
+          )
+        ) : null}
       </div>
     </Modal>
   );

@@ -39,6 +39,7 @@ model User {
   updatedAt  DateTime    @updatedAt
   orders     Order[]
   orderItems OrderItem[]
+  notifications Notification[]
 
   @@map("users")
 }

@@ -1,6 +1,22 @@
 export type Role = 'ADMIN' | 'USER';
 export type DayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 export type DishCategory = 'MAIN' | 'DRINK';
+export type PaymentStatus = 'UNPAID' | 'PENDING' | 'PAID';
+
+export interface AppNotification {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  read: boolean;
+  weekId?: string | null;
+  createdAt: string;
+}
+
+export interface NotificationFeed {
+  items: AppNotification[];
+  unread: number;
+}
 
 export interface User {
   id: string;
@@ -65,6 +81,9 @@ export interface GridMember {
   drinksTotal?: number;
   total: number;
   paid: boolean;
+  paymentStatus: PaymentStatus;
+  reportedAt?: string | null;
+  paidAt?: string | null;
 }
 
 export interface Grid {

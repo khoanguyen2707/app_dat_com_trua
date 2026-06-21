@@ -1,6 +1,7 @@
 import { useAuth } from '@/context/AuthContext';
 import { t } from '@/constants/strings';
 import { Avatar, IconButton, Pill } from '@/components/ui';
+import { NotificationBell } from './NotificationBell';
 
 export function TopBar({
   weekLabel,
@@ -29,6 +30,7 @@ export function TopBar({
           <span className="pill-txt">{isAdmin ? t.role.admin : t.role.member}</span>
         </Pill>
         <Avatar name={user?.fullName || '?'} color={user?.color} />
+        <NotificationBell />
         <IconButton title={t.topbar.changePassword} onClick={onChangePassword}>
           🔑
         </IconButton>

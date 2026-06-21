@@ -25,6 +25,9 @@ export function Dashboard() {
   const settings = useDisclosure();
   const password = useDisclosure();
 
+  // admin: số người đang chờ xác nhận thanh toán → badge ở tab Thanh toán
+  const pendingCount = isAdmin && grid ? grid.members.filter((m) => m.paymentStatus === 'PENDING').length : 0;
+
   return (
     <div className="app-shell">
       <TopBar weekLabel={grid?.week.label} onChangePassword={password.onOpen} onOpenSettings={settings.onOpen} />
@@ -48,7 +51,14 @@ export function Dashboard() {
             )}
             {tab === 'menu' && <MenuPanel dishes={dishes} isAdmin={isAdmin} reload={reloadDishes} />}
             {tab === 'pay' && payment && (
-              <PaymentPanel grid={grid} payment={payment} isAdmin={isAdmin} reloadGrid={reloadGrid} reloadPayment={reloadPayment} />
+              <PaymentPanel
+                grid={grid}
+                payment={payment}
+                isAdmin={isAdmin}
+                meId={user!.id}
+                reloadGrid={reloadGrid}
+                reloadPayment={reloadPayment}
+              />
             )}
             {tab === 'stats' && <StatsPanel grid={grid} weeks={weeks} />}
             {tab === 'hist' && (
@@ -66,7 +76,7 @@ export function Dashboard() {
         )}
       </div>
 
-      <TabBar active={tab} onChange={setTab} />
+      <TabBar active={tab} onChange={setTab} badges={pendingCount ? { pay: pendingCount } : undefined} />
 
       {settings.open && grid && (
         <SettingsModal

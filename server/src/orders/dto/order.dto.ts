@@ -17,10 +17,25 @@ export class UpsertOrderDto {
   @ApiPropertyOptional() @IsOptional() @IsBoolean() sun?: boolean;
 }
 
-export class SetPaidDto {
+const PAYMENT_STATUSES = ['UNPAID', 'PENDING', 'PAID'] as const;
+
+/** Admin đặt trạng thái thanh toán của 1 thành viên. */
+export class SetPaymentStatusDto {
   @ApiProperty() @IsString() weekId: string;
   @ApiProperty() @IsString() userId: string;
-  @ApiProperty() @IsBoolean() paid: boolean;
+
+  @ApiProperty({ enum: PAYMENT_STATUSES, example: 'PAID' })
+  @IsIn(PAYMENT_STATUSES)
+  status: (typeof PAYMENT_STATUSES)[number];
+}
+
+/** User báo / huỷ báo đã chuyển khoản. */
+export class ReportPaymentDto {
+  @ApiProperty() @IsString() weekId: string;
+
+  @ApiProperty({ description: 'true = báo đã chuyển khoản; false = huỷ báo' })
+  @IsBoolean()
+  report: boolean;
 }
 
 export class DrinkItemDto {

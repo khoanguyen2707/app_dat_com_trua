@@ -1,11 +1,17 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
+import { NotificationsService } from '@/notifications/notifications.service';
 import { CUTOFF_LABEL, computeLockedDays, DAY_KEYS, DAY_LABEL, type DayKey } from '@/common/week-lock';
-import { SetDayDetailDto, SetPaidDto, UpsertOrderDto } from './dto/order.dto';
+import { ReportPaymentDto, SetDayDetailDto, SetPaymentStatusDto, UpsertOrderDto } from './dto/order.dto';
+
+const vnd = (n: number) => n.toLocaleString('vi-VN') + 'đ';
 
 @Injectable()
 export class OrdersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   private days(dto: UpsertOrderDto) {
     return {
@@ -99,11 +105,81 @@ export class OrdersService {
     return { ok: true };
   }
 
-  async setPaid(dto: SetPaidDto) {
-    return this.prisma.order.upsert({
-      where: { weekId_userId: { weekId: dto.weekId, userId: dto.userId } },
-      update: { paid: dto.paid },
-      create: { weekId: dto.weekId, userId: dto.userId, paid: dto.paid },
+  /** Lấy đơn + tổng tiền + nhãn tuần + tên (cho thông báo). */
+  private async orderInfo(weekId: string, userId: string) {
+    const order: any = await this.prisma.order.findUnique({
+      where: { weekId_userId: { weekId, userId } },
+      include: { week: { select: { label: true, unitPrice: true } }, user: { select: { fullName: true } } },
     });
+    if (!order) {
+      throw new NotFoundException('Chưa có đăng ký cho tuần này');
+    }
+    const servings = DAY_KEYS.reduce((a, d) => a + (order[d] ? 1 : 0), 0);
+    const items = await this.prisma.orderItem.findMany({ where: { weekId, userId }, include: { dish: true } });
+    const drinksTotal = items.reduce((a, it) => a + (it.dish.category === 'DRINK' ? it.qty * it.dish.price : 0), 0);
+    const total = servings * order.week.unitPrice + drinksTotal;
+    return { order, total, label: order.week.label as string, fullName: order.user.fullName as string };
+  }
+
+  /** User báo (hoặc huỷ báo) đã chuyển khoản → PENDING/UNPAID + báo admin. */
+  async reportPayment(userId: string, dto: ReportPaymentDto) {
+    const { order, total, label, fullName } = await this.orderInfo(dto.weekId, userId);
+    if (order.paymentStatus === 'PAID') {
+      throw new BadRequestException('Khoản này đã được xác nhận thanh toán.');
+    }
+
+    if (dto.report) {
+      if (total <= 0) {
+        throw new BadRequestException('Chưa có khoản cần thanh toán.');
+      }
+      await this.prisma.order.update({
+        where: { weekId_userId: { weekId: dto.weekId, userId } },
+        data: { paymentStatus: 'PENDING', reportedAt: new Date() },
+      });
+      await this.notifications.createFor(await this.notifications.adminIds(), {
+        type: 'PAYMENT_PENDING',
+        title: '💸 Yêu cầu xác nhận thanh toán',
+        body: `${fullName} báo đã chuyển ${vnd(total)} — tuần ${label}.`,
+        weekId: dto.weekId,
+      });
+    } else {
+      await this.prisma.order.update({
+        where: { weekId_userId: { weekId: dto.weekId, userId } },
+        data: { paymentStatus: 'UNPAID', reportedAt: null },
+      });
+    }
+    return { ok: true };
+  }
+
+  /** Admin đặt trạng thái thanh toán → đồng bộ paid + báo cho user. */
+  async setPaymentStatus(dto: SetPaymentStatusDto) {
+    const { label } = await this.orderInfo(dto.weekId, dto.userId);
+    const paid = dto.status === 'PAID';
+    await this.prisma.order.update({
+      where: { weekId_userId: { weekId: dto.weekId, userId: dto.userId } },
+      data: {
+        paymentStatus: dto.status,
+        paid,
+        paidAt: paid ? new Date() : null,
+        ...(dto.status === 'UNPAID' ? { reportedAt: null } : {}),
+      },
+    });
+
+    if (dto.status === 'PAID') {
+      await this.notifications.createFor([dto.userId], {
+        type: 'PAYMENT_CONFIRMED',
+        title: '✅ Đã xác nhận thanh toán',
+        body: `Admin đã xác nhận bạn thanh toán tuần ${label}. Cảm ơn!`,
+        weekId: dto.weekId,
+      });
+    } else if (dto.status === 'UNPAID') {
+      await this.notifications.createFor([dto.userId], {
+        type: 'PAYMENT_REJECTED',
+        title: '↩️ Chưa nhận được tiền',
+        body: `Admin chưa nhận được khoản tuần ${label}, vui lòng kiểm tra lại.`,
+        weekId: dto.weekId,
+      });
+    }
+    return { ok: true };
   }
 }

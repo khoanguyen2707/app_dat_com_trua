@@ -1,23 +1,26 @@
 import { useState } from 'react';
 import type { Grid, GridMember, PaymentConfig } from '@/types';
 import { t } from '@/constants/strings';
-import { vnd } from '@/lib/format';
+import { cls, vnd } from '@/lib/format';
 import { vietqr } from '@/lib/vietqr';
 import { useDisclosure } from '@/hooks/useDisclosure';
 import { Avatar, Button, Card, CardBody, CardHeader, toast } from '@/components/ui';
 import { MemberPayModal } from './MemberPayModal';
 import { PaymentEditModal } from './PaymentEditModal';
+import { PaymentStatusChip } from './PaymentStatusChip';
 
 export function PaymentPanel({
   grid,
   payment,
   isAdmin,
+  meId,
   reloadGrid,
   reloadPayment,
 }: {
   grid: Grid;
   payment: PaymentConfig;
   isAdmin: boolean;
+  meId: string;
   reloadGrid: () => Promise<void>;
   reloadPayment: () => Promise<void>;
 }) {
@@ -82,7 +85,11 @@ export function PaymentPanel({
             <div className="member-pay">
               {eating.length === 0 && <div className="small muted">{t.payment.noEaters}</div>}
               {eating.map((m) => (
-                <div key={m.userId} className={`mp ${m.paid ? 'paid' : ''}`} onClick={() => setPicked(m)}>
+                <div
+                  key={m.userId}
+                  className={cls('mp', m.paymentStatus === 'PAID' && 'paid')}
+                  onClick={() => setPicked(m)}
+                >
                   <Avatar name={m.fullName} color={m.color} size={34} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="nm">{m.fullName}</div>
@@ -91,7 +98,7 @@ export function PaymentPanel({
                       {(m.drinksTotal ?? 0) > 0 && ' · 🥤'}
                     </div>
                   </div>
-                  <span style={{ fontSize: 18 }}>{m.paid ? '✅' : '›'}</span>
+                  <PaymentStatusChip status={m.paymentStatus} />
                 </div>
               ))}
             </div>
@@ -105,6 +112,7 @@ export function PaymentPanel({
           unitPrice={grid.week.unitPrice}
           weekId={grid.week.id}
           weekLabel={grid.week.label}
+          meId={meId}
           payment={payment}
           isAdmin={isAdmin}
           onClose={() => setPicked(null)}

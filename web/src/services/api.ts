@@ -1,4 +1,15 @@
-import type { AuthResult, DayDetail, DayKey, Dish, Grid, PaymentConfig, User, Week } from '@/types';
+import type {
+  AuthResult,
+  DayDetail,
+  DayKey,
+  Dish,
+  Grid,
+  NotificationFeed,
+  PaymentConfig,
+  PaymentStatus,
+  User,
+  Week,
+} from '@/types';
 import { request } from './http';
 
 export const api = {
@@ -37,8 +48,15 @@ export const api = {
     request('/orders/me/day', { method: 'PUT', body: JSON.stringify({ weekId, day, ...detail }) }),
   setUserDay: (userId: string, weekId: string, day: DayKey, detail: DayDetail) =>
     request(`/orders/${userId}/day`, { method: 'PUT', body: JSON.stringify({ weekId, day, ...detail }) }),
-  setPaid: (weekId: string, userId: string, paid: boolean) =>
-    request('/orders/paid', { method: 'PATCH', body: JSON.stringify({ weekId, userId, paid }) }),
+  // thanh toán
+  reportMyPayment: (weekId: string, report: boolean) =>
+    request('/orders/me/payment', { method: 'PATCH', body: JSON.stringify({ weekId, report }) }),
+  setPaymentStatus: (weekId: string, userId: string, status: PaymentStatus) =>
+    request('/orders/payment', { method: 'PATCH', body: JSON.stringify({ weekId, userId, status }) }),
+
+  // thông báo
+  notifications: () => request<NotificationFeed>('/notifications'),
+  markNotificationsRead: () => request<{ ok: boolean }>('/notifications/read', { method: 'PATCH' }),
 
   // dishes
   dishes: () => request<Dish[]>('/dishes'),

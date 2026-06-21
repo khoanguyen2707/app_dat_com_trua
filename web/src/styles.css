@@ -258,6 +258,33 @@ tfoot td.col-name { background: #16a34a; color: #fff; } tfoot td.money { color: 
 /* hero stat: dòng phụ */
 .stat-sub { font-size: 11px; color: var(--muted); font-weight: 600; margin-top: 2px; }
 
+/* trạng thái công nợ — chip dùng chung */
+.pst { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 700; padding: 4px 9px; border-radius: 20px; white-space: nowrap; flex: none; }
+.pst.unpaid { color: var(--muted); background: var(--surface-2); border: 1px solid var(--line); }
+.pst.pending { color: #b25e00; background: #fff4e3; border: 1px solid #ffe0b0; }
+.pst.paid { color: var(--green); background: var(--green-soft); border: 1px solid #cdf0da; }
+.pay-status-row { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+.pay-note { font-size: 13.5px; font-weight: 600; padding: 9px 12px; border-radius: 12px; text-align: center; }
+.pay-note.wait { flex: 1; color: #b25e00; background: #fff4e3; }
+.pay-note.done { color: var(--green); background: var(--green-soft); padding: 12px; }
+
+/* chuông thông báo (header) */
+.notif-bell { position: relative; display: inline-flex; }
+.notif-dot { position: absolute; top: -3px; right: -3px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 9px; background: var(--red); color: #fff; font-size: 10px; font-weight: 800; display: grid; place-items: center; pointer-events: none; box-shadow: 0 0 0 2px #fff; }
+.notif-panel { position: absolute; top: calc(100% + 8px); right: 0; width: 320px; max-width: calc(100vw - 24px); max-height: 70vh; overflow: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow-lg); z-index: 70; animation: fadeUp .25s var(--ease) both; }
+.notif-h { font-weight: 800; font-size: 14px; padding: 13px 16px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--surface); }
+.notif-empty { padding: 28px 16px; text-align: center; color: var(--muted); font-size: 13px; }
+.notif-item { padding: 11px 16px; border-bottom: 1px solid var(--line); }
+.notif-item:last-child { border-bottom: none; }
+.notif-item.unread { background: var(--brand-soft); }
+.notif-title { font-weight: 700; font-size: 13.5px; }
+.notif-body { font-size: 12.5px; color: var(--text); margin-top: 2px; line-height: 1.4; }
+.notif-time { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+/* badge số trên icon tab */
+.tab .ti { position: relative; }
+.tab-badge { position: absolute; top: -5px; right: -10px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 9px; background: var(--red); color: #fff; font-size: 10px; font-weight: 800; display: grid; place-items: center; box-shadow: 0 0 0 2px var(--surface); }
+
 /* empty / loading */
 .empty { text-align: center; padding: 44px 20px; color: var(--muted); } .empty .e { font-size: 44px; margin-bottom: 10px; opacity: .7; }
 .spinner { width: 38px; height: 38px; border: 3px solid var(--line); border-top-color: var(--brand); border-radius: 50%; animation: spin .8s linear infinite; margin: 40px auto; }

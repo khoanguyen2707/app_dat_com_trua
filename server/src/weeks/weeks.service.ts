@@ -109,6 +109,9 @@ export class WeeksService {
         drinksTotal,
         total: foodTotal + drinksTotal,
         paid: o ? o.paid : false,
+        paymentStatus: o ? o.paymentStatus : 'UNPAID',
+        reportedAt: o ? o.reportedAt : null,
+        paidAt: o ? o.paidAt : null,
       };
     });
 

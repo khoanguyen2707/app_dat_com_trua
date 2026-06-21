@@ -40,6 +40,12 @@ export const t = {
     logout: 'Đăng xuất',
   },
 
+  notif: {
+    title: '🔔 Thông báo',
+    empty: 'Chưa có thông báo nào.',
+    markAllRead: 'Đánh dấu đã đọc',
+  },
+
   login: {
     subtitleLogin: 'Đăng nhập để đăng ký suất ăn',
     subtitleRegister: 'Tạo tài khoản mới (quyền thành viên)',
@@ -170,6 +176,21 @@ export const t = {
     includesDrinks: (money: string) => `gồm nước ${money}`,
     drinkDetail: (name: string, qty: number) => `${name} ×${qty}`,
     transferNote: 'Nội dung CK',
+    // trạng thái công nợ + luồng báo/xác nhận
+    status: { UNPAID: 'Chưa trả', PENDING: 'Chờ xác nhận', PAID: 'Đã thanh toán' },
+    reportBtn: '📤 Tôi đã chuyển khoản',
+    reportCancel: '↩️ Huỷ báo',
+    reportWaiting: '⏳ Đã gửi — chờ admin xác nhận',
+    paidDone: '✅ Đã thanh toán — cảm ơn bạn!',
+    confirmBtn: '✅ Xác nhận đã nhận',
+    rejectBtn: '↩️ Chưa nhận',
+    reportedToast: 'Đã báo chuyển khoản, chờ admin xác nhận',
+    reportCancelledToast: 'Đã huỷ báo',
+    confirmedToast: 'Đã xác nhận thanh toán',
+    rejectedToast: 'Đã chuyển về "Chưa trả"',
+    reportedAt: (time: string) => `Báo lúc ${time}`,
+    paidAt: (time: string) => `Xác nhận lúc ${time}`,
+    pendingTab: (n: number) => `${n} người chờ xác nhận`,
     unmark: '↩️ Bỏ đánh dấu',
     markPaid: '✅ Đã thanh toán',
     unmarked: 'Đã bỏ đánh dấu',

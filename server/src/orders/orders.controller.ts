@@ -4,7 +4,7 @@ import { Roles } from '@/common/decorators/roles.decorator';
 import { Role } from '@/common/enums/role.enum';
 import { AuthUser, CurrentUser } from '@/common/decorators/current-user.decorator';
 import { OrdersService } from './orders.service';
-import { SetDayDetailDto, SetPaidDto, UpsertOrderDto } from './dto/order.dto';
+import { ReportPaymentDto, SetDayDetailDto, SetPaymentStatusDto, UpsertOrderDto } from './dto/order.dto';
 
 @ApiTags('orders')
 @ApiBearerAuth('JWT-auth')
@@ -24,6 +24,12 @@ export class OrdersController {
     return this.orders.setDayDetail(user.id, dto, true);
   }
 
+  @Patch('me/payment')
+  @ApiOperation({ summary: 'Tôi báo / huỷ báo đã chuyển khoản (→ chờ admin xác nhận)' })
+  reportMyPayment(@CurrentUser() user: AuthUser, @Body() dto: ReportPaymentDto) {
+    return this.orders.reportPayment(user.id, dto);
+  }
+
   @Roles(Role.ADMIN)
   @Put(':userId')
   @ApiOperation({ summary: 'Admin: tích ngày hộ một thành viên' })
@@ -39,9 +45,9 @@ export class OrdersController {
   }
 
   @Roles(Role.ADMIN)
-  @Patch('paid')
-  @ApiOperation({ summary: 'Admin: đánh dấu đã/chưa thanh toán' })
-  setPaid(@Body() dto: SetPaidDto) {
-    return this.orders.setPaid(dto);
+  @Patch('payment')
+  @ApiOperation({ summary: 'Admin: đặt trạng thái thanh toán (UNPAID/PENDING/PAID) + báo user' })
+  setPaymentStatus(@Body() dto: SetPaymentStatusDto) {
+    return this.orders.setPaymentStatus(dto);
   }
 }
