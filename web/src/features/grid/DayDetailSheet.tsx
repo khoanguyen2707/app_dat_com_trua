@@ -45,6 +45,8 @@ export function DayDetailSheet({
   const [saving, setSaving] = useState(false);
 
   const chosenDrinks = Object.entries(qty).filter(([, n]) => n > 0);
+  /** Quy tắc: đặt cơm thì bắt buộc chọn ít nhất 1 món → chặn Lưu nếu thiếu. */
+  const needFood = eat && food.length === 0;
 
   const toggleFood = (id: string) => {
     if (!editable || !eat) return;
@@ -63,6 +65,7 @@ export function DayDetailSheet({
   const drinksCost = chosenDrinks.reduce((a, [id, n]) => a + priceOf(id) * n, 0);
 
   const save = async () => {
+    if (needFood) return;
     setSaving(true);
     try {
       const detail = {
@@ -122,17 +125,20 @@ export function DayDetailSheet({
           <div className="small muted">{t.grid.detail.noFood}</div>
         )
       ) : eat ? (
-        <div className="dd-chips">
-          {mains.map((d) => (
-            <button
-              key={d.id}
-              className={cls('dd-chip', food.includes(d.id) && 'on')}
-              onClick={() => toggleFood(d.id)}
-            >
-              <span>{d.emoji}</span> {d.name}
-            </button>
-          ))}
-        </div>
+        <>
+          {needFood && <div className="dd-foodwarn">{t.grid.detail.needFood}</div>}
+          <div className="dd-chips">
+            {mains.map((d) => (
+              <button
+                key={d.id}
+                className={cls('dd-chip', food.includes(d.id) && 'on')}
+                onClick={() => toggleFood(d.id)}
+              >
+                <span>{d.emoji}</span> {d.name}
+              </button>
+            ))}
+          </div>
+        </>
       ) : (
         <div className="small muted">{t.grid.detail.foodEnableHint}</div>
       )}
@@ -199,7 +205,7 @@ export function DayDetailSheet({
       {editable && (
         <div className="modal-actions">
           <Button onClick={onClose}>{t.actions.cancel}</Button>
-          <Button variant="primary" onClick={save} disabled={saving}>
+          <Button variant="primary" onClick={save} disabled={saving || needFood}>
             {saving ? t.actions.saving : t.actions.save}
           </Button>
         </div>

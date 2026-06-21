@@ -85,13 +85,13 @@ export const t = {
     // hướng dẫn chi tiết cho nghiệp vụ mới (mix món + đồ uống + chỉ đặt hôm nay)
     guide: {
       title: '📖 Cách đặt cơm',
-      order: (price: string) => `🍚 Chạm ô để đặt cơm (${price}/ngày).`,
+      order: (price: string) => `🍚 Chạm ô để đặt cơm (${price}/ngày) — bắt buộc chọn ít nhất 1 món.`,
       detail: (where: string) =>
         `🍱 Chạm ${where} để mở phiếu chi tiết — chọn món (mix nhiều món vẫn 1 suất) & thêm đồ uống (tính tiền riêng theo giá).`,
       whereMobile: 'tên thành viên',
-      whereDesktop: 'ô đã đặt',
+      whereDesktop: 'ô',
       today: (cutoff: string) => `⏰ Chỉ đặt cho HÔM NAY, trước ${cutoff} — không đặt trước cho ngày sau.`,
-      cancel: '❌ Bỏ tick = huỷ cơm + món; nước vẫn giữ → ô thành xanh 🥤 (muốn xoá nước thì vào phiếu chi tiết).',
+      cancel: '❌ Bỏ cơm: bấm × trên ô (mobile: nút tick) — huỷ cơm + món, nước vẫn giữ → ô thành xanh 🥤.',
       colors: '🎨 Ô cam 🍚 = có cơm · ô xanh 🥤 = chỉ uống nước.',
       admin: '👑 Admin: đặt/sửa hộ mọi người, mọi ngày (kể cả ngày đã khoá).',
       member: '✏️ Bạn chỉ sửa được dòng của mình.',
@@ -102,6 +102,7 @@ export const t = {
     colMoney: 'Thành tiền',
     totalRow: 'TỔNG CỘNG',
     autoSave: 'Tự động lưu khi tích',
+    clearRice: 'Bỏ cơm',
     exportBtn: '📊 Xuất Excel',
     exported: 'Đã xuất Excel (CSV)',
     csv: { no: 'STT', name: 'Tên', total: 'TỔNG' },
@@ -116,6 +117,7 @@ export const t = {
       eatPrice: (price: string) => `1 suất • ${price}`,
       foodSection: 'Món ăn (mix nhiều món vẫn 1 suất)',
       foodEnableHint: 'Bật "Ăn cơm" để chọn món.',
+      needFood: '❌ Chọn ít nhất 1 món để đặt cơm.',
       drinkSection: 'Đồ uống (tính tiền riêng)',
       riceLabel: 'Cơm',
       drinkLabel: 'Nước',

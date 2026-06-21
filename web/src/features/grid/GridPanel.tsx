@@ -40,18 +40,15 @@ export function GridPanel({
     !readOnly && (isAdmin || m.userId === meId) && (isAdmin || !locked[key]);
 
   /**
-   * Bật/tắt nhanh 1 ngày:
-   * - Bật → đặt cơm, GIỮ nguyên món/nước đã chọn (nếu có).
-   * - Tắt → bỏ cơm + món, NHƯNG GIỮ nước (ô thành "chỉ nước" 🥤 nền xanh).
-   *   Muốn xoá luôn nước thì vào phiếu chi tiết (giảm số lượng về 0).
+   * Bỏ cơm nhanh 1 ngày: huỷ cơm + món, GIỮ nước.
+   * - Còn nước → ô thành "chỉ nước" 🥤 (nền xanh).
+   * - Không có nước → ô về trống.
+   * Đặt/sửa cơm luôn qua phiếu chi tiết (vì đặt cơm bắt buộc phải chọn món).
    */
-  const toggle = async (m: GridMember, key: DayKey) => {
+  const clearRice = async (m: GridMember, key: DayKey) => {
     if (!canEditDay(m, key) || saving) return;
-    const turningOn = !m.days[key];
     const cur = m.items?.[key];
-    const detail = turningOn
-      ? { eat: true, food: cur?.food ?? [], drinks: cur?.drinks ?? [] }
-      : { eat: false, food: [], drinks: cur?.drinks ?? [] };
+    const detail = { eat: false, food: [], drinks: cur?.drinks ?? [] };
     setSaving(true);
     try {
       if (m.userId === meId) await api.setMyDay(week.id, key, detail);
@@ -64,22 +61,10 @@ export function GridPanel({
     }
   };
 
-  /**
-   * Tap ô:
-   * - trống / chỉ có nước (chưa có cơm) → đặt cơm nhanh.
-   * - chỉ có cơm (không món, không nước) → bỏ cơm nhanh (ô về trống).
-   * - có món hoặc nước → mở phiếu chi tiết (sửa/xem).
-   */
+  /** Tap ô → mở phiếu chi tiết (đặt cơm + chọn món / thêm nước). Bỏ cơm nhanh bằng nút × trên ô. */
   const onCell = (m: GridMember, key: DayKey) => {
     if (saving) return;
-    if (canEditDay(m, key)) {
-      const it = m.items?.[key];
-      const bare = (it?.food.length ?? 0) === 0 && (it?.drinks.length ?? 0) === 0;
-      if (!m.days[key] || bare) toggle(m, key);
-      else setPicked({ m, day: key });
-    } else if (!readOnly || m.days[key] || m.items?.[key]) {
-      setPicked({ m, day: key });
-    }
+    if (!readOnly || m.days[key] || m.items?.[key]) setPicked({ m, day: key });
   };
 
   const lockMine = (m: GridMember, key: DayKey) => !isAdmin && m.userId === meId && locked[key];
@@ -169,7 +154,9 @@ export function GridPanel({
                       !canEditDay(m, day) && 'ro',
                       lockMine(m, day) && 'locked',
                     )}
-                    onClick={() => (canEditDay(m, day) ? toggle(m, day) : setPicked({ m, day }))}
+                    onClick={() =>
+                      canEditDay(m, day) && on ? clearRice(m, day) : setPicked({ m, day })
+                    }
                   >
                     {cellMark(m, day)}
                     {on && hasDrink(m, day) && <span className="cell-drink">🥤</span>}
@@ -217,6 +204,18 @@ export function GridPanel({
                         <div className={cellClass(m, d.key)} onClick={() => onCell(m, d.key)}>
                           {cellMark(m, d.key)}
                           {m.days[d.key] && hasDrink(m, d.key) && <span className="cell-drink">🥤</span>}
+                          {m.days[d.key] && canEditDay(m, d.key) && (
+                            <button
+                              className="cell-x"
+                              title={t.grid.clearRice}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                clearRice(m, d.key);
+                              }}
+                            >
+                              ×
+                            </button>
+                          )}
                         </div>
                       </td>
                     ))}

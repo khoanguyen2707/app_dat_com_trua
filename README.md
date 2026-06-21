@@ -8,7 +8,7 @@
 | Frontend (`web/`) | React 18 + Vite + TypeScript |
 | Hạ tầng | Docker, docker-compose, GitHub Actions CI, render.yaml |
 
-> `index.html` ở thư mục gốc là **bản chạy offline 1 file** (không cần server) — giữ lại để dùng nhanh.
+> `index.html` ở thư mục gốc là **bản prototype offline 1 file** (không cần server) — *bản cũ, KHÔNG có các tính năng mới* (mix món, đồ uống, khoá giờ, trạng thái thanh toán, thông báo). Giữ lại để tham khảo nhanh; app thật là `server/` + `web/`.
 
 ## 📚 Tài liệu
 
@@ -27,7 +27,7 @@
 ```
 com-trua-app/
 ├─ server/            # API NestJS + Prisma
-│  ├─ src/ (auth, users, weeks, orders, dishes, payment, notifications, seed, common, prisma)
+│  ├─ src/ (auth, users, weeks, orders, dishes, payment, notifications, health, seed, common, prisma)
 │  ├─ prisma/schema.prisma
 │  └─ Dockerfile
 ├─ web/               # Frontend React + Vite (src, Dockerfile + nginx.conf)
@@ -68,7 +68,7 @@ Lần đầu chạy sẽ **tự seed**: admin + 13 thành viên + **thực đơn
 cd server
 cp .env.example .env          # DATABASE_URL: dùng 127.0.0.1 (KHÔNG localhost — xem docs/CHAY-LOCAL.md)
 npm install
-npm run prisma:push           # tạo bảng theo schema
+npm run db:push           # tạo bảng theo schema
 npm run start:dev             # API tại http://localhost:3000
 ```
 
@@ -149,7 +149,7 @@ npm run start:dev      # dev watch
 npm run build          # build production
 npm run lint           # oxlint + eslint
 npm run prisma:studio  # xem/sửa DB bằng giao diện
-npm run prisma:push    # đồng bộ schema -> DB
+npm run db:push    # đồng bộ schema -> DB
 
 # web
 npm run dev            # dev
