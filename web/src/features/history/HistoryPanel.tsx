@@ -1,21 +1,28 @@
+import { useState } from 'react';
 import { api } from '@/services/api';
-import type { Week } from '@/types';
+import type { Dish, Week } from '@/types';
 import { t } from '@/constants/strings';
 import { vnd } from '@/lib/format';
 import { useDisclosure } from '@/hooks/useDisclosure';
 import { Button, Card, CardBody, CardHeader, EmptyState, IconButton, toast } from '@/components/ui';
 import { CreateWeekModal } from './CreateWeekModal';
+import { HistoryWeekModal } from './HistoryWeekModal';
 
 export function HistoryPanel({
   weeks,
+  dishes,
   isAdmin,
+  meId,
   reload,
 }: {
   weeks: Week[];
+  dishes: Dish[];
   isAdmin: boolean;
+  meId: string;
   reload: () => Promise<void>;
 }) {
   const create = useDisclosure();
+  const [viewing, setViewing] = useState<Week | null>(null);
 
   const del = async (w: Week) => {
     if (!confirm(t.history.confirmDelete(w.label))) return;
@@ -50,6 +57,9 @@ export function HistoryPanel({
                   {t.history.meta(w.servings ?? 0, vnd(w.total ?? 0), w.memberCount ?? 0, vnd(w.unitPrice))}
                 </div>
               </div>
+              <Button tiny onClick={() => setViewing(w)}>
+                👁️ {t.history.viewBtn}
+              </Button>
               {isAdmin && (
                 <IconButton title={t.actions.delete} onClick={() => del(w)}>
                   🗑️
@@ -73,6 +83,9 @@ export function HistoryPanel({
             await reload();
           }}
         />
+      )}
+      {viewing && (
+        <HistoryWeekModal week={viewing} dishes={dishes} meId={meId} onClose={() => setViewing(null)} />
       )}
     </Card>
   );

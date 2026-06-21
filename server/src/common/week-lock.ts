@@ -1,10 +1,11 @@
 /**
  * Logic khoá tick theo ngày/giờ (giờ Việt Nam, UTC+7).
  *
- * Luật:
- *  - Ngày đã qua (so với hôm nay): khoá — chỉ admin sửa được.
+ * Luật (user thường — admin luôn sửa được mọi ngày):
+ *  - Ngày đã qua (so với hôm nay): khoá.
  *  - Hôm nay: khoá nếu đã quá GIỜ CHỐT (10:21 sáng giờ VN).
- *  - Ngày tương lai: mở.
+ *  - Ngày tương lai: khoá — KHÔNG cho đặt cơm/nước trước.
+ *  => User chỉ đặt được cho HÔM NAY, trước giờ chốt.
  *  - Tuần chưa có startDate: không khoá ngày nào (trả về toàn false).
  *
  * startDate được lưu là 00:00 UTC của ngày Thứ 2 (theo lịch VN), nên mọi so sánh
@@ -60,8 +61,9 @@ export function computeLockedDays(startDate: Date | null | undefined, now: Date 
     const dayNum = start + i * DAY_MS;
     if (dayNum < today)
       locked[key] = true; // đã qua
-    else if (dayNum === today) locked[key] = nowMinutes >= CUTOFF_MINUTES; // hôm nay, quá giờ chốt
-    // tương lai: mở
+    else if (dayNum === today)
+      locked[key] = nowMinutes >= CUTOFF_MINUTES; // hôm nay: quá giờ chốt thì khoá
+    else locked[key] = true; // tương lai: không cho đặt trước
   });
   return locked;
 }

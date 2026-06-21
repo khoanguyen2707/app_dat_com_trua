@@ -23,7 +23,7 @@ export function PaymentPanel({
 }) {
   const [picked, setPicked] = useState<GridMember | null>(null);
   const edit = useDisclosure();
-  const eating = grid.members.filter((m) => m.servings > 0);
+  const eating = grid.members.filter((m) => m.total > 0);
 
   const copy = () => {
     navigator.clipboard?.writeText(payment.accountNumber);
@@ -86,7 +86,10 @@ export function PaymentPanel({
                   <Avatar name={m.fullName} color={m.color} size={34} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="nm">{m.fullName}</div>
-                    <div className="am">{t.payment.servingsAmount(m.servings, vnd(m.servings * grid.week.unitPrice))}</div>
+                    <div className="am">
+                      {t.payment.servingsAmount(m.servings, vnd(m.total))}
+                      {(m.drinksTotal ?? 0) > 0 && ' · 🥤'}
+                    </div>
                   </div>
                   <span style={{ fontSize: 18 }}>{m.paid ? '✅' : '›'}</span>
                 </div>

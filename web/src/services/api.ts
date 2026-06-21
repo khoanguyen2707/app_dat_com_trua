@@ -1,4 +1,4 @@
-import type { AuthResult, Dish, Grid, PaymentConfig, User, Week } from '@/types';
+import type { AuthResult, DayDetail, DayKey, Dish, Grid, PaymentConfig, User, Week } from '@/types';
 import { request } from './http';
 
 export const api = {
@@ -32,6 +32,11 @@ export const api = {
     request('/orders/me', { method: 'PUT', body: JSON.stringify({ weekId, ...days }) }),
   setUserDays: (userId: string, weekId: string, days: Record<string, boolean>) =>
     request(`/orders/${userId}`, { method: 'PUT', body: JSON.stringify({ weekId, ...days }) }),
+  // chi tiết 1 ngày: ăn cơm + mix món + đồ uống
+  setMyDay: (weekId: string, day: DayKey, detail: DayDetail) =>
+    request('/orders/me/day', { method: 'PUT', body: JSON.stringify({ weekId, day, ...detail }) }),
+  setUserDay: (userId: string, weekId: string, day: DayKey, detail: DayDetail) =>
+    request(`/orders/${userId}/day`, { method: 'PUT', body: JSON.stringify({ weekId, day, ...detail }) }),
   setPaid: (weekId: string, userId: string, paid: boolean) =>
     request('/orders/paid', { method: 'PATCH', body: JSON.stringify({ weekId, userId, paid }) }),
 

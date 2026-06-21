@@ -1,5 +1,6 @@
 export type Role = 'ADMIN' | 'USER';
 export type DayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
+export type DishCategory = 'MAIN' | 'DRINK';
 
 export interface User {
   id: string;
@@ -16,6 +17,26 @@ export interface Dish {
   description?: string | null;
   emoji?: string | null;
   price: number;
+  category: DishCategory;
+}
+
+/** Đồ uống đã chọn: dishId + số lượng */
+export interface DrinkItem {
+  dishId: string;
+  qty: number;
+}
+
+/** Món & đồ uống của 1 ngày (food = dishId các món ăn, drinks = đồ uống + số lượng) */
+export interface DayItems {
+  food: string[];
+  drinks: DrinkItem[];
+}
+
+/** Payload đặt chi tiết 1 ngày */
+export interface DayDetail {
+  eat: boolean;
+  food: string[];
+  drinks: DrinkItem[];
 }
 
 export interface Week {
@@ -26,6 +47,8 @@ export interface Week {
   isActive: boolean;
   createdAt: string;
   servings?: number;
+  foodTotal?: number;
+  drinksTotal?: number;
   total?: number;
   memberCount?: number;
 }
@@ -36,7 +59,10 @@ export interface GridMember {
   color?: string | null;
   role: Role;
   days: Record<DayKey, boolean>;
+  items?: Record<DayKey, DayItems>;
   servings: number;
+  foodTotal?: number;
+  drinksTotal?: number;
   total: number;
   paid: boolean;
 }
@@ -44,7 +70,13 @@ export interface GridMember {
 export interface Grid {
   week: Week;
   members: GridMember[];
-  totals: { perDay: Record<DayKey, number>; totalServings: number; totalMoney: number };
+  totals: {
+    perDay: Record<DayKey, number>;
+    totalServings: number;
+    totalFood?: number;
+    totalDrinks?: number;
+    totalMoney: number;
+  };
   /** Ngày bị khoá với user thường (đã qua, hoặc hôm nay đã quá giờ chốt). */
   lockedDays?: Record<DayKey, boolean>;
   /** Nhãn ngày dương lịch "d/M" cho mỗi cột. */

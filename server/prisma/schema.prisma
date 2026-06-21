@@ -15,18 +15,24 @@ enum Role {
   USER
 }
 
+enum DishCategory {
+  MAIN // món ăn (đồng giá / suất)
+  DRINK // đồ uống (tính tiền riêng theo giá)
+}
+
 /// Tài khoản đăng nhập = thành viên ăn cơm
 model User {
-  id         String   @id @default(cuid())
-  email      String   @unique @db.VarChar(150)
-  password   String   @db.VarChar(255)
-  fullName   String   @db.VarChar(150)
-  role       Role     @default(USER)
-  active     Boolean  @default(true)
-  color      String?  @db.VarChar(20)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id         String      @id @default(cuid())
+  email      String      @unique @db.VarChar(150)
+  password   String      @db.VarChar(255)
+  fullName   String      @db.VarChar(150)
+  role       Role        @default(USER)
+  active     Boolean     @default(true)
+  color      String?     @db.VarChar(20)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
   orders     Order[]
+  orderItems OrderItem[]
 
   @@map("users")
 }
@@ -38,10 +44,11 @@ model Week {
   startDate DateTime? // Ngày Thứ 2 đầu tuần (mốc để khoá tick theo ngày/giờ VN). Null = không khoá.
   unitPrice Int       @default(25000)
   dayMenu   Json? // { "mon": dishId, "tue": dishId, ... }
-  isActive  Boolean   @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  orders    Order[]
+  isActive   Boolean     @default(false)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  orders     Order[]
+  orderItems OrderItem[]
 
   @@map("weeks")
 }
@@ -68,17 +75,38 @@ model Order {
   @@map("orders")
 }
 
-/// Thực đơn món ăn (admin quản lý)
+/// Thực đơn món ăn + đồ uống (admin quản lý)
 model Dish {
-  id          String   @id @default(cuid())
-  name        String   @db.VarChar(150)
-  description String?  @db.VarChar(255)
-  emoji       String?  @db.VarChar(10)
-  price       Int      @default(25000)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id          String       @id @default(cuid())
+  name        String       @db.VarChar(150)
+  description String?      @db.VarChar(255)
+  emoji       String?      @db.VarChar(10)
+  price       Int          @default(25000)
+  category    DishCategory @default(MAIN)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  orderItems  OrderItem[]
 
   @@map("dishes")
+}
+
+/// Món/đồ uống cụ thể 1 user chọn cho 1 ngày trong tuần (mix nhiều món; nước có số lượng).
+/// Suất cơm 25k vẫn tính theo Order.<ngày>; OrderItem.MAIN chỉ là chi tiết, DRINK mới cộng tiền.
+model OrderItem {
+  id        String   @id @default(cuid())
+  weekId    String
+  userId    String
+  dishId    String
+  day       String   @db.VarChar(3) // 'mon'..'sun'
+  qty       Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  week      Week     @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dish      Dish     @relation(fields: [dishId], references: [id], onDelete: Cascade)
+
+  @@index([weekId, userId])
+  @@map("order_items")
 }
 
 /// Thông tin thanh toán (singleton, admin chỉnh sửa)

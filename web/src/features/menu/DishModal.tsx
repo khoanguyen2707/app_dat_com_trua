@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { api } from '@/services/api';
-import type { Dish } from '@/types';
+import type { Dish, DishCategory } from '@/types';
 import { DISH_EMOJIS, DEFAULT_DISH_PRICE } from '@/constants/config';
 import { t } from '@/constants/strings';
 import { cls } from '@/lib/format';
@@ -11,13 +11,14 @@ export function DishModal({ dish, onClose, onSaved }: { dish: Dish | null; onClo
   const [desc, setDesc] = useState(dish?.description ?? '');
   const [emoji, setEmoji] = useState(dish?.emoji ?? DISH_EMOJIS[0]);
   const [price, setPrice] = useState(dish?.price ?? DEFAULT_DISH_PRICE);
+  const [category, setCategory] = useState<DishCategory>(dish?.category ?? 'MAIN');
   const [busy, setBusy] = useState(false);
 
   const save = async () => {
     if (!name.trim()) return toast(t.menu.nameRequired, '✏️');
     setBusy(true);
     try {
-      const payload = { name: name.trim(), description: desc.trim(), emoji, price: Number(price) };
+      const payload = { name: name.trim(), description: desc.trim(), emoji, price: Number(price), category };
       if (dish) await api.updateDish(dish.id, payload);
       else await api.createDish(payload);
       toast(dish ? t.menu.saved : t.menu.added, '🍽️');
@@ -31,6 +32,16 @@ export function DishModal({ dish, onClose, onSaved }: { dish: Dish | null; onClo
 
   return (
     <Modal open title={dish ? t.menu.modalEdit : t.menu.modalCreate} onClose={onClose}>
+      <Field label={t.menu.fieldCategory}>
+        <div className="seg">
+          <button className={cls(category === 'MAIN' && 'active')} onClick={() => setCategory('MAIN')}>
+            {t.menu.catMain}
+          </button>
+          <button className={cls(category === 'DRINK' && 'active')} onClick={() => setCategory('DRINK')}>
+            {t.menu.catDrink}
+          </button>
+        </div>
+      </Field>
       <Field label={t.menu.fieldEmoji}>
         <div className="emoji-pick">
           {DISH_EMOJIS.map((e) => (

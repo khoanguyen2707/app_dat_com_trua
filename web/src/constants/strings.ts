@@ -76,11 +76,20 @@ export const t = {
 
   grid: {
     title: 'Bảng đăng ký tuần',
-    hintLead: '💡 Chạm ô ngày bạn ăn. ',
-    hintAdmin: 'Admin có thể tích hộ mọi người & sửa cả ngày đã khoá.',
-    hintMember: 'Bạn chỉ sửa được dòng của mình.',
-    lockHint: (cutoff: string) =>
-      `🔒 Khoá đặt cơm sau ${cutoff} mỗi ngày. Ngày đã qua chỉ admin sửa được.`,
+    // hướng dẫn chi tiết cho nghiệp vụ mới (mix món + đồ uống + chỉ đặt hôm nay)
+    guide: {
+      title: '📖 Cách đặt cơm',
+      order: (price: string) => `🍚 Chạm ô để đặt cơm (${price}/ngày).`,
+      detail: (where: string) =>
+        `🍱 Chạm ${where} để mở phiếu chi tiết — chọn món (mix nhiều món vẫn 1 suất) & thêm đồ uống (tính tiền riêng theo giá).`,
+      whereMobile: 'tên thành viên',
+      whereDesktop: 'ô đã đặt',
+      today: (cutoff: string) => `⏰ Chỉ đặt cho HÔM NAY, trước ${cutoff} — không đặt trước cho ngày sau.`,
+      cancel: '❌ Bỏ tick = huỷ cả ngày (cơm + món + nước).',
+      colors: '🎨 Ô cam 🍚 = có cơm · ô xanh 🥤 = chỉ uống nước.',
+      admin: '👑 Admin: đặt/sửa hộ mọi người, mọi ngày (kể cả ngày đã khoá).',
+      member: '✏️ Bạn chỉ sửa được dòng của mình.',
+    },
     locked: 'Đã khoá',
     colMember: 'Thành viên',
     colServings: 'Số suất',
@@ -95,6 +104,20 @@ export const t = {
     dayTotal: (n: number) => `${n} suất`,
     noEatersDay: 'Chưa ai đăng ký ngày này.',
     eatingDay: (n: number) => `${n} người ăn`,
+    // phiếu chi tiết 1 ngày (mix món + đồ uống)
+    detail: {
+      eat: 'Ăn cơm',
+      eatPrice: (price: string) => `1 suất • ${price}`,
+      foodSection: 'Món ăn (mix nhiều món vẫn 1 suất)',
+      foodEnableHint: 'Bật "Ăn cơm" để chọn món.',
+      drinkSection: 'Đồ uống (tính tiền riêng)',
+      riceLabel: 'Cơm',
+      drinkLabel: 'Nước',
+      totalLabel: 'Tổng',
+      lockedView: '🔒 Ngày này đã khoá — chỉ xem, không sửa.',
+      noFood: 'Chưa chọn món.',
+      noDrink: 'Chưa có đồ uống.',
+    },
   },
 
   menu: {
@@ -113,6 +136,12 @@ export const t = {
     fieldDesc: 'Mô tả',
     descPlaceholder: 'Ngắn gọn',
     fieldPrice: 'Giá (đ)',
+    fieldCategory: 'Loại',
+    catMain: '🍱 Món ăn',
+    catDrink: '🥤 Đồ uống',
+    foodSection: '🍱 Món ăn',
+    drinkSection: '🥤 Đồ uống',
+    sectionCount: (n: number) => `${n} món`,
     nameRequired: 'Nhập tên món',
     saved: 'Đã lưu món',
     added: 'Đã thêm món',
@@ -134,6 +163,12 @@ export const t = {
     modalTitle: (name: string) => `Thanh toán · ${name}`,
     amountToTransfer: 'Số tiền cần chuyển',
     servingsTimesPrice: (servings: number, price: string) => `${servings} suất × ${price}`,
+    // breakdown minh bạch cơm + nước
+    breakdownRice: (servings: number) => `Cơm (${servings} suất)`,
+    breakdownDrink: 'Đồ uống',
+    breakdownTotal: 'Tổng cộng',
+    includesDrinks: (money: string) => `gồm nước ${money}`,
+    drinkDetail: (name: string, qty: number) => `${name} ×${qty}`,
     transferNote: 'Nội dung CK',
     unmark: '↩️ Bỏ đánh dấu',
     markPaid: '✅ Đã thanh toán',
@@ -161,6 +196,8 @@ export const t = {
       `${servings} suất • ${total} • ${members} người • ${unitPrice}/suất`,
     confirmDelete: (label: string) => `Xoá tuần "${label}"? Mọi đăng ký của tuần này sẽ mất.`,
     deleted: 'Đã xoá tuần',
+    viewBtn: 'Xem',
+    viewOnlyNote: '🔒 Tuần đã đóng — chỉ xem, không sửa.',
     hint: '🆕 "Tuần mới" tạo một tuần trống và đặt làm tuần hiện hành (giữ nguyên thành viên). Tuần cũ vẫn lưu ở đây.',
     modalTitle: 'Tạo tuần mới',
     fieldStartDate: 'Ngày bắt đầu (Thứ 2)',

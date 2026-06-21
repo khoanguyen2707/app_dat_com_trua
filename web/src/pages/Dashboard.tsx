@@ -43,7 +43,9 @@ export function Dashboard() {
           <>
             <HeroStats grid={grid} />
 
-            {tab === 'grid' && <GridPanel grid={grid} isAdmin={isAdmin} meId={user!.id} reload={reloadGrid} />}
+            {tab === 'grid' && (
+              <GridPanel grid={grid} dishes={dishes} isAdmin={isAdmin} meId={user!.id} reload={reloadGrid} />
+            )}
             {tab === 'menu' && <MenuPanel dishes={dishes} isAdmin={isAdmin} reload={reloadDishes} />}
             {tab === 'pay' && payment && (
               <PaymentPanel grid={grid} payment={payment} isAdmin={isAdmin} reloadGrid={reloadGrid} reloadPayment={reloadPayment} />
@@ -52,7 +54,9 @@ export function Dashboard() {
             {tab === 'hist' && (
               <HistoryPanel
                 weeks={weeks}
+                dishes={dishes}
                 isAdmin={isAdmin}
+                meId={user!.id}
                 reload={async () => {
                   await Promise.all([reloadWeeks(), reloadGrid()]);
                 }}

@@ -15,7 +15,12 @@ export function HeroStats({ grid }: { grid: Grid }) {
       <div className="hero-grid">
         <StatCard label={t.dashboard.statUnitPrice} value={vnd(grid.week.unitPrice)} />
         <StatCard label={t.dashboard.statTotalServings} value={totals.totalServings} />
-        <StatCard label={t.dashboard.statTotalMoney} value={vnd(totals.totalMoney)} brand />
+        <StatCard
+          label={t.dashboard.statTotalMoney}
+          value={vnd(totals.totalMoney)}
+          brand
+          sub={totals.totalDrinks ? t.payment.includesDrinks(vnd(totals.totalDrinks)) : undefined}
+        />
         <StatCard label={t.dashboard.statEating} value={eating} />
       </div>
     </section>

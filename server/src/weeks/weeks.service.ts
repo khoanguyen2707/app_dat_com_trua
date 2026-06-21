@@ -12,15 +12,31 @@ import {
 
 const DAYS = DAY_KEYS;
 
+/** Món/đồ uống 1 người chọn cho 1 ngày (food = danh sách dishId, drinks = dishId + số lượng). */
+type DayItems = { food: string[]; drinks: { dishId: string; qty: number }[] };
+const emptyDayItems = (): Record<DayKey, DayItems> => {
+  const out = {} as Record<DayKey, DayItems>;
+  for (const d of DAYS) {
+    out[d] = { food: [], drinks: [] };
+  }
+  return out;
+};
+
 @Injectable()
 export class WeeksService {
   constructor(private readonly prisma: PrismaService) {}
+
+  /** Tổng tiền đồ uống của 1 danh sách OrderItem (đã include dish). */
+  private drinksTotal(items: { qty: number; dish: { category: string; price: number } }[]): number {
+    return items.reduce((a, it) => a + (it.dish.category === 'DRINK' ? it.qty * it.dish.price : 0), 0);
+  }
 
   async findAll() {
     const weeks = await this.prisma.week.findMany({ orderBy: { createdAt: 'desc' } });
     const result: any[] = [];
     for (const w of weeks) {
       const orders: any[] = await this.prisma.order.findMany({ where: { weekId: w.id } });
+      const items = await this.prisma.orderItem.findMany({ where: { weekId: w.id }, include: { dish: true } });
       let servings = 0;
       let memberCount = 0;
       for (const o of orders) {
@@ -28,7 +44,9 @@ export class WeeksService {
         servings += s;
         if (s > 0) memberCount += 1;
       }
-      result.push({ ...w, servings, total: servings * w.unitPrice, memberCount });
+      const foodTotal = servings * w.unitPrice;
+      const drinksTotal = this.drinksTotal(items);
+      result.push({ ...w, servings, foodTotal, drinksTotal, total: foodTotal + drinksTotal, memberCount });
     }
     return result;
   }
@@ -54,18 +72,42 @@ export class WeeksService {
     const orders: any[] = await this.prisma.order.findMany({ where: { weekId } });
     const byUser = new Map<string, any>(orders.map((o: any) => [o.userId, o] as [string, any]));
 
+    const items = await this.prisma.orderItem.findMany({ where: { weekId }, include: { dish: true } });
+    const itemsByUser = new Map<string, Record<DayKey, DayItems>>();
+    const drinksByUser = new Map<string, number>();
+    for (const it of items) {
+      const day = it.day as DayKey;
+      if (!DAYS.includes(day)) continue;
+      let byDay = itemsByUser.get(it.userId);
+      if (!byDay) {
+        byDay = emptyDayItems();
+        itemsByUser.set(it.userId, byDay);
+      }
+      if (it.dish.category === 'DRINK') {
+        byDay[day].drinks.push({ dishId: it.dishId, qty: it.qty });
+        drinksByUser.set(it.userId, (drinksByUser.get(it.userId) ?? 0) + it.qty * it.dish.price);
+      } else {
+        byDay[day].food.push(it.dishId);
+      }
+    }
+
     const members = users.map((u) => {
       const o = byUser.get(u.id);
       const days = Object.fromEntries(DAYS.map((d) => [d, o ? !!o[d] : false])) as Record<DayKey, boolean>;
       const servings = DAYS.reduce((a, d) => a + (days[d] ? 1 : 0), 0);
+      const foodTotal = servings * week.unitPrice;
+      const drinksTotal = drinksByUser.get(u.id) ?? 0;
       return {
         userId: u.id,
         fullName: u.fullName,
         color: u.color,
         role: u.role,
         days,
+        items: itemsByUser.get(u.id) ?? emptyDayItems(),
         servings,
-        total: servings * week.unitPrice,
+        foodTotal,
+        drinksTotal,
+        total: foodTotal + drinksTotal,
         paid: o ? o.paid : false,
       };
     });
@@ -74,11 +116,13 @@ export class WeeksService {
       DAYS.map((d) => [d, members.reduce((a, m) => a + (m.days[d] ? 1 : 0), 0)]),
     ) as Record<DayKey, number>;
     const totalServings = members.reduce((a, m) => a + m.servings, 0);
+    const totalFood = totalServings * week.unitPrice;
+    const totalDrinks = members.reduce((a, m) => a + m.drinksTotal, 0);
 
     return {
       week,
       members,
-      totals: { perDay, totalServings, totalMoney: totalServings * week.unitPrice },
+      totals: { perDay, totalServings, totalFood, totalDrinks, totalMoney: totalFood + totalDrinks },
       lockedDays: computeLockedDays(week.startDate),
       dates: computeDayDates(week.startDate),
       cutoff: { minutes: CUTOFF_MINUTES, label: CUTOFF_LABEL },

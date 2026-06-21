@@ -1,5 +1,7 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
-import { IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+
+const CATEGORIES = ['MAIN', 'DRINK'] as const;
 
 export class CreateDishDto {
   @ApiProperty({ example: 'Cơm gà xối mỡ' })
@@ -23,6 +25,11 @@ export class CreateDishDto {
   @IsInt()
   @Min(0)
   price: number;
+
+  @ApiPropertyOptional({ enum: CATEGORIES, example: 'MAIN', description: 'MAIN = món ăn, DRINK = đồ uống' })
+  @IsOptional()
+  @IsIn(CATEGORIES)
+  category?: (typeof CATEGORIES)[number];
 }
 
 export class UpdateDishDto extends PartialType(CreateDishDto) {}

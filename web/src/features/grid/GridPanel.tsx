@@ -1,43 +1,61 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { api } from '@/services/api';
-import type { DayKey, Grid, GridMember } from '@/types';
+import type { DayKey, Dish, Grid, GridMember } from '@/types';
 import { DAYS } from '@/constants/config';
 import { t } from '@/constants/strings';
 import { cls, vnd } from '@/lib/format';
 import { exportGridCSV } from '@/lib/csv';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { Avatar, Button, Card, CardBody, CardHeader, toast } from '@/components/ui';
+import { DayDetailSheet } from './DayDetailSheet';
 
 export function GridPanel({
   grid,
+  dishes,
   isAdmin,
   meId,
   reload,
+  readOnly = false,
 }: {
   grid: Grid;
+  dishes: Dish[];
   isAdmin: boolean;
   meId: string;
   reload: () => Promise<void>;
+  /** Lịch sử: chỉ xem, mọi thao tác sửa bị khoá. */
+  readOnly?: boolean;
 }) {
   const { week, members, totals } = grid;
   const locked = grid.lockedDays ?? ({} as Record<DayKey, boolean>);
   const dates = grid.dates ?? ({} as Record<DayKey, string | null>);
   const isMobile = useIsMobile();
+  const dishMap = useMemo(() => new Map(dishes.map((d) => [d.id, d])), [dishes]);
 
   const [saving, setSaving] = useState(false);
   const [day, setDay] = useState<DayKey>(() => DAYS.find((d) => !locked[d.key])?.key ?? 'mon');
+  const [picked, setPicked] = useState<{ m: GridMember; day: DayKey } | null>(null);
 
-  /** Có được sửa ô (member, ngày) không: tự mình/admin VÀ (admin hoặc ngày chưa khoá). */
+  /** Có được sửa ô (member, ngày): tự mình/admin VÀ (admin hoặc ngày chưa khoá). */
   const canEditDay = (m: GridMember, key: DayKey) =>
-    (isAdmin || m.userId === meId) && (isAdmin || !locked[key]);
+    !readOnly && (isAdmin || m.userId === meId) && (isAdmin || !locked[key]);
 
+  /**
+   * Bật/tắt nhanh 1 ngày:
+   * - Bật → đặt cơm, GIỮ nguyên món/nước đã chọn (nếu có).
+   * - Tắt → HUỶ cả ngày: bỏ cơm + xoá luôn món & nước (không để nước "ngầm" còn tính tiền).
+   * Muốn đặt nước mà không ăn cơm thì dùng phiếu chi tiết (tắt "Ăn cơm" + thêm nước).
+   */
   const toggle = async (m: GridMember, key: DayKey) => {
     if (!canEditDay(m, key) || saving) return;
-    const days = { ...m.days, [key]: !m.days[key] };
+    const turningOn = !m.days[key];
+    const cur = m.items?.[key];
+    const detail = turningOn
+      ? { eat: true, food: cur?.food ?? [], drinks: cur?.drinks ?? [] }
+      : { eat: false, food: [], drinks: [] };
     setSaving(true);
     try {
-      if (m.userId === meId) await api.setMyDays(week.id, days);
-      else await api.setUserDays(m.userId, week.id, days);
+      if (m.userId === meId) await api.setMyDay(week.id, key, detail);
+      else await api.setUserDay(m.userId, week.id, key, detail);
       await reload();
     } catch (e: any) {
       toast(e.message || t.errors.save, '⚠️');
@@ -46,25 +64,53 @@ export function GridPanel({
     }
   };
 
-  /** Ô của chính mình bị khoá (member, không phải admin). */
+  /** Tap ô: trống & sửa được → đặt cơm nhanh; còn lại → mở phiếu chi tiết (sửa/xem). */
+  const onCell = (m: GridMember, key: DayKey) => {
+    if (saving) return;
+    if (canEditDay(m, key) && !m.days[key]) toggle(m, key);
+    else if (!readOnly || m.days[key] || m.items?.[key]) setPicked({ m, day: key });
+  };
+
   const lockMine = (m: GridMember, key: DayKey) => !isAdmin && m.userId === meId && locked[key];
+  const hasDrink = (m: GridMember, key: DayKey) => (m.items?.[key]?.drinks.length ?? 0) > 0;
 
-  /** Nội dung 1 ô tick: 🔒 nếu là ô của mình bị khoá & chưa tích, còn lại ✓. */
-  const cellMark = (m: GridMember, key: DayKey, on: boolean) => (lockMine(m, key) && !on ? '🔒' : '✓');
+  /** Icon ô: 🍚 có cơm · 🥤 chỉ nước · 🔒 khoá (ô trống của mình) · trống. */
+  const cellMark = (m: GridMember, key: DayKey) => {
+    if (m.days[key]) return '🍚';
+    if (hasDrink(m, key)) return '🥤';
+    if (lockMine(m, key)) return '🔒';
+    return '';
+  };
+  const cellClass = (m: GridMember, key: DayKey) => {
+    const com = m.days[key];
+    const drinkOnly = !com && hasDrink(m, key);
+    const interactive = canEditDay(m, key) || (!readOnly && (com || m.items?.[key]));
+    return cls('cell', com && 'on', drinkOnly && 'drink', interactive ? 'clickable' : 'ro', lockMine(m, key) && 'locked');
+  };
 
-  const cellClass = (m: GridMember, key: DayKey, on: boolean) =>
-    cls('cell', on && 'on', canEditDay(m, key) ? 'clickable' : 'ro', lockMine(m, key) && 'locked');
+  /** Tóm tắt món/nước của 1 ngày (cho mobile row): "🐟 🍳  ·  🥤×2" */
+  const summary = (m: GridMember, key: DayKey) => {
+    const it = m.items?.[key];
+    if (!it) return '';
+    const foodEmojis = it.food.map((id) => dishMap.get(id)?.emoji).filter(Boolean).join(' ');
+    const drinkN = it.drinks.reduce((a, d) => a + d.qty, 0);
+    return [foodEmojis, drinkN > 0 ? `🥤×${drinkN}` : ''].filter(Boolean).join('  ·  ');
+  };
 
   return (
     <Card>
       <CardHeader icon="🗓️" title={t.grid.title} />
-      <div className="hint" style={{ margin: '14px 20px 0' }}>
-        {t.grid.hintLead}
-        {isAdmin ? t.grid.hintAdmin : t.grid.hintMember}
-      </div>
-      {grid.cutoff && (
-        <div className="hint lock" style={{ margin: '10px 20px 0' }}>
-          {t.grid.lockHint(grid.cutoff.label)}
+      {!readOnly && (
+        <div className="grid-guide">
+          <div className="grid-guide-h">{t.grid.guide.title}</div>
+          <ul>
+            <li>{t.grid.guide.order(vnd(week.unitPrice))}</li>
+            <li>{t.grid.guide.detail(isMobile ? t.grid.guide.whereMobile : t.grid.guide.whereDesktop)}</li>
+            {grid.cutoff && <li>{t.grid.guide.today(grid.cutoff.label)}</li>}
+            <li>{t.grid.guide.cancel}</li>
+            <li>{t.grid.guide.colors}</li>
+            <li>{isAdmin ? t.grid.guide.admin : t.grid.guide.member}</li>
+          </ul>
         </div>
       )}
 
@@ -96,16 +142,26 @@ export function GridPanel({
           <div className="day-list">
             {members.map((m) => {
               const on = m.days[day];
-              const editable = canEditDay(m, day);
+              const sub = summary(m, day);
               return (
                 <div key={m.userId} className={cls('dayrow', m.userId === meId && 'me')}>
                   <Avatar name={m.fullName} color={m.color} size={36} />
-                  <span className="nm">{m.fullName}</span>
+                  <button className="dayrow-info" onClick={() => setPicked({ m, day })}>
+                    <span className="nm">{m.fullName}</span>
+                    {sub && <span className="dayrow-sub">{sub}</span>}
+                  </button>
                   <button
-                    className={cls('daytick', on && 'on', !editable && 'ro', lockMine(m, day) && 'locked')}
-                    onClick={() => toggle(m, day)}
+                    className={cls(
+                      'daytick',
+                      on && 'on',
+                      !on && hasDrink(m, day) && 'drink',
+                      !canEditDay(m, day) && 'ro',
+                      lockMine(m, day) && 'locked',
+                    )}
+                    onClick={() => (canEditDay(m, day) ? toggle(m, day) : setPicked({ m, day }))}
                   >
-                    {cellMark(m, day, on)}
+                    {cellMark(m, day)}
+                    {on && hasDrink(m, day) && <span className="cell-drink">🥤</span>}
                   </button>
                 </div>
               );
@@ -145,18 +201,16 @@ export function GridPanel({
                         <span>{m.fullName}</span>
                       </div>
                     </td>
-                    {DAYS.map((d) => {
-                      const on = m.days[d.key];
-                      return (
-                        <td key={d.key} className="day">
-                          <div className={cellClass(m, d.key, on)} onClick={() => toggle(m, d.key)}>
-                            {cellMark(m, d.key, on)}
-                          </div>
-                        </td>
-                      );
-                    })}
+                    {DAYS.map((d) => (
+                      <td key={d.key} className="day">
+                        <div className={cellClass(m, d.key)} onClick={() => onCell(m, d.key)}>
+                          {cellMark(m, d.key)}
+                          {m.days[d.key] && hasDrink(m, d.key) && <span className="cell-drink">🥤</span>}
+                        </div>
+                      </td>
+                    ))}
                     <td className="num">{m.servings}</td>
-                    <td className="money">{vnd(m.servings * week.unitPrice)}</td>
+                    <td className="money">{vnd(m.total)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -187,6 +241,20 @@ export function GridPanel({
           {t.grid.exportBtn}
         </Button>
       </div>
+
+      {picked && (
+        <DayDetailSheet
+          grid={grid}
+          member={picked.m}
+          day={picked.day}
+          dishes={dishes}
+          isAdmin={isAdmin && !readOnly}
+          meId={meId}
+          locked={readOnly || !!locked[picked.day]}
+          onClose={() => setPicked(null)}
+          onSaved={reload}
+        />
+      )}
     </Card>
   );
 }

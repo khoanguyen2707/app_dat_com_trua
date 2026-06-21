@@ -22,7 +22,9 @@ export function MemberPayModal({
   onClose: () => void;
   onPaid: () => void;
 }) {
-  const amount = member.servings * unitPrice;
+  const foodTotal = member.foodTotal ?? member.servings * unitPrice;
+  const drinksTotal = member.drinksTotal ?? 0;
+  const amount = member.total ?? foodTotal + drinksTotal;
   const info = t.payment.qrInfoMember(member.fullName);
 
   const togglePaid = async () => {
@@ -43,7 +45,22 @@ export function MemberPayModal({
           {t.payment.amountToTransfer}
         </div>
         <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--brand)' }}>{vnd(amount)}</div>
-        <div className="small muted">{t.payment.servingsTimesPrice(member.servings, vnd(unitPrice))}</div>
+        <div className="pay-breakdown">
+          <div>
+            <span>{t.payment.breakdownRice(member.servings)}</span>
+            <span>{vnd(foodTotal)}</span>
+          </div>
+          {drinksTotal > 0 && (
+            <div>
+              <span>{t.payment.breakdownDrink}</span>
+              <span>{vnd(drinksTotal)}</span>
+            </div>
+          )}
+          <div className="sum">
+            <span>{t.payment.breakdownTotal}</span>
+            <span>{vnd(amount)}</span>
+          </div>
+        </div>
         <div className="acct-row" style={{ marginTop: 16, textAlign: 'left' }}>
           <div>
             <div className="k">{t.payment.transferNote}</div>

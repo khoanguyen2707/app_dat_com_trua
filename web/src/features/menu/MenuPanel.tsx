@@ -4,7 +4,7 @@ import type { Dish } from '@/types';
 import { t } from '@/constants/strings';
 import { vnd } from '@/lib/format';
 import { useDisclosure } from '@/hooks/useDisclosure';
-import { Button, Card, CardBody, CardHeader, EmptyState, toast } from '@/components/ui';
+import { Button, Card, CardBody, CardHeader, EmptyState, IconButton, toast } from '@/components/ui';
 import { DishModal } from './DishModal';
 
 export function MenuPanel({ dishes, isAdmin, reload }: { dishes: Dish[]; isAdmin: boolean; reload: () => Promise<void> }) {
@@ -23,6 +23,39 @@ export function MenuPanel({ dishes, isAdmin, reload }: { dishes: Dish[]; isAdmin
     await reload();
     toast(t.menu.deleted, '🗑️');
   };
+
+  const mains = dishes.filter((d) => d.category !== 'DRINK');
+  const drinks = dishes.filter((d) => d.category === 'DRINK');
+
+  const section = (title: string, list: Dish[]) =>
+    list.length > 0 && (
+      <div className="menu-sec">
+        <div className="menu-sec-h">
+          {title} <span className="muted small">· {t.menu.sectionCount(list.length)}</span>
+        </div>
+        <div className="menu-grid">
+          {list.map((d) => (
+            <div className="mdish" key={d.id}>
+              <span className="mdish-emoji">{d.emoji || '🍽️'}</span>
+              <span className="mdish-info">
+                <b>{d.name}</b>
+                <span className="mdish-price">{vnd(d.price)}</span>
+              </span>
+              {isAdmin && (
+                <span className="mdish-act">
+                  <IconButton title={t.actions.edit} onClick={() => setEditing(d)}>
+                    ✏️
+                  </IconButton>
+                  <IconButton title={t.actions.delete} onClick={() => remove(d)}>
+                    🗑️
+                  </IconButton>
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
 
   return (
     <Card>
@@ -44,26 +77,10 @@ export function MenuPanel({ dishes, isAdmin, reload }: { dishes: Dish[]; isAdmin
             {isAdmin && t.menu.emptyHintAdmin}
           </EmptyState>
         ) : (
-          <div className="dishes">
-            {dishes.map((d) => (
-              <div className="dish-card" key={d.id}>
-                <div className="dish-emoji">{d.emoji || '🍽️'}</div>
-                <h3>{d.name}</h3>
-                <div className="desc">{d.description}</div>
-                <div className="price">{vnd(d.price)}</div>
-                {isAdmin && (
-                  <div className="dish-actions">
-                    <Button tiny onClick={() => setEditing(d)}>
-                      {t.actions.edit}
-                    </Button>
-                    <Button tiny variant="danger" onClick={() => remove(d)}>
-                      🗑️
-                    </Button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+          <>
+            {section(t.menu.foodSection, mains)}
+            {section(t.menu.drinkSection, drinks)}
+          </>
         )}
       </CardBody>
 

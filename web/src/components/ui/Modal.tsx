@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { cls } from '@/lib/format';
 import { IconButton } from './IconButton';
 
 export function Modal({
@@ -7,11 +8,14 @@ export function Modal({
   title,
   onClose,
   children,
+  wide = false,
 }: {
   open: boolean;
   title: ReactNode;
   onClose: () => void;
   children: ReactNode;
+  /** Modal rộng (vd xem bảng tuần lịch sử). */
+  wide?: boolean;
 }) {
   useEffect(() => {
     if (!open) return;
@@ -41,7 +45,7 @@ export function Modal({
   // không bị "nhốt" trong .card (card có animation/overflow tạo containing-block).
   return createPortal(
     <div className="overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal">
+      <div className={cls('modal', wide && 'wide')}>
         <div className="modal-h">
           <h3>{title}</h3>
           <IconButton onClick={onClose}>✕</IconButton>
