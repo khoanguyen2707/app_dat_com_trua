@@ -40,15 +40,17 @@ export function GridPanel({
     !readOnly && (isAdmin || m.userId === meId) && (isAdmin || !locked[key]);
 
   /**
-   * Bỏ cơm nhanh 1 ngày: huỷ cơm + món, GIỮ nước.
-   * - Còn nước → ô thành "chỉ nước" 🥤 (nền xanh).
-   * - Không có nước → ô về trống.
-   * Đặt/sửa cơm luôn qua phiếu chi tiết (vì đặt cơm bắt buộc phải chọn món).
+   * Nút × / nút tick — "dọn một lớp", tôn trọng quy tắc nước độc lập:
+   * - Ô có cơm  → bỏ cơm + món, GIỮ nước (còn nước → thành ô chỉ-nước 🥤).
+   * - Ô chỉ nước → bỏ nước → ô về trống.
+   * Đặt/sửa chi tiết (đặt cơm phải chọn món) luôn qua phiếu.
    */
-  const clearRice = async (m: GridMember, key: DayKey) => {
+  const clearCell = async (m: GridMember, key: DayKey) => {
     if (!canEditDay(m, key) || saving) return;
     const cur = m.items?.[key];
-    const detail = { eat: false, food: [], drinks: cur?.drinks ?? [] };
+    const detail = m.days[key]
+      ? { eat: false, food: [], drinks: cur?.drinks ?? [] } // bỏ cơm, giữ nước
+      : { eat: false, food: [], drinks: [] }; // chỉ nước → bỏ nước
     setSaving(true);
     try {
       if (m.userId === meId) await api.setMyDay(week.id, key, detail);
@@ -69,6 +71,8 @@ export function GridPanel({
 
   const lockMine = (m: GridMember, key: DayKey) => !isAdmin && m.userId === meId && locked[key];
   const hasDrink = (m: GridMember, key: DayKey) => (m.items?.[key]?.drinks.length ?? 0) > 0;
+  /** Ô có "thứ gì đó" để dọn (cơm hoặc nước) → hiện nút × / cho phép tick dọn nhanh. */
+  const hasAny = (m: GridMember, key: DayKey) => m.days[key] || hasDrink(m, key);
 
   /** Icon ô: 🍚 có cơm · 🥤 chỉ nước · 🔒 khoá (ô trống của mình) · trống. */
   const cellMark = (m: GridMember, key: DayKey) => {
@@ -155,7 +159,7 @@ export function GridPanel({
                       lockMine(m, day) && 'locked',
                     )}
                     onClick={() =>
-                      canEditDay(m, day) && on ? clearRice(m, day) : setPicked({ m, day })
+                      canEditDay(m, day) && hasAny(m, day) ? clearCell(m, day) : setPicked({ m, day })
                     }
                   >
                     {cellMark(m, day)}
@@ -204,13 +208,13 @@ export function GridPanel({
                         <div className={cellClass(m, d.key)} onClick={() => onCell(m, d.key)}>
                           {cellMark(m, d.key)}
                           {m.days[d.key] && hasDrink(m, d.key) && <span className="cell-drink">🥤</span>}
-                          {m.days[d.key] && canEditDay(m, d.key) && (
+                          {hasAny(m, d.key) && canEditDay(m, d.key) && (
                             <button
                               className="cell-x"
-                              title={t.grid.clearRice}
+                              title={m.days[d.key] ? t.grid.clearRice : t.grid.clearDrink}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                clearRice(m, d.key);
+                                clearCell(m, d.key);
                               }}
                             >
                               ×

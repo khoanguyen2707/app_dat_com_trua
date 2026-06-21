@@ -67,7 +67,7 @@ export function SettingsModal({
       <Field label={t.settings.fieldUnitPrice}>
         <input type="number" value={unitPrice} onChange={(e) => setUnitPrice(Number(e.target.value))} />
       </Field>
-      <Button variant="primary" block onClick={saveWeek} disabled={busy}>
+      <Button variant="primary" block onClick={saveWeek} loading={busy}>
         {t.settings.saveWeek}
       </Button>
 

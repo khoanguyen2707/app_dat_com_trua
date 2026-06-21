@@ -54,9 +54,9 @@ export const api = {
   setPaymentStatus: (weekId: string, userId: string, status: PaymentStatus) =>
     request('/orders/payment', { method: 'PATCH', body: JSON.stringify({ weekId, userId, status }) }),
 
-  // thông báo
-  notifications: () => request<NotificationFeed>('/notifications'),
-  markNotificationsRead: () => request<{ ok: boolean }>('/notifications/read', { method: 'PATCH' }),
+  // thông báo (chạy nền → silent, không hiện thanh tiến trình)
+  notifications: () => request<NotificationFeed>('/notifications', {}, { silent: true }),
+  markNotificationsRead: () => request<{ ok: boolean }>('/notifications/read', { method: 'PATCH' }, { silent: true }),
 
   // dishes
   dishes: () => request<Dish[]>('/dishes'),

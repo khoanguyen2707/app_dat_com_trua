@@ -33,7 +33,7 @@ export function ChangePasswordModal({ onClose }: { onClose: () => void }) {
       </Field>
       <div className="modal-actions">
         <Button onClick={onClose}>{t.actions.cancel}</Button>
-        <Button variant="primary" onClick={save} disabled={busy}>
+        <Button variant="primary" onClick={save} loading={busy}>
           {t.password.submit}
         </Button>
       </div>

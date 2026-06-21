@@ -32,8 +32,38 @@ async function tryRefresh(): Promise<boolean> {
   }
 }
 
-/** Gọi API có gắn Bearer token, tự refresh khi gặp 401 và chuẩn hoá lỗi */
-export async function request<T>(path: string, options: RequestInit = {}, retry = true): Promise<T> {
+// ===== Đếm số request đang chạy → cho thanh tiến trình trên đầu (TopProgress) =====
+let inflight = 0;
+const inflightListeners = new Set<(n: number) => void>();
+
+/** Lắng nghe số request đang chạy (gọi ngay 1 lần với giá trị hiện tại). Trả hàm huỷ. */
+export function onInflight(cb: (n: number) => void): () => void {
+  inflightListeners.add(cb);
+  cb(inflight);
+  return () => {
+    inflightListeners.delete(cb);
+  };
+}
+
+function bumpInflight(delta: number) {
+  inflight = Math.max(0, inflight + delta);
+  inflightListeners.forEach((l) => l(inflight));
+}
+
+/**
+ * Gọi API có gắn Bearer token, tự refresh khi gặp 401 và chuẩn hoá lỗi.
+ * @param opts.silent true = request nền (vd poll thông báo) → KHÔNG hiện thanh tiến trình.
+ */
+export async function request<T>(path: string, options: RequestInit = {}, opts: { silent?: boolean } = {}): Promise<T> {
+  if (!opts.silent) bumpInflight(1);
+  try {
+    return await doRequest<T>(path, options, true);
+  } finally {
+    if (!opts.silent) bumpInflight(-1);
+  }
+}
+
+async function doRequest<T>(path: string, options: RequestInit, retry: boolean): Promise<T> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json', ...(options.headers as any) };
   if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
 
@@ -41,7 +71,7 @@ export async function request<T>(path: string, options: RequestInit = {}, retry 
 
   if (res.status === 401 && retry && refreshToken) {
     const ok = await tryRefresh();
-    if (ok) return request<T>(path, options, false);
+    if (ok) return doRequest<T>(path, options, false);
   }
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));

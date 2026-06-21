@@ -205,8 +205,8 @@ export function DayDetailSheet({
       {editable && (
         <div className="modal-actions">
           <Button onClick={onClose}>{t.actions.cancel}</Button>
-          <Button variant="primary" onClick={save} disabled={saving || needFood}>
-            {saving ? t.actions.saving : t.actions.save}
+          <Button variant="primary" onClick={save} loading={saving} disabled={needFood}>
+            {t.actions.save}
           </Button>
         </div>
       )}

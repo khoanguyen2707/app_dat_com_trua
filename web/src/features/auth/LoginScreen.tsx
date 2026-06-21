@@ -71,8 +71,8 @@ export function LoginScreen() {
           />
         </Field>
 
-        <Button variant="primary" block disabled={busy}>
-          {busy ? t.actions.processing : mode === 'login' ? t.login.submitLogin : t.login.submitRegister}
+        <Button variant="primary" block loading={busy}>
+          {mode === 'login' ? t.login.submitLogin : t.login.submitRegister}
         </Button>
       </form>
     </div>

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { api } from '@/services/api';
 import type { GridMember, PaymentConfig, PaymentStatus } from '@/types';
 import { t } from '@/constants/strings';
@@ -35,22 +36,28 @@ export function MemberPayModal({
   // Nội dung CK: tên người chuyển (không dấu) + tuần (bỏ năm), vd "Chuong - 22/6 - 27/6"
   const info = t.payment.qrInfoMember(noAccent(member.fullName), weekShort(weekLabel));
 
+  const [busy, setBusy] = useState(false);
+
   const report = async (r: boolean) => {
+    setBusy(true);
     try {
       await api.reportMyPayment(weekId, r);
       toast(r ? t.payment.reportedToast : t.payment.reportCancelledToast, r ? '📤' : '↩️');
       onPaid();
     } catch (e: any) {
       toast(e.message || t.errors.short, '⚠️');
+      setBusy(false);
     }
   };
   const setStatus = async (s: PaymentStatus) => {
+    setBusy(true);
     try {
       await api.setPaymentStatus(weekId, member.userId, s);
       toast(s === 'PAID' ? t.payment.confirmedToast : t.payment.rejectedToast, s === 'PAID' ? '✅' : '↩️');
       onPaid();
     } catch (e: any) {
       toast(e.message || t.errors.short, '⚠️');
+      setBusy(false);
     }
   };
 
@@ -103,11 +110,15 @@ export function MemberPayModal({
         {isAdmin ? (
           <div className="modal-actions">
             {status !== 'PAID' && (
-              <Button variant="success" onClick={() => setStatus('PAID')}>
+              <Button variant="success" loading={busy} onClick={() => setStatus('PAID')}>
                 {t.payment.confirmBtn}
               </Button>
             )}
-            {status !== 'UNPAID' && <Button onClick={() => setStatus('UNPAID')}>{t.payment.rejectBtn}</Button>}
+            {status !== 'UNPAID' && (
+              <Button loading={busy} onClick={() => setStatus('UNPAID')}>
+                {t.payment.rejectBtn}
+              </Button>
+            )}
           </div>
         ) : isMine ? (
           status === 'PAID' ? (
@@ -115,11 +126,13 @@ export function MemberPayModal({
           ) : status === 'PENDING' ? (
             <div className="modal-actions">
               <span className="pay-note wait">{t.payment.reportWaiting}</span>
-              <Button onClick={() => report(false)}>{t.payment.reportCancel}</Button>
+              <Button loading={busy} onClick={() => report(false)}>
+                {t.payment.reportCancel}
+              </Button>
             </div>
           ) : (
             <div className="modal-actions">
-              <Button variant="primary" onClick={() => report(true)}>
+              <Button variant="primary" loading={busy} onClick={() => report(true)}>
                 {t.payment.reportBtn}
               </Button>
             </div>

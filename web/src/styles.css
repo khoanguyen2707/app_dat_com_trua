@@ -37,6 +37,15 @@ a { color: var(--brand); }
 .btn.ghost { background: transparent; }
 .btn.tiny { padding: 6px 11px; font-size: 13px; border-radius: 10px; }
 .btn.block { width: 100%; padding: 13px; }
+.btn.is-loading { cursor: progress; }
+.btn-spin { width: 14px; height: 14px; flex: none; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; }
+
+/* thanh tiến trình API trên đỉnh màn hình (tự hiện khi có request đang chạy) */
+.topprogress { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 100; pointer-events: none; opacity: 0; transition: opacity .3s; overflow: hidden; }
+.topprogress.on { opacity: 1; }
+.topprogress::before { content: ''; position: absolute; top: 0; height: 100%; width: 35%; left: -35%; border-radius: 0 3px 3px 0; background: linear-gradient(90deg, transparent, var(--brand), var(--brand-deep)); }
+.topprogress.on::before { animation: topbar 1.05s cubic-bezier(.4,0,.2,1) infinite; }
+@keyframes topbar { 0% { left: -35%; } 100% { left: 100%; } }
 .btn-ico { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--surface-2); border: 1px solid var(--line); font-size: 18px; transition: transform .18s var(--ease), background .2s; }
 .btn-ico:hover { transform: translateY(-1px); background: #fff; }
 .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 5px 11px; border-radius: 20px; }
@@ -208,8 +217,7 @@ tfoot td.col-name { background: #16a34a; color: #fff; } tfoot td.money { color: 
 .dayrow-sub { font-size: 12px; color: var(--muted); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cell { position: relative; }
 .cell-drink { position: absolute; right: -7px; bottom: -8px; font-size: 22px; line-height: 1; filter: drop-shadow(0 1px 2px rgba(0,0,0,.2)); pointer-events: none; }
-.cell-x { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; padding: 0; border: none; border-radius: 50%; background: #fff; color: var(--brand); font-size: 15px; font-weight: 900; line-height: 1; display: grid; place-items: center; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,.28); opacity: 0; transform: scale(.7); transition: opacity .15s var(--ease), transform .15s var(--ease); }
-.cell:hover .cell-x, .cell-x:focus-visible { opacity: 1; transform: scale(1); }
+.cell-x { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; padding: 0; border: none; border-radius: 50%; background: #fff; color: var(--brand); font-size: 15px; font-weight: 900; line-height: 1; display: grid; place-items: center; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,.28); transition: transform .15s var(--ease), background .2s, color .2s; }
 .cell-x:hover { background: var(--brand); color: #fff; transform: scale(1.15); }
 
 /* phiếu chi tiết 1 ngày (DayDetailSheet) */

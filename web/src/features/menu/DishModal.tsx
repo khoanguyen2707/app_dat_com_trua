@@ -62,7 +62,7 @@ export function DishModal({ dish, onClose, onSaved }: { dish: Dish | null; onClo
       </Field>
       <div className="modal-actions">
         <Button onClick={onClose}>{t.actions.cancel}</Button>
-        <Button variant="primary" onClick={save} disabled={busy}>
+        <Button variant="primary" onClick={save} loading={busy}>
           {dish ? t.actions.save : t.actions.add}
         </Button>
       </div>

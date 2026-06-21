@@ -62,7 +62,7 @@ export function PaymentEditModal({
       </Field>
       <div className="modal-actions">
         <Button onClick={onClose}>{t.actions.cancel}</Button>
-        <Button variant="primary" onClick={save} disabled={busy}>
+        <Button variant="primary" onClick={save} loading={busy}>
           {t.actions.save}
         </Button>
       </div>

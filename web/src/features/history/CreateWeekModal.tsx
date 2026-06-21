@@ -65,7 +65,7 @@ export function CreateWeekModal({ onClose, onSaved }: { onClose: () => void; onS
       </Field>
       <div className="modal-actions">
         <Button onClick={onClose}>{t.actions.cancel}</Button>
-        <Button variant="primary" onClick={save} disabled={busy}>
+        <Button variant="primary" onClick={save} loading={busy}>
           {t.history.createBtn}
         </Button>
       </div>
