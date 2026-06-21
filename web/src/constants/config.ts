@@ -28,7 +28,7 @@ export const DAYS: { key: DayKey; label: string; full: string }[] = [
 ];
 
 /** Bộ biểu tượng món ăn cho phép chọn */
-export const DISH_EMOJIS = ['🍗', '🍖', '🥩', '🐟', '🥗', '🍛', '🍜', '🍲', '🥘', '🍱', '🍳', '🦐', '🍚', '🥬', '🌶️'];
+export const DISH_EMOJIS = ['🍗', '🍖', '🥩', '🐟', '🥗', '🍛', '🍜', '🍲', '🥘', '🍱', '🍳', '🦐', '🍚', '🥬', '🌶️', '☕', '🥛', '🧋'];
 
 /** Danh sách ngân hàng hỗ trợ VietQR (tên + mã BIN) */
 export const BANKS: { name: string; bin: string }[] = [
