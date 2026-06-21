@@ -42,8 +42,8 @@ export function GridPanel({
   /**
    * Bật/tắt nhanh 1 ngày:
    * - Bật → đặt cơm, GIỮ nguyên món/nước đã chọn (nếu có).
-   * - Tắt → HUỶ cả ngày: bỏ cơm + xoá luôn món & nước (không để nước "ngầm" còn tính tiền).
-   * Muốn đặt nước mà không ăn cơm thì dùng phiếu chi tiết (tắt "Ăn cơm" + thêm nước).
+   * - Tắt → bỏ cơm + món, NHƯNG GIỮ nước (ô thành "chỉ nước" 🥤 nền xanh).
+   *   Muốn xoá luôn nước thì vào phiếu chi tiết (giảm số lượng về 0).
    */
   const toggle = async (m: GridMember, key: DayKey) => {
     if (!canEditDay(m, key) || saving) return;
@@ -51,7 +51,7 @@ export function GridPanel({
     const cur = m.items?.[key];
     const detail = turningOn
       ? { eat: true, food: cur?.food ?? [], drinks: cur?.drinks ?? [] }
-      : { eat: false, food: [], drinks: [] };
+      : { eat: false, food: [], drinks: cur?.drinks ?? [] };
     setSaving(true);
     try {
       if (m.userId === meId) await api.setMyDay(week.id, key, detail);

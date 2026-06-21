@@ -1,6 +1,6 @@
 # 🍱 Đặt Cơm Trưa — Full-stack (NestJS + Prisma + React)
 
-Ứng dụng đặt cơm trưa cho nhóm: mỗi người **tự đăng ký tài khoản**, tích ngày ăn theo tuần, hệ thống tự tính suất & tiền, **thanh toán QR/STK** (VietQR điền sẵn số tiền từng người), thống kê, lịch sử tuần. **Admin** quản lý món ăn, thành viên, đơn giá, thông tin thanh toán, phân quyền.
+Ứng dụng đặt cơm trưa cho nhóm: mỗi người **tự đăng ký tài khoản**, **tích ngày ăn theo tuần** (mix nhiều món/ngày vẫn 1 suất, thêm **đồ uống** tính tiền riêng), hệ thống **tự tính suất & tiền**. **Khoá đặt theo giờ/ngày** (chỉ đặt hôm nay trước giờ chốt 10:21). **Thanh toán QR** (VietQR điền sẵn số tiền) theo quy trình **user báo đã chuyển → admin xác nhận**, kèm **chuông thông báo**. Có thống kê, lịch sử tuần (xem lại read-only). **Admin** quản lý món ăn, thành viên, đơn giá, thông tin thanh toán, phân quyền.
 
 | Phần | Công nghệ |
 |------|-----------|
@@ -12,9 +12,13 @@
 
 ## 📚 Tài liệu
 
-- [docs/CHAY-LOCAL.md](docs/CHAY-LOCAL.md) — chạy local + các lỗi đã gặp & cách sửa (Prisma 7, Docker, cổng)
+> Thư mục `docs/` là **tài liệu nội bộ** (đã `.gitignore`). Nguồn là `.md`; chạy `node docs/build-docs.mjs` để sinh lại bản `.html` (cùng style + điều hướng).
+
+- [docs/NGHIEP-VU.md](docs/NGHIEP-VU.md) — **nghiệp vụ**: đặt cơm, khoá giờ/ngày, mix món + đồ uống, thanh toán + thông báo
+- [docs/CHAY-LOCAL.md](docs/CHAY-LOCAL.md) — chạy local + các lỗi đã gặp & cách sửa (Prisma 7, Docker, cổng, IPv4)
 - [docs/DEPLOY.md](docs/DEPLOY.md) — deploy cho mọi người dùng chung (Render + Neon, free + HTTPS)
 - [docs/GIT-PUSH.md](docs/GIT-PUSH.md) — đẩy code lên GitHub
+- [docs/VAN-HANH.md](docs/VAN-HANH.md) — vận hành & hạ tầng (CI/CD, giới hạn Neon, backup)
 
 ---
 
@@ -23,7 +27,7 @@
 ```
 com-trua-app/
 ├─ server/            # API NestJS + Prisma
-│  ├─ src/ (auth, users, weeks, orders, dishes, payment, seed, common, prisma)
+│  ├─ src/ (auth, users, weeks, orders, dishes, payment, notifications, seed, common, prisma)
 │  ├─ prisma/schema.prisma
 │  └─ Dockerfile
 ├─ web/               # Frontend React + Vite (src, Dockerfile + nginx.conf)
@@ -44,7 +48,7 @@ docker compose up --build
 - API + Swagger: **http://localhost:3000/docs**
 - Postgres tự bật trong compose (không cần cài gì thêm).
 
-Lần đầu chạy sẽ **tự seed**: admin + 13 thành viên + tuần mẫu 15–20/6/2026 (33 suất, 825.000đ).
+Lần đầu chạy sẽ **tự seed**: admin + 13 thành viên + **thực đơn 25 món ăn/đồ uống** + tuần mẫu 15–20/6/2026.
 
 ### Tài khoản mặc định
 
@@ -62,7 +66,7 @@ Lần đầu chạy sẽ **tự seed**: admin + 13 thành viên + tuần mẫu 1
 **Backend**
 ```bash
 cd server
-cp .env.example .env          # sửa DATABASE_URL trỏ tới Postgres của bạn
+cp .env.example .env          # DATABASE_URL: dùng 127.0.0.1 (KHÔNG localhost — xem docs/CHAY-LOCAL.md)
 npm install
 npm run prisma:push           # tạo bảng theo schema
 npm run start:dev             # API tại http://localhost:3000
@@ -114,10 +118,12 @@ Combo free ổn định: **Neon** (PostgreSQL free, không hết hạn) + **Rend
 | Nhóm | Endpoint chính |
 |------|----------------|
 | Auth | `POST /auth/register` · `POST /auth/login` · `GET /auth/me` · `POST /auth/change-password` |
-| Tuần | `GET /weeks/active` · `GET /weeks` · `POST /weeks` *(admin)* |
-| Đăng ký ăn | `PUT /orders/me` · `PUT /orders/:userId` *(admin)* · `PATCH /orders/paid` *(admin)* |
+| Tuần | `GET /weeks/active` · `GET /weeks` · `GET /weeks/:id/grid` · `POST /weeks` · `PATCH/DELETE /weeks/:id` *(admin)* |
+| Đặt cơm (của tôi) | `PUT /orders/me` (tick ngày) · `PUT /orders/me/day` (mix món + đồ uống) · `PATCH /orders/me/payment` (báo đã chuyển khoản) |
+| Đặt hộ / xác nhận *(admin)* | `PUT /orders/:userId` · `PUT /orders/:userId/day` · `PATCH /orders/payment` (đặt trạng thái thanh toán + báo user) |
 | Thực đơn | `GET /dishes` · `POST/PATCH/DELETE /dishes/:id` *(admin)* |
 | Thanh toán | `GET /payment` · `PATCH /payment` *(admin)* |
+| Thông báo | `GET /notifications` · `PATCH /notifications/read` |
 | Thành viên | `GET /users` · `PATCH/DELETE /users/:id` *(admin)* |
 
 ---
@@ -141,10 +147,15 @@ Combo free ổn định: **Neon** (PostgreSQL free, không hết hạn) + **Rend
 # server
 npm run start:dev      # dev watch
 npm run build          # build production
+npm run lint           # oxlint + eslint
 npm run prisma:studio  # xem/sửa DB bằng giao diện
 npm run prisma:push    # đồng bộ schema -> DB
 
 # web
 npm run dev            # dev
 npm run build          # build tĩnh -> dist/
+npm run lint           # eslint
+
+# docs (tài liệu nội bộ) — sửa .md rồi sinh lại .html
+node docs/build-docs.mjs
 ```

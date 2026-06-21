@@ -91,7 +91,7 @@ export const t = {
       whereMobile: 'tên thành viên',
       whereDesktop: 'ô đã đặt',
       today: (cutoff: string) => `⏰ Chỉ đặt cho HÔM NAY, trước ${cutoff} — không đặt trước cho ngày sau.`,
-      cancel: '❌ Bỏ tick = huỷ cả ngày (cơm + món + nước).',
+      cancel: '❌ Bỏ tick = huỷ cơm + món; nước vẫn giữ → ô thành xanh 🥤 (muốn xoá nước thì vào phiếu chi tiết).',
       colors: '🎨 Ô cam 🍚 = có cơm · ô xanh 🥤 = chỉ uống nước.',
       admin: '👑 Admin: đặt/sửa hộ mọi người, mọi ngày (kể cả ngày đã khoá).',
       member: '✏️ Bạn chỉ sửa được dòng của mình.',
