@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { api } from '@/services/api';
-import type { DayKey, Dish, Grid, GridMember } from '@/types';
+import type { DayDetail, DayItems, DayKey, Dish, DrinkItem, Grid, GridMember } from '@/types';
 import { DAYS } from '@/constants/config';
 import { t } from '@/constants/strings';
 import { cls, vnd } from '@/lib/format';
@@ -9,6 +9,56 @@ import { useIsMobile } from '@/hooks/useIsMobile';
 import { Avatar, Button, Card, CardBody, CardHeader, toast } from '@/components/ui';
 import { DayDetailSheet } from './DayDetailSheet';
 
+/** Tính lại servings + tiền cho TOÀN grid theo đúng công thức backend → cho phép cập nhật lạc quan mà không cần tải lại. */
+function recomputeGrid(grid: Grid, dishMap: Map<string, Dish>): Grid {
+  const unitPrice = grid.week.unitPrice;
+  const drinkCost = (drinks: DrinkItem[]) =>
+    drinks.reduce((a, d) => {
+      const dish = dishMap.get(d.dishId);
+      return a + (dish?.category === 'DRINK' ? dish.price * d.qty : 0);
+    }, 0);
+  const members = grid.members.map((m) => {
+    const servings = DAYS.reduce((a, d) => a + (m.days[d.key] ? 1 : 0), 0);
+    const foodTotal = servings * unitPrice;
+    const drinksTotal = DAYS.reduce((a, d) => a + drinkCost(m.items?.[d.key]?.drinks ?? []), 0);
+    return { ...m, servings, foodTotal, drinksTotal, total: foodTotal + drinksTotal };
+  });
+  const perDay = Object.fromEntries(
+    DAYS.map((d) => [d.key, members.reduce((a, m) => a + (m.days[d.key] ? 1 : 0), 0)]),
+  ) as Record<DayKey, number>;
+  const totalServings = members.reduce((a, m) => a + m.servings, 0);
+  const totalFood = totalServings * unitPrice;
+  const totalDrinks = members.reduce((a, m) => a + (m.drinksTotal ?? 0), 0);
+  return {
+    ...grid,
+    members,
+    totals: { ...grid.totals, perDay, totalServings, totalFood, totalDrinks, totalMoney: totalFood + totalDrinks },
+  };
+}
+
+/** Áp 1 thay đổi ngày (eat/food/drinks) của 1 thành viên rồi tính lại tổng → grid mới (optimistic). */
+function applyDayLocal(
+  grid: Grid,
+  dishMap: Map<string, Dish>,
+  userId: string,
+  key: DayKey,
+  detail: DayDetail,
+): Grid {
+  const members = grid.members.map((m) =>
+    m.userId !== userId
+      ? m
+      : {
+          ...m,
+          days: { ...m.days, [key]: detail.eat },
+          items: {
+            ...(m.items ?? ({} as Record<DayKey, DayItems>)),
+            [key]: { food: detail.food, drinks: detail.drinks },
+          },
+        },
+  );
+  return recomputeGrid({ ...grid, members }, dishMap);
+}
+
 export function GridPanel({
   grid,
   dishes,
@@ -16,6 +66,7 @@ export function GridPanel({
   meId,
   reload,
   readOnly = false,
+  onMutate,
 }: {
   grid: Grid;
   dishes: Dish[];
@@ -24,6 +75,8 @@ export function GridPanel({
   reload: () => Promise<void>;
   /** Lịch sử: chỉ xem, mọi thao tác sửa bị khoá. */
   readOnly?: boolean;
+  /** Cập nhật lạc quan grid ở state cha (đổi ô tức thì, không chờ tải lại). */
+  onMutate?: (next: Grid) => void;
 }) {
   const { week, members, totals } = grid;
   const locked = grid.lockedDays ?? ({} as Record<DayKey, boolean>);
@@ -46,18 +99,20 @@ export function GridPanel({
    * Đặt/sửa chi tiết (đặt cơm phải chọn món) luôn qua phiếu.
    */
   const clearCell = async (m: GridMember, key: DayKey) => {
-    if (!canEditDay(m, key) || saving) return;
+    if (!canEditDay(m, key)) return;
     const cur = m.items?.[key];
-    const detail = m.days[key]
+    const detail: DayDetail = m.days[key]
       ? { eat: false, food: [], drinks: cur?.drinks ?? [] } // bỏ cơm, giữ nước
       : { eat: false, food: [], drinks: [] }; // chỉ nước → bỏ nước
+    onMutate?.(applyDayLocal(grid, dishMap, m.userId, key, detail)); // optimistic: ô đổi tức thì
     setSaving(true);
     try {
       if (m.userId === meId) await api.setMyDay(week.id, key, detail);
       else await api.setUserDay(m.userId, week.id, key, detail);
-      await reload();
+      if (!onMutate) await reload(); // không có optimistic (vd lịch sử) → giữ hành vi cũ
     } catch (e: any) {
       toast(e.message || t.errors.save, '⚠️');
+      await reload(); // lỗi → đồng bộ lại từ server (gỡ optimistic)
     } finally {
       setSaving(false);
     }
@@ -65,7 +120,6 @@ export function GridPanel({
 
   /** Tap ô → mở phiếu chi tiết (đặt cơm + chọn món / thêm nước). Bỏ cơm nhanh bằng nút × trên ô. */
   const onCell = (m: GridMember, key: DayKey) => {
-    if (saving) return;
     if (!readOnly || m.days[key] || m.items?.[key]) setPicked({ m, day: key });
   };
 

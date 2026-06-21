@@ -39,6 +39,8 @@ export function useDashboardData() {
     payment,
     weeks,
     loading,
+    /** Ghi đè grid ở local ngay lập tức (cho optimistic update, không gọi mạng). */
+    mutateGrid: setGrid,
     reloadGrid,
     reloadDishes,
     reloadPayment,

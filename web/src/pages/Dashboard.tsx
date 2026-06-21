@@ -20,7 +20,7 @@ export function Dashboard() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
   const [tab, setTab] = useState<TabKey>('grid');
-  const { grid, dishes, payment, weeks, loading, reloadGrid, reloadDishes, reloadPayment, reloadWeeks } =
+  const { grid, dishes, payment, weeks, loading, mutateGrid, reloadGrid, reloadDishes, reloadPayment, reloadWeeks } =
     useDashboardData();
   const settings = useDisclosure();
   const password = useDisclosure();
@@ -47,7 +47,14 @@ export function Dashboard() {
             <HeroStats grid={grid} />
 
             {tab === 'grid' && (
-              <GridPanel grid={grid} dishes={dishes} isAdmin={isAdmin} meId={user!.id} reload={reloadGrid} />
+              <GridPanel
+                grid={grid}
+                dishes={dishes}
+                isAdmin={isAdmin}
+                meId={user!.id}
+                reload={reloadGrid}
+                onMutate={mutateGrid}
+              />
             )}
             {tab === 'menu' && <MenuPanel dishes={dishes} isAdmin={isAdmin} reload={reloadDishes} />}
             {tab === 'pay' && payment && (

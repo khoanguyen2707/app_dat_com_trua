@@ -9,6 +9,12 @@ export const t = {
     loading: 'Đang tải…',
   },
 
+  /** Viên báo hoạt động ở đỉnh (spinner khi gọi API → ✓ khi xong) */
+  activity: {
+    loading: 'Đang xử lý…',
+    done: 'Xong',
+  },
+
   actions: {
     cancel: 'Huỷ',
     save: 'Lưu',

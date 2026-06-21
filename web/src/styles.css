@@ -40,12 +40,16 @@ a { color: var(--brand); }
 .btn.is-loading { cursor: progress; }
 .btn-spin { width: 14px; height: 14px; flex: none; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; }
 
-/* thanh tiến trình API trên đỉnh màn hình (tự hiện khi có request đang chạy) */
-.topprogress { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 100; pointer-events: none; opacity: 0; transition: opacity .3s; overflow: hidden; }
-.topprogress.on { opacity: 1; }
-.topprogress::before { content: ''; position: absolute; top: 0; height: 100%; width: 35%; left: -35%; border-radius: 0 3px 3px 0; background: linear-gradient(90deg, transparent, var(--brand), var(--brand-deep)); }
-.topprogress.on::before { animation: topbar 1.05s cubic-bezier(.4,0,.2,1) infinite; }
-@keyframes topbar { 0% { left: -35%; } 100% { left: 100%; } }
+/* toast loading gọn ở DƯỚI (cùng chỗ + giao diện với toast kết quả) */
+.activity { position: fixed; bottom: 80px; left: 50%; z-index: 80; transform: translateX(-50%);
+  display: inline-flex; align-items: center; gap: 9px; max-width: calc(100vw - 24px); white-space: nowrap;
+  padding: 11px 19px; border-radius: 30px; font-size: 14px; font-weight: 600; color: #fff;
+  background: #16181d; box-shadow: var(--shadow-lg); pointer-events: none;
+  animation: actIn .35s var(--ease) both; }
+.activity.hide { animation: actOut .28s var(--ease) forwards; }
+.activity-spin { width: 15px; height: 15px; flex: none; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes actIn { from { opacity: 0; transform: translate(-50%, 12px) scale(.96); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }
+@keyframes actOut { to { opacity: 0; transform: translate(-50%, 12px); } }
 .btn-ico { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--surface-2); border: 1px solid var(--line); font-size: 18px; transition: transform .18s var(--ease), background .2s; }
 .btn-ico:hover { transform: translateY(-1px); background: #fff; }
 .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 5px 11px; border-radius: 20px; }
@@ -400,8 +404,9 @@ tfoot td.col-name { background: #16a34a; color: #fff; } tfoot td.money { color: 
   .tab { font-size: 10.5px; padding: 5px 2px; }
   .tab .ti { font-size: 23px; }
 
-  /* toast sits above the nav */
+  /* toast + báo loading nằm trên thanh nav */
   .toast-wrap { bottom: calc(86px + env(safe-area-inset-bottom)); }
+  .activity { bottom: calc(86px + env(safe-area-inset-bottom)); }
 
   /* modal -> bottom sheet */
   .overlay { align-items: flex-end; padding: 0; }
