@@ -1,0 +1,191 @@
+/**
+ * NGUỒN DUY NHẤT cho toàn bộ chữ hiển thị (tiếng Việt) của ứng dụng.
+ * Muốn đổi text ở bất cứ đâu → chỉ sửa tại file này.
+ * Chuỗi có chèn biến được khai báo dưới dạng hàm: vd t.menu.confirmDelete('Cơm gà').
+ */
+export const t = {
+  app: {
+    name: 'Đặt Cơm Trưa',
+    loading: 'Đang tải…',
+  },
+
+  actions: {
+    cancel: 'Huỷ',
+    save: 'Lưu',
+    add: 'Thêm',
+    delete: 'Xoá',
+    saving: 'Đang lưu…',
+    processing: 'Đang xử lý…',
+    edit: '✏️ Sửa',
+    copy: '📋 Copy',
+  },
+
+  errors: {
+    generic: 'Có lỗi xảy ra',
+    save: 'Lỗi lưu',
+    short: 'Lỗi',
+    status: (code: number) => `Lỗi ${code}`,
+  },
+
+  role: {
+    admin: 'Admin',
+    member: 'Thành viên',
+    adminIcon: '🔓',
+    memberIcon: '👤',
+  },
+
+  topbar: {
+    changePassword: 'Đổi mật khẩu',
+    settings: 'Cài đặt',
+    logout: 'Đăng xuất',
+  },
+
+  login: {
+    subtitleLogin: 'Đăng nhập để đăng ký suất ăn',
+    subtitleRegister: 'Tạo tài khoản mới (quyền thành viên)',
+    tabLogin: 'Đăng nhập',
+    tabRegister: 'Đăng ký',
+    fullName: 'Họ tên',
+    fullNamePlaceholder: 'Nguyễn Anh Khoa',
+    email: 'Email',
+    emailPlaceholder: 'ban@email.com',
+    password: 'Mật khẩu',
+    passwordPlaceholder: '••••••',
+    submitLogin: 'Đăng nhập',
+    submitRegister: 'Tạo tài khoản',
+  },
+
+  tabs: {
+    grid: 'Bảng tuần',
+    menu: 'Thực đơn',
+    pay: 'Thanh toán',
+    stats: 'Thống kê',
+    hist: 'Lịch sử',
+  },
+
+  dashboard: {
+    noWeekTitle: 'Chưa có tuần nào đang mở.',
+    noWeekAdmin: ' Vào tab Lịch sử để tạo tuần mới.',
+    noWeekMember: ' Nhờ admin tạo tuần mới nhé.',
+    weekChip: 'Tuần:',
+    statUnitPrice: '🍚 Đơn giá / suất',
+    statTotalServings: '🧮 Tổng số suất',
+    statTotalMoney: '💰 Tổng tiền',
+    statEating: '👥 Đang ăn',
+  },
+
+  grid: {
+    title: 'Bảng đăng ký tuần',
+    hintLead: '💡 Chạm ô ngày bạn ăn. ',
+    hintAdmin: 'Admin có thể tích hộ mọi người.',
+    hintMember: 'Bạn chỉ sửa được dòng của mình.',
+    colMember: 'Thành viên',
+    colServings: 'Số suất',
+    colMoney: 'Thành tiền',
+    totalRow: 'TỔNG CỘNG',
+    autoSave: 'Tự động lưu khi tích',
+    exportBtn: '📊 Xuất Excel',
+    exported: 'Đã xuất Excel (CSV)',
+    csv: { no: 'STT', name: 'Tên', total: 'TỔNG' },
+  },
+
+  menu: {
+    title: 'Thực đơn',
+    addBtn: '＋ Thêm món',
+    emptyIcon: '🍽️',
+    empty: 'Chưa có món nào.',
+    emptyHintAdmin: ' Bấm ＋ Thêm món.',
+    confirmDelete: (name: string) => `Xoá món "${name}"?`,
+    deleted: 'Đã xoá món',
+    modalEdit: 'Sửa món',
+    modalCreate: 'Thêm món',
+    fieldEmoji: 'Biểu tượng',
+    fieldName: 'Tên món',
+    namePlaceholder: 'VD: Cơm gà',
+    fieldDesc: 'Mô tả',
+    descPlaceholder: 'Ngắn gọn',
+    fieldPrice: 'Giá (đ)',
+    nameRequired: 'Nhập tên món',
+    saved: 'Đã lưu món',
+    added: 'Đã thêm món',
+  },
+
+  payment: {
+    title: 'Thanh toán',
+    accountHolder: 'Chủ tài khoản',
+    bank: 'Ngân hàng',
+    accountNumber: 'Số tài khoản',
+    copied: 'Đã copy số tài khoản',
+    memberHintLead: '🔎 Chạm tên để mở QR ',
+    memberHintBold: 'đã điền sẵn số tiền',
+    memberHintTail: ' của từng người.',
+    noEaters: 'Chưa có ai đăng ký ăn.',
+    servingsAmount: (servings: number, money: string) => `${servings} suất • ${money}`,
+    qrInfoWeek: (label: string) => `Com trua ${label}`,
+    qrInfoMember: (name: string) => `Com trua ${name}`,
+    modalTitle: (name: string) => `Thanh toán · ${name}`,
+    amountToTransfer: 'Số tiền cần chuyển',
+    servingsTimesPrice: (servings: number, price: string) => `${servings} suất × ${price}`,
+    transferNote: 'Nội dung CK',
+    unmark: '↩️ Bỏ đánh dấu',
+    markPaid: '✅ Đã thanh toán',
+    unmarked: 'Đã bỏ đánh dấu',
+    marked: 'Đã đánh dấu thanh toán',
+    editTitle: 'Thông tin thanh toán',
+    groupName: 'Tên nhóm',
+    accountHolderNoAccent: 'Chủ tài khoản (không dấu)',
+    updated: 'Đã cập nhật thanh toán',
+  },
+
+  stats: {
+    byMember: 'Suất theo thành viên',
+    noData: 'Chưa có dữ liệu',
+    byDay: 'Suất theo ngày',
+    trend: 'Xu hướng các tuần',
+  },
+
+  history: {
+    title: 'Lịch sử các tuần',
+    newBtn: '＋ Tuần mới',
+    empty: 'Chưa có tuần nào.',
+    active: 'Đang mở',
+    meta: (servings: number, total: string, members: number, unitPrice: string) =>
+      `${servings} suất • ${total} • ${members} người • ${unitPrice}/suất`,
+    confirmDelete: (label: string) => `Xoá tuần "${label}"? Mọi đăng ký của tuần này sẽ mất.`,
+    deleted: 'Đã xoá tuần',
+    hint: '🆕 "Tuần mới" tạo một tuần trống và đặt làm tuần hiện hành (giữ nguyên thành viên). Tuần cũ vẫn lưu ở đây.',
+    modalTitle: 'Tạo tuần mới',
+    fieldLabel: 'Nhãn tuần',
+    labelPlaceholder: 'VD: 22/6/2026 - 27/6/2026',
+    fieldUnitPrice: 'Đơn giá / suất (đ)',
+    labelRequired: 'Nhập nhãn tuần',
+    created: 'Đã tạo tuần mới',
+    createBtn: 'Tạo & kích hoạt',
+  },
+
+  settings: {
+    title: '⚙️ Cài đặt (Admin)',
+    currentWeek: 'Tuần hiện hành',
+    fieldLabel: 'Nhãn tuần',
+    fieldUnitPrice: 'Đơn giá / suất (đ)',
+    saveWeek: 'Lưu tuần',
+    savedWeek: 'Đã lưu tuần',
+    members: (n: number) => `Thành viên (${n})`,
+    locked: '(khoá)',
+    changeRole: 'Đổi quyền',
+    lock: 'Khoá',
+    unlock: 'Mở khoá',
+    confirmRemove: (name: string) => `Xoá thành viên "${name}"?`,
+    removed: 'Đã xoá',
+    roleChanged: (name: string, role: string) => `${name} → ${role}`,
+  },
+
+  password: {
+    title: '🔑 Đổi mật khẩu',
+    current: 'Mật khẩu hiện tại',
+    new: 'Mật khẩu mới',
+    tooShort: (min: number) => `Mật khẩu mới tối thiểu ${min} ký tự`,
+    changed: 'Đổi mật khẩu thành công',
+    submit: 'Đổi mật khẩu',
+  },
+} as const;

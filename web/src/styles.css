@@ -181,5 +181,106 @@ tfoot td.col-name { background: #16a34a; color: #fff; } tfoot td.money { color: 
 @keyframes toastIn { from { opacity: 0; transform: translateY(20px) scale(.9); } to { opacity: 1; transform: none; } }
 @keyframes checkpop { 0% { transform: scale(.6); } 55% { transform: scale(1.18); } 100% { transform: scale(1); } }
 @keyframes spin { to { transform: rotate(360deg); } }
-@media (max-width: 720px) { .pay-grid { grid-template-columns: 1fr; } .logo .sub { display: none; } }
+/* ===================== RESPONSIVE / MOBILE (app-style) ===================== */
+@keyframes sheetIn { from { opacity: .5; transform: translateY(100%); } to { opacity: 1; transform: none; } }
+
+@media (max-width: 720px) {
+  .pay-grid { grid-template-columns: 1fr; }
+  .logo .sub { display: none; }
+}
+
+/* Phone layout — pinned bottom nav, bottom-sheet modals, no iOS zoom */
+@media (max-width: 640px) {
+  /* iOS zooms inputs whose font < 16px on focus — force 16px */
+  input, select, .field input, .field select { font-size: 16px; }
+
+  /* leave room for the fixed bottom nav + iPhone home indicator */
+  .wrap { padding: 0 14px calc(80px + env(safe-area-inset-bottom)); }
+
+  /* topbar */
+  .topbar { padding-top: env(safe-area-inset-top); }
+  .topbar-in { gap: 8px; padding: 10px 12px; }
+  .logo { overflow: hidden; }
+  .logo > div { min-width: 0; }
+  .logo .ic { width: 36px; height: 36px; font-size: 19px; border-radius: 11px; }
+  .logo h1 { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pill { padding: 6px 9px; gap: 0; }
+  .pill-txt { display: none; }
+  .btn-ico { width: 36px; height: 36px; font-size: 16px; border-radius: 11px; }
+
+  /* hero */
+  .hero { padding: 14px 0 2px; }
+  .weekchip { font-size: 13px; padding: 6px 12px; margin-bottom: 12px; }
+  .hero-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat { padding: 13px 14px; border-radius: 16px; }
+  .stat .lbl { font-size: 11.5px; }
+  .stat .val { font-size: 20px; margin-top: 2px; }
+
+  /* cards */
+  .card { border-radius: 20px; margin-bottom: 14px; }
+  .card-h { padding: 14px 16px; gap: 10px; }
+  .card-h h2 { font-size: 16px; }
+  .card-b { padding: 14px 16px; }
+  .hint { font-size: 12px; }
+
+  /* dishes — 2 per row */
+  .dishes { grid-template-columns: 1fr 1fr; gap: 11px; }
+  .dish-card { padding: 13px; border-radius: 16px; }
+  .dish-emoji { font-size: 30px; }
+  .dish-card h3 { font-size: 15px; }
+  .dish-card .price { font-size: 16px; }
+  .dish-actions { gap: 6px; }
+
+  /* payment members — full width rows */
+  .member-pay { grid-template-columns: 1fr; }
+  .qr-box img { width: 200px; }
+
+  /* stats */
+  .bar-row { gap: 10px; }
+  .bar-row .nm { width: 82px; font-size: 12.5px; }
+  .daycols { height: 150px; gap: 7px; }
+
+  /* history */
+  .hist-item { padding: 13px 16px; gap: 12px; }
+  .hist-item .ic { width: 38px; height: 38px; font-size: 17px; }
+
+  /* bottom nav — fixed & full width like native apps */
+  .tabs-bar { position: fixed; left: 0; right: 0; bottom: 0; margin-top: 0;
+    padding-bottom: env(safe-area-inset-bottom);
+    box-shadow: 0 -1px 0 var(--line), 0 -10px 26px rgba(16,18,29,.07); }
+  .tabs { max-width: none; padding: 7px 6px 5px; }
+  .tab { font-size: 10.5px; padding: 5px 2px; }
+  .tab .ti { font-size: 23px; }
+
+  /* toast sits above the nav */
+  .toast-wrap { bottom: calc(86px + env(safe-area-inset-bottom)); }
+
+  /* modal -> bottom sheet */
+  .overlay { align-items: flex-end; padding: 0; }
+  .modal { width: 100%; max-width: none; max-height: 92vh;
+    border-radius: 24px 24px 0 0; animation: sheetIn .38s var(--ease) both;
+    padding-bottom: env(safe-area-inset-bottom); }
+  .modal-h { padding: 18px 20px 14px; border-radius: 24px 24px 0 0; }
+  .modal-h h3 { font-size: 17px; }
+  .modal-h::before { content: ''; position: absolute; top: 7px; left: 50%; transform: translateX(-50%);
+    width: 40px; height: 4px; border-radius: 99px; background: var(--line); }
+  .modal-b { padding: 18px 20px; }
+  .modal-actions .btn { padding: 13px; }
+
+  /* login */
+  .login-screen { padding: 16px; }
+  .login-card { padding: 26px 20px; border-radius: 24px; }
+}
+
+/* Very small phones (SE / older) */
+@media (max-width: 360px) {
+  .topbar-in { gap: 6px; }
+  .btn-ico { width: 34px; height: 34px; }
+  .hero-grid { gap: 8px; }
+  .stat { padding: 11px 12px; }
+  .stat .val { font-size: 18px; }
+  .dishes { gap: 9px; }
+  .tab { font-size: 10px; }
+}
+
 @media (prefers-reduced-motion: reduce) { * { animation-duration: .01ms !important; transition-duration: .01ms !important; } }

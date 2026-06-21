@@ -1,7 +1,7 @@
-import { useAuth } from './auth';
-import { Login } from './components/Login';
-import { Dashboard } from './components/Dashboard';
-import { Spinner } from './ui';
+import { useAuth } from '@/context/AuthContext';
+import { LoginScreen } from '@/features/auth/LoginScreen';
+import { Dashboard } from '@/pages/Dashboard';
+import { Spinner } from '@/components/ui';
 
 export function App() {
   const { user, loading } = useAuth();
@@ -12,5 +12,5 @@ export function App() {
       </div>
     );
   }
-  return user ? <Dashboard /> : <Login />;
+  return user ? <Dashboard /> : <LoginScreen />;
 }

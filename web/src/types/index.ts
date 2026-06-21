@@ -53,3 +53,9 @@ export interface PaymentConfig {
   accountNumber: string;
   accountHolder: string;
 }
+
+export interface AuthResult {
+  accessToken: string;
+  refreshToken: string;
+  user: User;
+}

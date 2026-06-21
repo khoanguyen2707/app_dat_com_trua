@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
-import type { Grid, Week } from '../types';
-import { DAYS } from '../util';
+import type { Grid, Week } from '@/types';
+import { DAYS } from '@/constants/config';
+import { t } from '@/constants/strings';
+import { Card, CardBody, CardHeader, EmptyState } from '@/components/ui';
 
 export function StatsPanel({ grid, weeks }: { grid: Grid; weeks: Week[] }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
-    const t = setTimeout(() => setMounted(true), 30);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setMounted(true), 30);
+    return () => clearTimeout(timer);
   }, []);
 
   const memberStats = grid.members
@@ -16,21 +18,15 @@ export function StatsPanel({ grid, weeks }: { grid: Grid; weeks: Week[] }) {
   const maxMember = Math.max(1, ...memberStats.map((x) => x.s));
   const maxDay = Math.max(1, ...DAYS.map((d) => grid.totals.perDay[d.key]));
   const trend = [...weeks].reverse().map((w) => ({ label: w.label.split(' ')[0], s: w.servings ?? 0 }));
-  const maxTrend = Math.max(1, ...trend.map((t) => t.s));
+  const maxTrend = Math.max(1, ...trend.map((x) => x.s));
 
   return (
     <>
-      <div className="card">
-        <div className="card-h">
-          <div className="ic">📊</div>
-          <h2>Suất theo thành viên</h2>
-        </div>
-        <div className="card-b">
+      <Card>
+        <CardHeader icon="📊" title={t.stats.byMember} />
+        <CardBody>
           {memberStats.length === 0 ? (
-            <div className="empty">
-              <div className="e">📊</div>
-              Chưa có dữ liệu
-            </div>
+            <EmptyState icon="📊">{t.stats.noData}</EmptyState>
           ) : (
             memberStats.map((x) => (
               <div className="bar-row" key={x.name}>
@@ -43,15 +39,12 @@ export function StatsPanel({ grid, weeks }: { grid: Grid; weeks: Week[] }) {
               </div>
             ))
           )}
-        </div>
-      </div>
+        </CardBody>
+      </Card>
 
-      <div className="card">
-        <div className="card-h">
-          <div className="ic">📆</div>
-          <h2>Suất theo ngày</h2>
-        </div>
-        <div className="card-b">
+      <Card>
+        <CardHeader icon="📆" title={t.stats.byDay} />
+        <CardBody>
           <div className="daycols">
             {DAYS.map((d) => {
               const c = grid.totals.perDay[d.key];
@@ -65,32 +58,32 @@ export function StatsPanel({ grid, weeks }: { grid: Grid; weeks: Week[] }) {
               );
             })}
           </div>
-        </div>
-      </div>
+        </CardBody>
+      </Card>
 
-      <div className="card">
-        <div className="card-h">
-          <div className="ic">📈</div>
-          <h2>Xu hướng các tuần</h2>
-        </div>
-        <div className="card-b">
+      <Card>
+        <CardHeader icon="📈" title={t.stats.trend} />
+        <CardBody>
           <div className="daycols" style={{ height: 130 }}>
-            {trend.map((t, i) => (
+            {trend.map((x, i) => (
               <div className="daycol" key={i}>
                 <div
                   className="vb"
-                  style={{ height: mounted ? `${(t.s / maxTrend) * 100}%` : 0, background: 'linear-gradient(180deg,#34d27b,#22c55e)' }}
+                  style={{
+                    height: mounted ? `${(x.s / maxTrend) * 100}%` : 0,
+                    background: 'linear-gradient(180deg,#34d27b,#22c55e)',
+                  }}
                 >
-                  <span className="n">{t.s}</span>
+                  <span className="n">{x.s}</span>
                 </div>
                 <span className="lab" style={{ fontSize: 10 }}>
-                  {t.label}
+                  {x.label}
                 </span>
               </div>
             ))}
           </div>
-        </div>
-      </div>
+        </CardBody>
+      </Card>
     </>
   );
 }

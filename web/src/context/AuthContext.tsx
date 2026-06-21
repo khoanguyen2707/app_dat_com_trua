@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { api, setTokens } from './api';
-import type { User } from './types';
+import { api } from '@/services/api';
+import { setTokens } from '@/services/http';
+import { STORAGE } from '@/constants/config';
+import type { User } from '@/types';
 
 interface AuthCtx {
   user: User | null;
@@ -19,7 +21,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('ct_access');
+    const token = localStorage.getItem(STORAGE.access);
     if (!token) {
       setLoading(false);
       return;
