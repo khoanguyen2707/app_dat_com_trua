@@ -9,3 +9,14 @@ export const initials = (name: string) => {
 
 /** Ghép class có điều kiện: cls('a', cond && 'b') -> "a b" */
 export const cls = (...xs: (string | false | undefined | null)[]) => xs.filter(Boolean).join(' ');
+
+/** Bỏ dấu tiếng Việt (cho nội dung chuyển khoản — ngân hàng dễ đọc) */
+export const noAccent = (s: string) =>
+  (s || '')
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D');
+
+/** Rút gọn nhãn tuần (bỏ năm): "22/6/2026 - 27/6/2026" -> "22/6 - 27/6" */
+export const weekShort = (label: string) => (label || '').replace(/\/\d{4}/g, '');

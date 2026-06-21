@@ -1,7 +1,7 @@
 import { api } from '@/services/api';
 import type { GridMember, PaymentConfig } from '@/types';
 import { t } from '@/constants/strings';
-import { vnd } from '@/lib/format';
+import { noAccent, vnd, weekShort } from '@/lib/format';
 import { vietqr } from '@/lib/vietqr';
 import { Button, Modal, toast } from '@/components/ui';
 
@@ -9,6 +9,7 @@ export function MemberPayModal({
   member,
   unitPrice,
   weekId,
+  weekLabel,
   payment,
   isAdmin,
   onClose,
@@ -17,6 +18,7 @@ export function MemberPayModal({
   member: GridMember;
   unitPrice: number;
   weekId: string;
+  weekLabel: string;
   payment: PaymentConfig;
   isAdmin: boolean;
   onClose: () => void;
@@ -25,7 +27,8 @@ export function MemberPayModal({
   const foodTotal = member.foodTotal ?? member.servings * unitPrice;
   const drinksTotal = member.drinksTotal ?? 0;
   const amount = member.total ?? foodTotal + drinksTotal;
-  const info = t.payment.qrInfoMember(member.fullName);
+  // Nội dung CK: tên người chuyển (không dấu) + tuần (bỏ năm), vd "Chuong - 22/6 - 27/6"
+  const info = t.payment.qrInfoMember(noAccent(member.fullName), weekShort(weekLabel));
 
   const togglePaid = async () => {
     await api.setPaid(weekId, member.userId, !member.paid);

@@ -104,6 +104,7 @@ export function PaymentPanel({
           member={picked}
           unitPrice={grid.week.unitPrice}
           weekId={grid.week.id}
+          weekLabel={grid.week.label}
           payment={payment}
           isAdmin={isAdmin}
           onClose={() => setPicked(null)}

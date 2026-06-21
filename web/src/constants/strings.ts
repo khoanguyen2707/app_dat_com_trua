@@ -159,7 +159,7 @@ export const t = {
     noEaters: 'Chưa có ai đăng ký ăn.',
     servingsAmount: (servings: number, money: string) => `${servings} suất • ${money}`,
     qrInfoWeek: (label: string) => `Com trua ${label}`,
-    qrInfoMember: (name: string) => `Com trua ${name}`,
+    qrInfoMember: (name: string, week: string) => `${name} - ${week}`,
     modalTitle: (name: string) => `Thanh toán · ${name}`,
     amountToTransfer: 'Số tiền cần chuyển',
     servingsTimesPrice: (servings: number, price: string) => `${servings} suất × ${price}`,

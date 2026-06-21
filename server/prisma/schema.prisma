@@ -20,6 +20,12 @@ enum DishCategory {
   DRINK // đồ uống (tính tiền riêng theo giá)
 }
 
+enum PaymentStatus {
+  UNPAID // chưa trả
+  PENDING // user đã báo chuyển khoản, chờ admin xác nhận
+  PAID // admin đã xác nhận nhận tiền
+}
+
 /// Tài khoản đăng nhập = thành viên ăn cơm
 model User {
   id         String      @id @default(cuid())
@@ -65,7 +71,10 @@ model Order {
   fri       Boolean  @default(false)
   sat       Boolean  @default(false)
   sun       Boolean  @default(false)
-  paid      Boolean  @default(false)
+  paid      Boolean       @default(false) // = (paymentStatus == PAID), giữ cho tương thích
+  paymentStatus PaymentStatus @default(UNPAID)
+  reportedAt    DateTime? // lúc user bấm "đã chuyển khoản"
+  paidAt        DateTime? // lúc admin xác nhận
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   week      Week     @relation(fields: [weekId], references: [id], onDelete: Cascade)
@@ -73,6 +82,22 @@ model Order {
 
   @@unique([weekId, userId])
   @@map("orders")
+}
+
+/// Thông báo trong app (chuông ở header) — báo chuyển khoản / xác nhận thanh toán.
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String // người nhận
+  type      String   @db.VarChar(30) // PAYMENT_PENDING | PAYMENT_CONFIRMED | PAYMENT_REJECTED
+  title     String   @db.VarChar(150)
+  body      String   @db.VarChar(255)
+  read      Boolean  @default(false)
+  weekId    String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@map("notifications")
 }
 
 /// Thực đơn món ăn + đồ uống (admin quản lý)
