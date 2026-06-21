@@ -88,7 +88,12 @@ export class SeedService {
     }
 
     const week = await this.prisma.week.create({
-      data: { label: '15/6/2026 - 20/6/2026', unitPrice: 25000, isActive: true },
+      data: {
+        label: '15/6/2026 - 20/6/2026',
+        startDate: new Date(Date.UTC(2026, 5, 15)), // Thứ 2, 15/6/2026
+        unitPrice: 25000,
+        isActive: true,
+      },
     });
 
     const defaultPassword = this.config.get<string>('DEFAULT_PASSWORD') ?? '123456';

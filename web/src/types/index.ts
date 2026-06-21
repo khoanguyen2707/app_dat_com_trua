@@ -21,6 +21,7 @@ export interface Dish {
 export interface Week {
   id: string;
   label: string;
+  startDate?: string | null;
   unitPrice: number;
   isActive: boolean;
   createdAt: string;
@@ -44,6 +45,12 @@ export interface Grid {
   week: Week;
   members: GridMember[];
   totals: { perDay: Record<DayKey, number>; totalServings: number; totalMoney: number };
+  /** Ngày bị khoá với user thường (đã qua, hoặc hôm nay đã quá giờ chốt). */
+  lockedDays?: Record<DayKey, boolean>;
+  /** Nhãn ngày dương lịch "d/M" cho mỗi cột. */
+  dates?: Record<DayKey, string | null>;
+  /** Giờ chốt đặt cơm trong ngày. */
+  cutoff?: { minutes: number; label: string };
 }
 
 export interface PaymentConfig {

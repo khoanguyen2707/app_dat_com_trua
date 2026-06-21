@@ -8,8 +8,6 @@ export default defineConfig({
   datasource: {
     // process.env (không dùng env() để không ném lỗi khi generate lúc build chưa có DATABASE_URL).
     // Lúc chạy thật, docker-compose / .env sẽ truyền DATABASE_URL thật vào.
-    url:
-      process.env.DATABASE_URL ??
-      'postgresql://postgres:postgres@localhost:5432/com_trua?schema=public',
+    url: process.env.DATABASE_URL ?? 'postgresql://postgres:postgres@localhost:5432/com_trua?schema=public',
   },
 });

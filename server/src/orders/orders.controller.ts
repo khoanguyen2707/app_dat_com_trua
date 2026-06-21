@@ -15,7 +15,7 @@ export class OrdersController {
   @Put('me')
   @ApiOperation({ summary: 'Cập nhật đăng ký ăn của chính mình (tích ngày)' })
   upsertMine(@CurrentUser() user: AuthUser, @Body() dto: UpsertOrderDto) {
-    return this.orders.upsert(user.id, dto);
+    return this.orders.upsert(user.id, dto, true);
   }
 
   @Roles(Role.ADMIN)

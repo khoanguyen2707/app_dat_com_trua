@@ -21,7 +21,7 @@
 ## 1. Cấu trúc dự án
 
 ```
-app đặt cơm trưa/
+com-trua-app/
 ├─ server/            # API NestJS + Prisma
 │  ├─ src/ (auth, users, weeks, orders, dishes, payment, seed, common, prisma)
 │  ├─ prisma/schema.prisma

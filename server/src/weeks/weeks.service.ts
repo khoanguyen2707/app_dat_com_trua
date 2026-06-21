@@ -1,9 +1,16 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { CreateWeekDto, UpdateWeekDto } from './dto/week.dto';
+import {
+  CUTOFF_LABEL,
+  CUTOFF_MINUTES,
+  computeDayDates,
+  computeLockedDays,
+  DAY_KEYS,
+  type DayKey,
+} from '@/common/week-lock';
 
-const DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
-type DayKey = (typeof DAYS)[number];
+const DAYS = DAY_KEYS;
 
 @Injectable()
 export class WeeksService {
@@ -72,7 +79,18 @@ export class WeeksService {
       week,
       members,
       totals: { perDay, totalServings, totalMoney: totalServings * week.unitPrice },
+      lockedDays: computeLockedDays(week.startDate),
+      dates: computeDayDates(week.startDate),
+      cutoff: { minutes: CUTOFF_MINUTES, label: CUTOFF_LABEL },
     };
+  }
+
+  /** "2026-06-15" -> 00:00 UTC của ngày đó (mốc lịch VN, tránh lệch múi giờ). */
+  private parseStartDate(value?: string | null): Date | null {
+    if (!value) return null;
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+    if (!m) return null;
+    return new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
   }
 
   async create(dto: CreateWeekDto) {
@@ -80,7 +98,12 @@ export class WeeksService {
       await this.prisma.week.updateMany({ data: { isActive: false }, where: { isActive: true } });
     }
     return this.prisma.week.create({
-      data: { label: dto.label, unitPrice: dto.unitPrice ?? 25000, isActive: dto.isActive ?? false },
+      data: {
+        label: dto.label,
+        startDate: this.parseStartDate(dto.startDate),
+        unitPrice: dto.unitPrice ?? 25000,
+        isActive: dto.isActive ?? false,
+      },
     });
   }
 
@@ -89,7 +112,14 @@ export class WeeksService {
     if (dto.isActive) {
       await this.prisma.week.updateMany({ data: { isActive: false }, where: { isActive: true, NOT: { id } } });
     }
-    return this.prisma.week.update({ where: { id }, data: dto });
+    const { startDate, ...rest } = dto;
+    return this.prisma.week.update({
+      where: { id },
+      data: {
+        ...rest,
+        ...(startDate !== undefined ? { startDate: this.parseStartDate(startDate) } : {}),
+      },
+    });
   }
 
   async remove(id: string) {

@@ -77,8 +77,11 @@ export const t = {
   grid: {
     title: 'Bảng đăng ký tuần',
     hintLead: '💡 Chạm ô ngày bạn ăn. ',
-    hintAdmin: 'Admin có thể tích hộ mọi người.',
+    hintAdmin: 'Admin có thể tích hộ mọi người & sửa cả ngày đã khoá.',
     hintMember: 'Bạn chỉ sửa được dòng của mình.',
+    lockHint: (cutoff: string) =>
+      `🔒 Khoá đặt cơm sau ${cutoff} mỗi ngày. Ngày đã qua chỉ admin sửa được.`,
+    locked: 'Đã khoá',
     colMember: 'Thành viên',
     colServings: 'Số suất',
     colMoney: 'Thành tiền',
@@ -87,6 +90,11 @@ export const t = {
     exportBtn: '📊 Xuất Excel',
     exported: 'Đã xuất Excel (CSV)',
     csv: { no: 'STT', name: 'Tên', total: 'TỔNG' },
+    // mobile: chọn ngày → list thành viên
+    pickDay: 'Chọn ngày',
+    dayTotal: (n: number) => `${n} suất`,
+    noEatersDay: 'Chưa ai đăng ký ngày này.',
+    eatingDay: (n: number) => `${n} người ăn`,
   },
 
   menu: {
@@ -155,6 +163,8 @@ export const t = {
     deleted: 'Đã xoá tuần',
     hint: '🆕 "Tuần mới" tạo một tuần trống và đặt làm tuần hiện hành (giữ nguyên thành viên). Tuần cũ vẫn lưu ở đây.',
     modalTitle: 'Tạo tuần mới',
+    fieldStartDate: 'Ngày bắt đầu (Thứ 2)',
+    startDateHint: 'Dùng để khoá tick theo ngày & giờ chốt 10:21.',
     fieldLabel: 'Nhãn tuần',
     labelPlaceholder: 'VD: 22/6/2026 - 27/6/2026',
     fieldUnitPrice: 'Đơn giá / suất (đ)',

@@ -18,8 +18,11 @@ export const api = {
   activeGrid: () => request<Grid>('/weeks/active'),
   weekGrid: (id: string) => request<Grid>(`/weeks/${id}/grid`),
   weeks: () => request<Week[]>('/weeks'),
-  createWeek: (label: string, unitPrice: number) =>
-    request<Week>('/weeks', { method: 'POST', body: JSON.stringify({ label, unitPrice, isActive: true }) }),
+  createWeek: (label: string, unitPrice: number, startDate?: string) =>
+    request<Week>('/weeks', {
+      method: 'POST',
+      body: JSON.stringify({ label, unitPrice, isActive: true, ...(startDate ? { startDate } : {}) }),
+    }),
   updateWeek: (id: string, data: Partial<Week>) =>
     request<Week>(`/weeks/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   deleteWeek: (id: string) => request<{ message: string }>(`/weeks/${id}`, { method: 'DELETE' }),

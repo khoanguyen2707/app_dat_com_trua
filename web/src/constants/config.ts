@@ -16,15 +16,15 @@ export const DEFAULT_DISH_PRICE = 25000;
 export const DEFAULT_AVATAR_COLOR = '#0a84ff';
 export const MIN_PASSWORD_LENGTH = 6;
 
-/** Các ngày trong tuần (khoá + nhãn hiển thị) */
-export const DAYS: { key: DayKey; label: string }[] = [
-  { key: 'mon', label: 'T2' },
-  { key: 'tue', label: 'T3' },
-  { key: 'wed', label: 'T4' },
-  { key: 'thu', label: 'T5' },
-  { key: 'fri', label: 'T6' },
-  { key: 'sat', label: 'T7' },
-  { key: 'sun', label: 'CN' },
+/** Các ngày trong tuần (khoá + nhãn ngắn + tên đầy đủ) */
+export const DAYS: { key: DayKey; label: string; full: string }[] = [
+  { key: 'mon', label: 'T2', full: 'Thứ 2' },
+  { key: 'tue', label: 'T3', full: 'Thứ 3' },
+  { key: 'wed', label: 'T4', full: 'Thứ 4' },
+  { key: 'thu', label: 'T5', full: 'Thứ 5' },
+  { key: 'fri', label: 'T6', full: 'Thứ 6' },
+  { key: 'sat', label: 'T7', full: 'Thứ 7' },
+  { key: 'sun', label: 'CN', full: 'Chủ nhật' },
 ];
 
 /** Bộ biểu tượng món ăn cho phép chọn */

@@ -33,11 +33,12 @@ model User {
 
 /// Mỗi tuần đặt cơm (tuần hiện tại + lịch sử)
 model Week {
-  id        String   @id @default(cuid())
-  label     String   @db.VarChar(100) // "15/6/2026 - 20/6/2026"
-  unitPrice Int      @default(25000)
+  id        String    @id @default(cuid())
+  label     String    @db.VarChar(100) // "15/6/2026 - 20/6/2026"
+  startDate DateTime? // Ngày Thứ 2 đầu tuần (mốc để khoá tick theo ngày/giờ VN). Null = không khoá.
+  unitPrice Int       @default(25000)
   dayMenu   Json? // { "mon": dishId, "tue": dishId, ... }
-  isActive  Boolean  @default(false)
+  isActive  Boolean   @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   orders    Order[]

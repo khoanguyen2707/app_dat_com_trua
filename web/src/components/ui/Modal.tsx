@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { IconButton } from './IconButton';
 
 export function Modal({
@@ -19,8 +20,26 @@ export function Modal({
     return () => window.removeEventListener('keydown', h);
   }, [open, onClose]);
 
+  // Khoá cuộn nền khi modal/sheet mở (tránh nền trôi lung tung trên mobile).
+  // Bù chiều rộng thanh cuộn để nội dung desktop không nhảy ngang.
+  useEffect(() => {
+    if (!open) return;
+    const { body, documentElement: html } = document;
+    const scrollbar = window.innerWidth - html.clientWidth;
+    const prevOverflow = body.style.overflow;
+    const prevPad = body.style.paddingRight;
+    body.style.overflow = 'hidden';
+    if (scrollbar > 0) body.style.paddingRight = `${scrollbar}px`;
+    return () => {
+      body.style.overflow = prevOverflow;
+      body.style.paddingRight = prevPad;
+    };
+  }, [open]);
+
   if (!open) return null;
-  return (
+  // Portal ra <body> để overlay (position: fixed) luôn phủ toàn viewport,
+  // không bị "nhốt" trong .card (card có animation/overflow tạo containing-block).
+  return createPortal(
     <div className="overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal">
         <div className="modal-h">
@@ -29,6 +48,7 @@ export function Modal({
         </div>
         <div className="modal-b">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

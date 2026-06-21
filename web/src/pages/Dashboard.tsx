@@ -26,7 +26,7 @@ export function Dashboard() {
   const password = useDisclosure();
 
   return (
-    <div>
+    <div className="app-shell">
       <TopBar weekLabel={grid?.week.label} onChangePassword={password.onOpen} onOpenSettings={settings.onOpen} />
 
       <div className="wrap">
