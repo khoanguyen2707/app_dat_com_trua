@@ -64,11 +64,22 @@ export function GridPanel({
     }
   };
 
-  /** Tap ô: trống & sửa được → đặt cơm nhanh; còn lại → mở phiếu chi tiết (sửa/xem). */
+  /**
+   * Tap ô:
+   * - trống / chỉ có nước (chưa có cơm) → đặt cơm nhanh.
+   * - chỉ có cơm (không món, không nước) → bỏ cơm nhanh (ô về trống).
+   * - có món hoặc nước → mở phiếu chi tiết (sửa/xem).
+   */
   const onCell = (m: GridMember, key: DayKey) => {
     if (saving) return;
-    if (canEditDay(m, key) && !m.days[key]) toggle(m, key);
-    else if (!readOnly || m.days[key] || m.items?.[key]) setPicked({ m, day: key });
+    if (canEditDay(m, key)) {
+      const it = m.items?.[key];
+      const bare = (it?.food.length ?? 0) === 0 && (it?.drinks.length ?? 0) === 0;
+      if (!m.days[key] || bare) toggle(m, key);
+      else setPicked({ m, day: key });
+    } else if (!readOnly || m.days[key] || m.items?.[key]) {
+      setPicked({ m, day: key });
+    }
   };
 
   const lockMine = (m: GridMember, key: DayKey) => !isAdmin && m.userId === meId && locked[key];
