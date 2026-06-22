@@ -302,7 +302,7 @@ export function GridPanel({
         <Button
           tiny
           onClick={() => {
-            exportGridCSV(grid);
+            exportGridCSV(grid, dishes);
             toast(t.grid.exported, '📊');
           }}
         >
