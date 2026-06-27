@@ -152,6 +152,28 @@ function guessCategory(key: string, price: number): DishCat {
 }
 
 /**
+ * Đoán biểu tượng (nhóm protein) theo TÊN món — làm emoji mặc định cho MÓN MỚI
+ * để gom nhóm 🐟🍗🥩… cho đẹp. Chỉ là gợi ý, admin sửa lại được trong Thực đơn.
+ */
+export function guessEmoji(name: string, category: DishCat): string {
+  const k = deburr(name);
+  const first = k.split(' ')[0];
+  if (category === 'DRINK') {
+    if (/(ca phe|caphe|cafe|bac xiu|bac siu|bac suu)/.test(k)) return '☕';
+    if (/(tra|sinh to|ep|cam|chanh|dua hau|sua chua)/.test(k)) return '🧋';
+    return '🥛';
+  }
+  if (first === 'ca' || k.startsWith('cha ca')) return '🐟';
+  if (/\b(tom|muc|nghieu|so|cua|ghe|hau|oc|bach tuoc)\b/.test(k)) return '🦐';
+  if (/\b(suon|quay|chan gio|gio heo)\b/.test(k)) return '🍖';
+  if (first === 'ga' || /\bga\b/.test(k)) return '🍗';
+  if (/\b(thit|heo|bo|ba chi|nem|xa xiu|gio lua|lon|long)\b/.test(k)) return '🥩';
+  if (/\btrung\b/.test(k)) return '🍳';
+  if (/\b(rau|cai|bong cai|muop|bi|nam|su su|dau|bau|ngon)\b/.test(k)) return '🥬';
+  return '🍲';
+}
+
+/**
  * Phân tích text thực đơn so với danh mục hiện có.
  * @param text  nội dung admin dán
  * @param catalog  danh sách Dish hiện có

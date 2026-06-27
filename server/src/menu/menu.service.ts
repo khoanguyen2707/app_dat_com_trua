@@ -1,10 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import type { DayKey } from '@/common/week-lock';
-import { matchKey, parseMenuText, type CatalogDish, type DishCat } from './menu-parse';
+import { guessEmoji, matchKey, parseMenuText, type CatalogDish } from './menu-parse';
 import { ApplyDayMenuDto } from './dto/menu.dto';
-
-const EMOJI: Record<DishCat, string> = { MAIN: '🍽️', DRINK: '🥤' };
 
 @Injectable()
 export class MenuService {
@@ -47,7 +45,7 @@ export class MenuService {
       }
       const price = item.category === 'MAIN' ? item.price || week.unitPrice : (item.price ?? 0);
       const dish = await this.prisma.dish.create({
-        data: { name, category: item.category, price, emoji: EMOJI[item.category] },
+        data: { name, category: item.category, price, emoji: guessEmoji(name, item.category) },
       });
       existingByKey.set(key, dish.id);
       createdIds.push(dish.id);
