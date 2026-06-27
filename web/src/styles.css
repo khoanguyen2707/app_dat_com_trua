@@ -239,6 +239,10 @@ tfoot td.col-name { background: #16a34a; color: #fff; } tfoot td.money { color: 
 .dd-chip:not(.ro):active { transform: scale(.94); }
 .dd-chip.on { background: var(--brand-soft); border-color: var(--brand); color: var(--brand-deep); }
 .dd-chip.ro { cursor: default; }
+/* nhóm món theo emoji trong picker chọn món */
+.dd-egroup { margin-bottom: 12px; }
+.dd-egroup:last-child { margin-bottom: 0; }
+.dd-egroup-h { font-size: 18px; line-height: 1; margin: 0 0 7px; }
 .dd-drinks { display: flex; flex-direction: column; gap: 8px; }
 .dd-drink { display: flex; align-items: center; gap: 11px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface); }
 .dd-drink.on { border-color: #cfe4ff; background: #f5f9ff; }
@@ -256,6 +260,9 @@ tfoot td.col-name { background: #16a34a; color: #fff; } tfoot td.money { color: 
 /* thực đơn: mục + card gọn */
 .menu-sec { margin-bottom: 18px; } .menu-sec:last-child { margin-bottom: 0; }
 .menu-sec-h { font-size: 14px; font-weight: 800; margin-bottom: 11px; }
+.menu-egroup { margin-bottom: 14px; } .menu-egroup:last-child { margin-bottom: 0; }
+.menu-egroup-h { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; padding-bottom: 6px; border-bottom: 1px dashed var(--line); }
+.menu-egroup-emoji { font-size: 20px; line-height: 1; }
 .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 9px; }
 .mdish { display: flex; align-items: center; gap: 10px; padding: 15px 11px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface); box-shadow: var(--shadow-sm); }
 .mdish-emoji { font-size: 23px; flex: none; }

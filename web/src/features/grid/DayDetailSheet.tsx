@@ -4,6 +4,7 @@ import type { DayKey, Dish, Grid, GridMember } from '@/types';
 import { DAYS } from '@/constants/config';
 import { t } from '@/constants/strings';
 import { cls, vnd } from '@/lib/format';
+import { groupByEmoji } from '@/lib/dishGroup';
 import { Avatar, Button, Modal, toast } from '@/components/ui';
 
 export function DayDetailSheet({
@@ -142,17 +143,22 @@ export function DayDetailSheet({
       ) : eat ? (
         <>
           {needFood && <div className="dd-foodwarn">{t.grid.detail.needFood}</div>}
-          <div className="dd-chips">
-            {mains.map((d) => (
-              <button
-                key={d.id}
-                className={cls('dd-chip', food.includes(d.id) && 'on')}
-                onClick={() => toggleFood(d.id)}
-              >
-                <span>{d.emoji}</span> {d.name}
-              </button>
-            ))}
-          </div>
+          {groupByEmoji(mains).map((g) => (
+            <div className="dd-egroup" key={g.emoji}>
+              <div className="dd-egroup-h">{g.emoji}</div>
+              <div className="dd-chips">
+                {g.dishes.map((d) => (
+                  <button
+                    key={d.id}
+                    className={cls('dd-chip', food.includes(d.id) && 'on')}
+                    onClick={() => toggleFood(d.id)}
+                  >
+                    {d.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
         </>
       ) : (
         <div className="small muted">{t.grid.detail.foodEnableHint}</div>

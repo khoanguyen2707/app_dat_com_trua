@@ -3,6 +3,7 @@ import { api } from '@/services/api';
 import type { Dish, Grid } from '@/types';
 import { t } from '@/constants/strings';
 import { vnd } from '@/lib/format';
+import { groupByEmoji } from '@/lib/dishGroup';
 import { useDisclosure } from '@/hooks/useDisclosure';
 import { Button, Card, CardBody, CardHeader, EmptyState, IconButton, toast } from '@/components/ui';
 import { DishModal } from './DishModal';
@@ -47,27 +48,35 @@ export function MenuPanel({
         <div className="menu-sec-h">
           {title} <span className="muted small">· {t.menu.sectionCount(list.length)}</span>
         </div>
-        <div className="menu-grid">
-          {list.map((d) => (
-            <div className="mdish" key={d.id}>
-              <span className="mdish-emoji">{d.emoji || '🍽️'}</span>
-              <span className="mdish-info">
-                <b>{d.name}</b>
-                <span className="mdish-price">{vnd(d.price)}</span>
-              </span>
-              {isAdmin && (
-                <span className="mdish-act">
-                  <IconButton title={t.actions.edit} onClick={() => setEditing(d)}>
-                    ✏️
-                  </IconButton>
-                  <IconButton title={t.actions.delete} onClick={() => remove(d)}>
-                    🗑️
-                  </IconButton>
-                </span>
-              )}
+        {groupByEmoji(list).map((g) => (
+          <div className="menu-egroup" key={g.emoji}>
+            <div className="menu-egroup-h">
+              <span className="menu-egroup-emoji">{g.emoji}</span>
+              <span className="muted small">{t.menu.sectionCount(g.dishes.length)}</span>
             </div>
-          ))}
-        </div>
+            <div className="menu-grid">
+              {g.dishes.map((d) => (
+                <div className="mdish" key={d.id}>
+                  <span className="mdish-emoji">{d.emoji || '🍽️'}</span>
+                  <span className="mdish-info">
+                    <b>{d.name}</b>
+                    <span className="mdish-price">{vnd(d.price)}</span>
+                  </span>
+                  {isAdmin && (
+                    <span className="mdish-act">
+                      <IconButton title={t.actions.edit} onClick={() => setEditing(d)}>
+                        ✏️
+                      </IconButton>
+                      <IconButton title={t.actions.delete} onClick={() => remove(d)}>
+                        🗑️
+                      </IconButton>
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     );
 
