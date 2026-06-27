@@ -56,7 +56,9 @@ export function Dashboard() {
                 onMutate={mutateGrid}
               />
             )}
-            {tab === 'menu' && <MenuPanel dishes={dishes} isAdmin={isAdmin} reload={reloadDishes} />}
+            {tab === 'menu' && (
+              <MenuPanel dishes={dishes} isAdmin={isAdmin} reload={reloadDishes} grid={grid} reloadGrid={reloadGrid} />
+            )}
             {tab === 'pay' && payment && (
               <PaymentPanel
                 grid={grid}

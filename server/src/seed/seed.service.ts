@@ -69,30 +69,28 @@ export class SeedService {
   async run() {
     await this.seedPayment();
     await this.seedAdmin();
-    await this.seedDishes(); // thực đơn: backfill món chuẩn còn thiếu mỗi lần khởi động (không phụ thuộc SEED_DEMO)
+    await this.seedDishes(); // thực đơn: chỉ seed khi DB còn trống, sau đó KHÔNG động vào nữa
     if ((this.config.get<string>('SEED_DEMO') ?? 'true') === 'true') {
       await this.seedDemo();
     }
   }
 
   /**
-   * Đảm bảo thực đơn chuẩn luôn có mặt: thêm món nào còn THIẾU (so theo name),
-   * KHÔNG đụng món admin đã tự thêm/sửa và KHÔNG tạo trùng. Idempotent & tự đồng
-   * bộ mỗi lần deploy (khắc phục DB production cũ thiếu món/đồ uống mới).
+   * Seed thực đơn chuẩn CHỈ KHI bảng Dish đang trống (lần đầu khởi tạo DB).
+   * Khi đã có món, server KHÔNG đụng vào thực đơn nữa: admin tự xóa/đổi tên/sửa
+   * giá tùy ý, món sẽ KHÔNG bị tự thêm lại mỗi lần khởi động.
    */
   private async seedDishes() {
-    const existing = await this.prisma.dish.findMany({ select: { name: true } });
-    const existingNames = new Set(existing.map((d) => d.name));
-    const missing = DISHES.filter((d) => !existingNames.has(d.name));
-    if (missing.length === 0) {
-      return; // menu chuẩn đã đủ -> bỏ qua
+    const count = await this.prisma.dish.count();
+    if (count > 0) {
+      return; // đã có thực đơn -> không động vào
     }
-    for (const d of missing) {
+    for (const d of DISHES) {
       await this.prisma.dish.create({
         data: { name: d.name, emoji: d.emoji, price: d.price, category: d.category },
       });
     }
-    this.logger.log(`Backfill ${missing.length}/${DISHES.length} món còn thiếu vào thực đơn`);
+    this.logger.log(`Seed thực đơn lần đầu: ${DISHES.length} món`);
   }
 
   private async seedPayment() {

@@ -265,6 +265,35 @@ tfoot td.col-name { background: #16a34a; color: #fff; } tfoot td.money { color: 
 .mdish-act { display: flex; gap: 2px; flex: none; }
 .mdish-act .btn-ico { width: 30px; height: 30px; font-size: 14px; border-radius: 9px; }
 
+/* đăng thực đơn theo ngày (admin dán text -> diff -> áp dụng) */
+.dm-days { display: flex; flex-wrap: wrap; gap: 7px; }
+.dm-day { display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 52px; padding: 8px 10px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface-2); color: var(--text); transition: border-color .2s, background .2s, color .2s; }
+.dm-day .dm-day-date { font-size: 10.5px; color: var(--muted); font-weight: 600; }
+.dm-day.on { border-color: var(--brand); background: var(--brand-soft); color: var(--brand-deep); }
+.dm-day.on .dm-day-date { color: var(--brand); }
+.dm-text { width: 100%; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); font: inherit; line-height: 1.5; resize: vertical; min-height: 150px; }
+.dm-text:focus { outline: none; border-color: var(--brand); background: #fff; box-shadow: 0 0 0 4px var(--brand-soft); }
+.dm-summary { font-size: 13px; font-weight: 700; color: var(--brand-deep); background: var(--brand-soft); border: 1px solid #ffd2bf; border-radius: 12px; padding: 9px 13px; margin-bottom: 14px; }
+.dm-group { margin-bottom: 16px; }
+.dm-group-h { font-size: 13.5px; font-weight: 800; margin-bottom: 4px; }
+.dm-group-hint { font-size: 12px; color: var(--muted); margin-bottom: 9px; }
+.dm-item { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); margin-bottom: 7px; transition: opacity .2s; }
+.dm-item.off { opacity: .5; }
+.dm-cb { width: 19px; height: 19px; flex: none; accent-color: var(--brand); }
+.dm-item-main { flex: 1 1 130px; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.dm-item-main b { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dm-near { font-size: 11.5px; font-weight: 600; color: #b25e00; }
+.dm-seg { display: flex; flex: none; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 3px; }
+.dm-seg button { padding: 5px 9px; border-radius: 8px; font-size: 12px; font-weight: 700; color: var(--muted); }
+.dm-seg button.on { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); }
+.dm-price { width: 86px; flex: none; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); font: inherit; font-weight: 700; text-align: right; }
+.dm-price:focus { outline: none; border-color: var(--brand); background: #fff; }
+.dm-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.dm-chip { display: inline-flex; align-items: center; gap: 5px; padding: 7px 11px; border-radius: 20px; font-size: 13px; font-weight: 600; background: var(--surface-2); border: 1.5px solid var(--line); color: var(--text); transition: border-color .2s, background .2s, color .2s, opacity .2s; }
+.dm-chip.on { background: var(--green-soft); border-color: #9be0b4; color: var(--green); }
+.dm-chip.mute { opacity: .55; }
+.dd-menuhint { font-size: 12px; font-weight: 600; color: var(--brand-deep); background: var(--brand-soft); border: 1px solid #ffd2bf; border-radius: 10px; padding: 7px 11px; margin-top: 12px; }
+
 /* payment: breakdown cơm + nước */
 .pay-breakdown { width: 100%; max-width: 280px; margin: 12px auto 0; text-align: left; }
 .pay-breakdown > div { display: flex; justify-content: space-between; font-size: 13.5px; color: var(--muted); padding: 3px 0; }

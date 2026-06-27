@@ -62,11 +62,33 @@ export interface Week {
   unitPrice: number;
   isActive: boolean;
   createdAt: string;
+  /** Thực đơn bán theo ngày: { mon: [dishId, ...], ... }. Ngày có list → picker chỉ hiện món đó. */
+  dayMenu?: Record<string, string[]> | null;
   servings?: number;
   foodTotal?: number;
   drinksTotal?: number;
   total?: number;
   memberCount?: number;
+}
+
+/** 1 dòng trong kết quả phân tích "thực đơn hôm nay". */
+export interface MenuParsedItem {
+  raw: string;
+  name: string;
+  key: string;
+  price: number;
+  category: DishCategory;
+  match: 'existing' | 'new';
+  dishId?: string;
+  maybeSameAs?: { id: string; name: string; score: number } | null;
+}
+
+/** Kết quả so text thực đơn với danh mục: tạo mới / đã có / ẩn hôm nay. */
+export interface MenuDiff {
+  items: MenuParsedItem[];
+  create: MenuParsedItem[];
+  matched: MenuParsedItem[];
+  hidden: { id: string; name: string; category: DishCategory; price: number }[];
 }
 
 export interface GridMember {

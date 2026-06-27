@@ -28,8 +28,8 @@ export class CreateWeekDto {
 }
 
 export class UpdateWeekDto extends PartialType(CreateWeekDto) {
-  @ApiPropertyOptional({ description: 'Gán món theo ngày: { "mon": dishId, ... }' })
+  @ApiPropertyOptional({ description: 'Thực đơn bán theo ngày: { "mon": [dishId, ...], ... }' })
   @IsOptional()
   @IsObject()
-  dayMenu?: Record<string, string>;
+  dayMenu?: Record<string, string[]>;
 }

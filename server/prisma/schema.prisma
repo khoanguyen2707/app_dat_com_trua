@@ -50,7 +50,7 @@ model Week {
   label     String    @db.VarChar(100) // "15/6/2026 - 20/6/2026"
   startDate DateTime? // Ngày Thứ 2 đầu tuần (mốc để khoá tick theo ngày/giờ VN). Null = không khoá.
   unitPrice Int       @default(25000)
-  dayMenu   Json? // { "mon": dishId, "tue": dishId, ... }
+  dayMenu   Json? // Thực đơn bán theo ngày: { "mon": [dishId, ...], ... }. Ngày có list -> picker chỉ hiện món đó; ngày trống -> full catalog.
   isActive   Boolean     @default(false)
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt

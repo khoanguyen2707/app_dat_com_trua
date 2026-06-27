@@ -6,6 +6,7 @@ import { UsersModule } from './users/users.module';
 import { WeeksModule } from './weeks/weeks.module';
 import { OrdersModule } from './orders/orders.module';
 import { DishesModule } from './dishes/dishes.module';
+import { MenuModule } from './menu/menu.module';
 import { PaymentModule } from './payment/payment.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { HealthModule } from './health/health.module';
@@ -23,6 +24,7 @@ import { SeedModule } from './seed/seed.module';
     WeeksModule,
     OrdersModule,
     DishesModule,
+    MenuModule,
     PaymentModule,
     NotificationsModule,
     HealthModule,
