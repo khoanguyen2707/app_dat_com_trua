@@ -1,15 +1,29 @@
 import { useState } from 'react';
 import { api } from '@/services/api';
-import type { Dish } from '@/types';
+import type { Dish, Grid } from '@/types';
 import { t } from '@/constants/strings';
 import { vnd } from '@/lib/format';
 import { useDisclosure } from '@/hooks/useDisclosure';
 import { Button, Card, CardBody, CardHeader, EmptyState, IconButton, toast } from '@/components/ui';
 import { DishModal } from './DishModal';
+import { DayMenuModal } from './DayMenuModal';
 
-export function MenuPanel({ dishes, isAdmin, reload }: { dishes: Dish[]; isAdmin: boolean; reload: () => Promise<void> }) {
+export function MenuPanel({
+  dishes,
+  isAdmin,
+  reload,
+  grid,
+  reloadGrid,
+}: {
+  dishes: Dish[];
+  isAdmin: boolean;
+  reload: () => Promise<void>;
+  grid: Grid;
+  reloadGrid: () => Promise<void>;
+}) {
   const [editing, setEditing] = useState<Dish | null>(null);
   const create = useDisclosure();
+  const postMenu = useDisclosure();
   const modalOpen = create.open || editing !== null;
 
   const closeModal = () => {
@@ -64,9 +78,14 @@ export function MenuPanel({ dishes, isAdmin, reload }: { dishes: Dish[]; isAdmin
         title={t.menu.title}
         action={
           isAdmin && (
-            <Button tiny variant="primary" onClick={create.onOpen}>
-              {t.menu.addBtn}
-            </Button>
+            <span className="row" style={{ gap: 6 }}>
+              <Button tiny variant="primary" onClick={postMenu.onOpen}>
+                {t.menu.post.btn}
+              </Button>
+              <Button tiny onClick={create.onOpen}>
+                {t.menu.addBtn}
+              </Button>
+            </span>
           )
         }
       />
@@ -91,6 +110,16 @@ export function MenuPanel({ dishes, isAdmin, reload }: { dishes: Dish[]; isAdmin
           onSaved={async () => {
             closeModal();
             await reload();
+          }}
+        />
+      )}
+
+      {postMenu.open && (
+        <DayMenuModal
+          grid={grid}
+          onClose={postMenu.onClose}
+          onApplied={async () => {
+            await Promise.all([reload(), reloadGrid()]);
           }}
         />
       )}

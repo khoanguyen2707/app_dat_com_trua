@@ -3,7 +3,9 @@ import type {
   DayDetail,
   DayKey,
   Dish,
+  DishCategory,
   Grid,
+  MenuDiff,
   NotificationFeed,
   PaymentConfig,
   PaymentStatus,
@@ -64,6 +66,21 @@ export const api = {
   updateDish: (id: string, d: Partial<Dish>) =>
     request<Dish>(`/dishes/${id}`, { method: 'PATCH', body: JSON.stringify(d) }),
   deleteDish: (id: string) => request<{ message: string }>(`/dishes/${id}`, { method: 'DELETE' }),
+
+  // thực đơn theo ngày (admin dán text → phân tích → áp dụng)
+  parseMenu: (text: string) => request<MenuDiff>('/menu/parse', { method: 'POST', body: JSON.stringify({ text }) }),
+  applyDayMenu: (payload: {
+    weekId?: string;
+    day: DayKey;
+    create: { name: string; category: DishCategory; price?: number }[];
+    dishIds: string[];
+  }) =>
+    request<{ weekId: string; day: DayKey; availableIds: string[]; createdCount: number; dayMenu: Record<string, string[]> }>(
+      '/menu/day',
+      { method: 'POST', body: JSON.stringify(payload) },
+    ),
+  clearDayMenu: (day: DayKey, weekId?: string) =>
+    request(`/menu/day/${day}${weekId ? `?weekId=${weekId}` : ''}`, { method: 'DELETE' }),
 
   // payment
   payment: () => request<PaymentConfig>('/payment'),

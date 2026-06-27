@@ -32,8 +32,6 @@ export function DayDetailSheet({
   const date = grid.dates?.[day];
 
   const dishMap = useMemo(() => new Map(dishes.map((d) => [d.id, d])), [dishes]);
-  const mains = useMemo(() => dishes.filter((d) => d.category === 'MAIN'), [dishes]);
-  const drinks = useMemo(() => dishes.filter((d) => d.category === 'DRINK'), [dishes]);
   const priceOf = (id: string) => dishMap.get(id)?.price ?? 0;
 
   const current = member.items?.[day];
@@ -43,6 +41,21 @@ export function DayDetailSheet({
     Object.fromEntries((current?.drinks ?? []).map((d) => [d.dishId, d.qty])),
   );
   const [saving, setSaving] = useState(false);
+
+  // Lọc theo thực đơn ngày: ngày nào admin đã đăng menu thì chỉ hiện món đó
+  // (vẫn giữ món đang được chọn để user còn thấy & bỏ ra được).
+  const allowedSet = useMemo(() => {
+    const list = grid.week.dayMenu?.[day];
+    return list && list.length ? new Set(list) : null; // null = không giới hạn
+  }, [grid.week.dayMenu, day]);
+  const mains = useMemo(
+    () => dishes.filter((d) => d.category === 'MAIN' && (!allowedSet || allowedSet.has(d.id) || food.includes(d.id))),
+    [dishes, allowedSet, food],
+  );
+  const drinks = useMemo(
+    () => dishes.filter((d) => d.category === 'DRINK' && (!allowedSet || allowedSet.has(d.id) || (qty[d.id] ?? 0) > 0)),
+    [dishes, allowedSet, qty],
+  );
 
   const chosenDrinks = Object.entries(qty).filter(([, n]) => n > 0);
   /** Quy tắc: đặt cơm thì bắt buộc chọn ít nhất 1 món → chặn Lưu nếu thiếu. */
@@ -109,6 +122,8 @@ export function DayDetailSheet({
           <span className="small muted">{t.grid.detail.eatPrice(vnd(grid.week.unitPrice))}</span>
         </span>
       </button>
+
+      {editable && allowedSet && <div className="dd-menuhint">{t.grid.detail.todayMenuOnly}</div>}
 
       {/* Món ăn */}
       <div className="dd-sec">{t.grid.detail.foodSection}</div>
