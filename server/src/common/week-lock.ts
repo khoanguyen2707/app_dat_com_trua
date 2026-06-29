@@ -68,6 +68,20 @@ export function computeLockedDays(startDate: Date | null | undefined, now: Date 
   return locked;
 }
 
+/** Ngày theo lịch VN dạng "YYYY-MM-DD" (mốc để chốt đúng 1 lượt lấy cơm mỗi ngày). */
+export function vnDateStr(now: Date = new Date()): string {
+  const v = vnShift(now);
+  const m = String(v.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(v.getUTCDate()).padStart(2, '0');
+  return `${v.getUTCFullYear()}-${m}-${d}`;
+}
+
+/** DayKey ('mon'..'sun') ứng với HÔM NAY theo lịch VN. */
+export function vnTodayKey(now: Date = new Date()): DayKey {
+  const dow = vnShift(now).getUTCDay(); // 0=CN, 1=T2, ... 6=T7
+  return dow === 0 ? 'sun' : DAY_KEYS[dow - 1];
+}
+
 /** Nhãn ngày dương lịch "d/M" cho từng cột (để FE hiển thị). */
 export function computeDayDates(startDate: Date | null | undefined): Record<DayKey, string | null> {
   const out = Object.fromEntries(DAY_KEYS.map((d) => [d, null])) as Record<DayKey, string | null>;

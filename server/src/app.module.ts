@@ -9,6 +9,7 @@ import { DishesModule } from './dishes/dishes.module';
 import { MenuModule } from './menu/menu.module';
 import { PaymentModule } from './payment/payment.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { PickupModule } from './pickup/pickup.module';
 import { HealthModule } from './health/health.module';
 import { SeedModule } from './seed/seed.module';
 
@@ -27,6 +28,7 @@ import { SeedModule } from './seed/seed.module';
     MenuModule,
     PaymentModule,
     NotificationsModule,
+    PickupModule,
     HealthModule,
     SeedModule,
   ],

@@ -35,11 +35,13 @@ model User {
   role       Role        @default(USER)
   active     Boolean     @default(true)
   color      String?     @db.VarChar(20)
+  teamsEmail String?     @db.VarChar(150) // email Microsoft 365 thật để @mention trong Teams (người đi lấy cơm)
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
   orders     Order[]
   orderItems OrderItem[]
   notifications Notification[]
+  pickups    PickupAssignment[]
 
   @@map("users")
 }
@@ -133,6 +135,21 @@ model OrderItem {
 
   @@index([weekId, userId])
   @@map("order_items")
+}
+
+/// Lịch sử "lượt đi lấy cơm" — xoay tua công bằng giữa những người có đặt cơm.
+/// date = ngày theo lịch VN ("YYYY-MM-DD"); @unique để 1 ngày chỉ chốt đúng 1 người
+/// (idempotent: Power Automate gọi lại trong ngày vẫn ra cùng người, không bốc lại).
+model PickupAssignment {
+  id        String   @id @default(cuid())
+  date      String   @unique @db.VarChar(10)
+  userId    String
+  weekId    String? // tuần lúc chốt (để tham chiếu, không bắt buộc)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("pickup_assignments")
 }
 
 /// Thông tin thanh toán (singleton, admin chỉnh sửa)

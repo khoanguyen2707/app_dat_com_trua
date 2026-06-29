@@ -2,7 +2,16 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 
-const SELECT = { id: true, email: true, fullName: true, role: true, active: true, color: true, createdAt: true };
+const SELECT = {
+  id: true,
+  email: true,
+  fullName: true,
+  role: true,
+  active: true,
+  color: true,
+  teamsEmail: true,
+  createdAt: true,
+};
 
 @Injectable()
 export class UsersService {
