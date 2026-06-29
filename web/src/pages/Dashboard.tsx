@@ -76,6 +76,7 @@ export function Dashboard() {
                 dishes={dishes}
                 isAdmin={isAdmin}
                 meId={user!.id}
+                payment={payment}
                 reload={async () => {
                   await Promise.all([reloadWeeks(), reloadGrid()]);
                 }}
