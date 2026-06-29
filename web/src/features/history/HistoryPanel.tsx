@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { api } from '@/services/api';
-import type { Dish, Week } from '@/types';
+import type { Dish, PaymentConfig, Week } from '@/types';
 import { t } from '@/constants/strings';
 import { vnd } from '@/lib/format';
 import { useDisclosure } from '@/hooks/useDisclosure';
@@ -13,12 +13,14 @@ export function HistoryPanel({
   dishes,
   isAdmin,
   meId,
+  payment,
   reload,
 }: {
   weeks: Week[];
   dishes: Dish[];
   isAdmin: boolean;
   meId: string;
+  payment: PaymentConfig | null;
   reload: () => Promise<void>;
 }) {
   const create = useDisclosure();
@@ -85,7 +87,14 @@ export function HistoryPanel({
         />
       )}
       {viewing && (
-        <HistoryWeekModal week={viewing} dishes={dishes} meId={meId} onClose={() => setViewing(null)} />
+        <HistoryWeekModal
+          week={viewing}
+          dishes={dishes}
+          meId={meId}
+          isAdmin={isAdmin}
+          payment={payment}
+          onClose={() => setViewing(null)}
+        />
       )}
     </Card>
   );
