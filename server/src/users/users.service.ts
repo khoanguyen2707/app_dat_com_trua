@@ -10,6 +10,7 @@ const SELECT = {
   active: true,
   color: true,
   teamsEmail: true,
+  pickupOptOut: true,
   createdAt: true,
 };
 
