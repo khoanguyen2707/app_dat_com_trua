@@ -1,6 +1,6 @@
 # 🍱 Đặt Cơm Trưa — Full-stack (NestJS + Prisma + React)
 
-Ứng dụng đặt cơm trưa cho nhóm: mỗi người **tự đăng ký tài khoản**, **tích ngày ăn theo tuần** (mix nhiều món/ngày vẫn 1 suất, thêm **đồ uống** tính tiền riêng), hệ thống **tự tính suất & tiền**. **Khoá đặt theo giờ/ngày** (chỉ đặt hôm nay trước giờ chốt 10:21). **Thanh toán QR** (VietQR điền sẵn số tiền) theo quy trình **user báo đã chuyển → admin xác nhận**, kèm **chuông thông báo**. Có thống kê, lịch sử tuần (xem lại read-only). **Admin** quản lý món ăn, thành viên, đơn giá, thông tin thanh toán, phân quyền.
+Ứng dụng đặt cơm trưa cho nhóm: mỗi người **tự đăng ký tài khoản**, **tích ngày ăn theo tuần** (mix nhiều món/ngày vẫn 1 suất, thêm **đồ uống** tính tiền riêng), hệ thống **tự tính suất & tiền**. **Khoá đặt theo giờ/ngày** (chỉ đặt hôm nay trước giờ chốt 10:21). **Thanh toán QR** (VietQR điền sẵn số tiền) theo quy trình **user báo đã chuyển → admin xác nhận**, kèm **chuông thông báo**. Có thống kê, lịch sử tuần (xem lại; **vẫn thanh toán/đối soát tuần cũ nếu còn nợ**), và **chọn người đi lấy cơm xoay tua công bằng** (tag vào Microsoft Teams qua Power Automate). **Admin** quản lý món ăn, thành viên, đơn giá, thông tin thanh toán, phân quyền.
 
 | Phần | Công nghệ |
 |------|-----------|
@@ -14,7 +14,7 @@
 
 > Thư mục `docs/` là **tài liệu nội bộ** (đã `.gitignore`). Nguồn là `.md`; chạy `node docs/build-docs.mjs` để sinh lại bản `.html` (cùng style + điều hướng).
 
-- [docs/NGHIEP-VU.md](docs/NGHIEP-VU.md) — **nghiệp vụ**: đặt cơm, khoá giờ/ngày, mix món + đồ uống, thanh toán + thông báo
+- [docs/NGHIEP-VU.md](docs/NGHIEP-VU.md) — **nghiệp vụ**: đặt cơm, khoá giờ/ngày, mix món + đồ uống, thanh toán + thông báo, người đi lấy cơm (Teams)
 - [docs/CHAY-LOCAL.md](docs/CHAY-LOCAL.md) — chạy local + các lỗi đã gặp & cách sửa (Prisma 7, Docker, cổng, IPv4)
 - [docs/DEPLOY.md](docs/DEPLOY.md) — deploy cho mọi người dùng chung (Render + Neon, free + HTTPS)
 - [docs/GIT-PUSH.md](docs/GIT-PUSH.md) — đẩy code lên GitHub
@@ -124,6 +124,7 @@ Combo free ổn định: **Neon** (PostgreSQL free, không hết hạn) + **Rend
 | Thực đơn | `GET /dishes` · `POST/PATCH/DELETE /dishes/:id` *(admin)* |
 | Thanh toán | `GET /payment` · `PATCH /payment` *(admin)* |
 | Thông báo | `GET /notifications` · `PATCH /notifications/read` |
+| Lấy cơm | `POST /pickup/today` (bốc người, header `x-pickup-token`) · `GET /pickup/today` · `GET /pickup/history` *(admin)* |
 | Thành viên | `GET /users` · `PATCH/DELETE /users/:id` *(admin)* |
 
 ---
@@ -138,6 +139,7 @@ Combo free ổn định: **Neon** (PostgreSQL free, không hết hạn) + **Rend
 | `DEFAULT_PASSWORD` | Mật khẩu mặc định cho thành viên seed |
 | `SEED_DEMO` | `true` để seed mẫu (đặt `false` khi đã có dữ liệu thật) |
 | `CORS_ORIGIN` | Origin của frontend (vd `https://comtrua.vn`) |
+| `PICKUP_TOKEN` | Token bí mật để Power Automate gọi `POST /pickup/today` (bốc người đi lấy cơm). Bỏ trống = endpoint từ chối mọi request |
 
 ---
 
