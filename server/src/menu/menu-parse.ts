@@ -112,7 +112,7 @@ function cleanName(line: string): string {
   }
   s = words
     .join(' ')
-    .replace(/[\s.\-]+$/u, '')
+    .replace(/[\s.-]+$/u, '')
     .trim();
   return s;
 }
