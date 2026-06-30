@@ -9,11 +9,16 @@ export class UpdateUserDto {
   @MaxLength(150)
   fullName?: string;
 
-  @ApiPropertyOptional({ description: 'Email Microsoft 365 thật để @mention trong Teams (người đi lấy cơm)' })
+  @ApiPropertyOptional({ description: 'Email/Object ID Microsoft 365 để @mention trong Teams (người đi lấy cơm)' })
   @IsOptional()
   @IsString()
   @MaxLength(150)
   teamsEmail?: string;
+
+  @ApiPropertyOptional({ description: 'true = miễn đi lấy cơm (không bao giờ bị bốc trong xoay tua)' })
+  @IsOptional()
+  @IsBoolean()
+  pickupOptOut?: boolean;
 
   @ApiPropertyOptional({ enum: Role })
   @IsOptional()

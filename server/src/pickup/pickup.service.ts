@@ -79,10 +79,10 @@ export class PickupService {
     });
     if (!week) return { date, picked: false, reason: 'Chưa có tuần nào đang mở' };
 
-    // Lọc thẳng trong DB: chỉ người CÓ đặt cơm hôm nay + đang active.
+    // Lọc thẳng trong DB: chỉ người CÓ đặt cơm hôm nay + đang active + KHÔNG opt-out.
     const dayFilter: Partial<Record<DayKey, boolean>> = { [vnTodayKey()]: true };
     const orders = await this.prisma.order.findMany({
-      where: { weekId: week.id, user: { active: true }, ...dayFilter },
+      where: { weekId: week.id, user: { active: true, pickupOptOut: false }, ...dayFilter },
       include: { user: { select: PICK_SELECT } },
     });
     const candidates = orders.map((o) => o.user);

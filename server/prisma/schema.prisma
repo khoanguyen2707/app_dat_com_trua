@@ -35,7 +35,8 @@ model User {
   role       Role        @default(USER)
   active     Boolean     @default(true)
   color      String?     @db.VarChar(20)
-  teamsEmail String?     @db.VarChar(150) // email Microsoft 365 thật để @mention trong Teams (người đi lấy cơm)
+  teamsEmail String?     @db.VarChar(150) // email/Object ID Microsoft 365 để @mention trong Teams (người đi lấy cơm)
+  pickupOptOut Boolean   @default(false) // true = miễn đi lấy cơm (không bao giờ bị bốc trong xoay tua)
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
   orders     Order[]
