@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsArray, IsIn, IsInt, IsOptional, IsString, MaxLength, Min, ValidateNested } from 'class-validator';
+import { IsArray, IsBoolean, IsIn, IsInt, IsOptional, IsString, MaxLength, Min, ValidateNested } from 'class-validator';
 import { DAY_KEYS, type DayKey } from '@/common/week-lock';
 
 const CATEGORIES = ['MAIN', 'DRINK'] as const;
@@ -52,4 +52,12 @@ export class ApplyDayMenuDto {
   @IsArray()
   @IsString({ each: true })
   dishIds: string[];
+
+  @ApiPropertyOptional({
+    default: true,
+    description: 'Bắn webhook Power Automate (đăng thực đơn lên Teams) sau khi áp dụng. false = chỉ lưu, không báo',
+  })
+  @IsOptional()
+  @IsBoolean()
+  notify?: boolean;
 }

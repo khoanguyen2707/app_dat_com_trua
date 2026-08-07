@@ -91,6 +91,23 @@ export interface MenuDiff {
   hidden: { id: string; name: string; category: DishCategory; price: number }[];
 }
 
+/** Trạng thái bắn webhook Power Automate: đã gửi / bỏ qua (tắt hoặc chưa cấu hình) / lỗi. */
+export interface WebhookResult {
+  status: 'sent' | 'skipped' | 'failed';
+  httpStatus?: number;
+  error?: string;
+}
+
+/** Kết quả áp dụng thực đơn 1 ngày (kèm trạng thái thông báo Teams). */
+export interface MenuApplyResult {
+  weekId: string;
+  day: DayKey;
+  availableIds: string[];
+  createdCount: number;
+  dayMenu: Record<string, string[]>;
+  webhook: WebhookResult;
+}
+
 export interface GridMember {
   userId: string;
   fullName: string;

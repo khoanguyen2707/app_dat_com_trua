@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { Role } from '@/common/enums/role.enum';
@@ -23,6 +23,20 @@ export class MenuController {
   @ApiOperation({ summary: 'Admin: áp dụng thực đơn 1 ngày (tạo món mới + đặt món bán hôm nay)' })
   applyDay(@Body() dto: ApplyDayMenuDto) {
     return this.menu.applyDay(dto);
+  }
+
+  @Get('announce/:day')
+  @ApiOperation({
+    summary: 'Admin: xem trước payload webhook của 1 ngày đã đăng (dán vào Parse JSON bên Power Automate)',
+  })
+  previewAnnounce(@Param('day') day: DayKey, @Query('weekId') weekId?: string) {
+    return this.menu.announce(day, weekId, false);
+  }
+
+  @Post('announce/:day')
+  @ApiOperation({ summary: 'Admin: bắn lại webhook thực đơn của 1 ngày (gửi lại Teams / test flow)' })
+  resendAnnounce(@Param('day') day: DayKey, @Query('weekId') weekId?: string) {
+    return this.menu.announce(day, weekId, true);
   }
 
   @Delete('day/:day')
