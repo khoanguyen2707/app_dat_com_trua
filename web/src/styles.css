@@ -301,6 +301,10 @@ tfoot td.col-name { background: #16a34a; color: #fff; } tfoot td.money { color: 
 .dm-chip { display: inline-flex; align-items: center; gap: 5px; padding: 7px 11px; border-radius: 20px; font-size: 13px; font-weight: 600; background: var(--surface-2); border: 1.5px solid var(--line); color: var(--text); transition: border-color .2s, background .2s, color .2s, opacity .2s; }
 .dm-chip.on { background: var(--green-soft); border-color: #9be0b4; color: var(--green); }
 .dm-chip.mute { opacity: .55; }
+.dm-notify { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); cursor: pointer; }
+.dm-notify > span { display: flex; flex-direction: column; gap: 2px; }
+.dm-notify b { font-size: 13.5px; }
+.dm-notify .dm-group-hint { margin-bottom: 0; }
 .dd-menuhint { font-size: 12px; font-weight: 600; color: var(--brand-deep); background: var(--brand-soft); border: 1px solid #ffd2bf; border-radius: 10px; padding: 7px 11px; margin-top: 12px; }
 
 /* payment: breakdown cơm + nước */

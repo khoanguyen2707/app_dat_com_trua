@@ -24,6 +24,7 @@ export function DayMenuModal({ grid, onClose, onApplied }: { grid: Grid; onClose
   const [matched, setMatched] = useState<Record<string, boolean>>({});
   const [parsing, setParsing] = useState(false);
   const [applying, setApplying] = useState(false);
+  const [notify, setNotify] = useState(true);
 
   const patchCreate = (key: string, patch: Partial<CreateState>) =>
     setCreateState((m) => ({ ...m, [key]: { ...m[key], ...patch } }));
@@ -62,8 +63,11 @@ export function DayMenuModal({ grid, onClose, onApplied }: { grid: Grid; onClose
     if (create.length + dishIds.length === 0) return toast(t.menu.post.nothing, '🍽️');
     setApplying(true);
     try {
-      const res = await api.applyDayMenu({ weekId: grid.week.id, day, create, dishIds });
+      const res = await api.applyDayMenu({ weekId: grid.week.id, day, create, dishIds, notify });
       toast(t.menu.post.applied(res.availableIds.length), '📋');
+      // Bước cuối: webhook Power Automate. Lỗi webhook không chặn việc đăng — chỉ báo cho admin biết.
+      if (res.webhook.status === 'sent') toast(t.menu.post.notifySent, '📣');
+      else if (res.webhook.status === 'failed') toast(t.menu.post.notifyFailed(res.webhook.error ?? ''), '⚠️');
       await onApplied();
       onClose();
     } catch (e: any) {
@@ -183,6 +187,14 @@ export function DayMenuModal({ grid, onClose, onApplied }: { grid: Grid; onClose
               </div>
             </div>
           )}
+
+          <label className="dm-notify">
+            <input type="checkbox" className="dm-cb" checked={notify} onChange={(e) => setNotify(e.target.checked)} />
+            <span>
+              <b>{t.menu.post.notifyLabel}</b>
+              <span className="dm-group-hint">{t.menu.post.notifyHint}</span>
+            </span>
+          </label>
 
           <div className="modal-actions">
             <Button onClick={() => setDiff(null)}>{t.menu.post.editText}</Button>

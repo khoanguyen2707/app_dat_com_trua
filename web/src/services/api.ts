@@ -5,6 +5,7 @@ import type {
   Dish,
   DishCategory,
   Grid,
+  MenuApplyResult,
   MenuDiff,
   NotificationFeed,
   PaymentConfig,
@@ -74,11 +75,9 @@ export const api = {
     day: DayKey;
     create: { name: string; category: DishCategory; price?: number }[];
     dishIds: string[];
-  }) =>
-    request<{ weekId: string; day: DayKey; availableIds: string[]; createdCount: number; dayMenu: Record<string, string[]> }>(
-      '/menu/day',
-      { method: 'POST', body: JSON.stringify(payload) },
-    ),
+    /** false = chỉ lưu, không bắn webhook đăng thực đơn lên Teams */
+    notify?: boolean;
+  }) => request<MenuApplyResult>('/menu/day', { method: 'POST', body: JSON.stringify(payload) }),
   clearDayMenu: (day: DayKey, weekId?: string) =>
     request(`/menu/day/${day}${weekId ? `?weekId=${weekId}` : ''}`, { method: 'DELETE' }),
 

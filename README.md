@@ -15,6 +15,7 @@
 > Thư mục `docs/` là **tài liệu nội bộ** (đã `.gitignore`). Nguồn là `.md`; chạy `node docs/build-docs.mjs` để sinh lại bản `.html` (cùng style + điều hướng).
 
 - [docs/NGHIEP-VU.md](docs/NGHIEP-VU.md) — **nghiệp vụ**: đặt cơm, khoá giờ/ngày, mix món + đồ uống, thanh toán + thông báo, người đi lấy cơm (Teams)
+- [docs/POWER-AUTOMATE.md](docs/POWER-AUTOMATE.md) — **Power Automate**: flow đăng thực đơn lên Teams + flow chốt người đi lấy cơm
 - [docs/CHAY-LOCAL.md](docs/CHAY-LOCAL.md) — chạy local + các lỗi đã gặp & cách sửa (Prisma 7, Docker, cổng, IPv4)
 - [docs/DEPLOY.md](docs/DEPLOY.md) — deploy cho mọi người dùng chung (Render + Neon, free + HTTPS)
 - [docs/GIT-PUSH.md](docs/GIT-PUSH.md) — đẩy code lên GitHub
@@ -140,6 +141,9 @@ Combo free ổn định: **Neon** (PostgreSQL free, không hết hạn) + **Rend
 | `SEED_DEMO` | `true` để seed mẫu (đặt `false` khi đã có dữ liệu thật) |
 | `CORS_ORIGIN` | Origin của frontend (vd `https://comtrua.vn`) |
 | `PICKUP_TOKEN` | Token bí mật để Power Automate gọi `POST /pickup/today` (bốc người đi lấy cơm). Bỏ trống = endpoint từ chối mọi request |
+| `MENU_WEBHOOK_URL` | URL trigger của flow Power Automate nhận thực đơn vừa đăng. Bỏ trống = tắt (vẫn đăng thực đơn bình thường, chỉ không báo Teams) |
+| `MENU_WEBHOOK_TOKEN` | Bí mật gửi kèm header `x-menu-token` để flow chặn request lạ |
+| `APP_URL` | Link app chèn vào tin nhắn Teams (vd `https://com-trua.vercel.app`) |
 
 ---
 
