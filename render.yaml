@@ -41,6 +41,18 @@ services:
       # Đặt = URL của web tĩnh bên dưới (vd https://com-trua-web.onrender.com)
       - key: CORS_ORIGIN
         sync: false
+      # Token để Power Automate gọi POST /pickup/today (bốc người đi lấy cơm).
+      - key: PICKUP_TOKEN
+        sync: false
+      # Webhook đăng thực đơn lên Teams: URL trigger của flow Power Automate + bí mật header.
+      # Bỏ trống MENU_WEBHOOK_URL = tắt tính năng (app vẫn đăng thực đơn bình thường).
+      - key: MENU_WEBHOOK_URL
+        sync: false
+      - key: MENU_WEBHOOK_TOKEN
+        sync: false
+      # Link app chèn vào tin nhắn Teams (= URL web tĩnh, KHÔNG có dấu / ở cuối).
+      - key: APP_URL
+        sync: false
 
   # ---- Frontend React (static, free) ----
   - type: web
