@@ -180,6 +180,11 @@ export class PickupService {
    *   2) lâu rồi chưa đi nhất (chưa đi lần nào = ưu tiên cao nhất) →
    *   3) ngẫu nhiên.
    *
+   * Người của LƯỢT GẦN NHẤT bị loại khỏi lượt này (trừ khi hôm nay chỉ còn mình họ đặt cơm):
+   * tỷ lệ chỉ nhích lên từng chút sau mỗi lượt, nên ai đang lệch sâu dưới trung bình sẽ đứng
+   * đầu bảng nhiều ngày liền. Luật này KHÔNG đổi tổng số lượt mỗi người phải gánh — chỉ rải
+   * đều ra thay vì dồn cục.
+   *
    * => Người đặt cơm nhiều gánh nhiều lượt hơn người thỉnh thoảng mới đặt, thay vì cào bằng
    *    theo tổng số lượt. Người mới không bị bốc dồn nhiều ngày liên tiếp vì prior kéo tỷ lệ
    *    của họ về sát trung bình nhóm cho tới khi có đủ dữ liệu.
@@ -213,13 +218,21 @@ export class PickupService {
     const candidates = orders.map((o) => o.user);
     if (!candidates.length) return { date, picked: false, reason: 'Hôm nay không có ai đặt cơm' };
 
-    // Số liệu của RIÊNG nhóm ứng viên hôm nay (trung bình nhóm cũng tính trên nhóm này).
-    const stats = await this.collectStats(
-      candidates.map((c) => c.id),
-      now,
-    );
+    // Số liệu của RIÊNG nhóm ứng viên hôm nay (trung bình nhóm cũng tính trên nhóm này),
+    // kèm người đã đi LƯỢT GẦN NHẤT để không bắt họ đi 2 lượt liền.
+    const [stats, prev] = await Promise.all([
+      this.collectStats(
+        candidates.map((c) => c.id),
+        now,
+      ),
+      this.prisma.pickupAssignment.findFirst({
+        where: { date: { lt: date } },
+        orderBy: { date: 'desc' },
+        select: { userId: true },
+      }),
+    ]);
 
-    const chosen = candidates
+    const ranked = candidates
       .map((c) => {
         const s = stats.get(c.id);
         return {
@@ -229,7 +242,13 @@ export class PickupService {
           tie: Math.random(),
         };
       })
-      .sort(compareCandidates)[0].c;
+      .sort(compareCandidates);
+
+    // Loại người của lượt gần nhất ra khỏi lượt này — trừ khi hôm nay chỉ còn mình họ đặt cơm.
+    // Dùng "lượt gần nhất" chứ không phải "hôm qua theo lịch": văn phòng nghỉ T7-CN nên sáng
+    // Thứ 2 vẫn phải nhớ người đã đi hôm Thứ 6, không thì luật này mất tác dụng đúng đầu tuần.
+    const pool = prev ? ranked.filter((x) => x.c.id !== prev.userId) : ranked;
+    const chosen = (pool.length ? pool : ranked)[0].c;
 
     // Ghi lượt. @unique(date) chống double-call: nếu vừa bị chốt song song thì đọc lại.
     try {
