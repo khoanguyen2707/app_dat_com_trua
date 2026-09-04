@@ -82,6 +82,22 @@ export function vnTodayKey(now: Date = new Date()): DayKey {
   return dow === 0 ? 'sun' : DAY_KEYS[dow - 1];
 }
 
+/**
+ * Các cột ngày của một tuần đã THỰC SỰ DIỄN RA tính tới hôm nay (gồm hôm nay), theo lịch VN.
+ *
+ * Dùng để đếm "số lần đã đặt cơm" (mẫu số của tỷ lệ đi lấy cơm): chỉ tính ngày đã tới,
+ * không tính ngày tương lai — admin có thể tick trước cho user (enforceLock = false),
+ * nếu đếm cả ngày tương lai thì mẫu số phồng lên và tỷ lệ bị hạ oan.
+ *
+ * startDate = null (tuần không khoá): không xác định được mốc ngày → coi như cả 7 ngày hợp lệ.
+ */
+export function elapsedDayKeys(startDate: Date | null | undefined, now: Date = new Date()): DayKey[] {
+  if (!startDate) return [...DAY_KEYS];
+  const start = startDayNumber(startDate);
+  const today = vnDayNumber(now);
+  return DAY_KEYS.filter((_, i) => start + i * DAY_MS <= today);
+}
+
 /** Nhãn ngày dương lịch "d/M" cho từng cột (để FE hiển thị). */
 export function computeDayDates(startDate: Date | null | undefined): Record<DayKey, string | null> {
   const out = Object.fromEntries(DAY_KEYS.map((d) => [d, null])) as Record<DayKey, string | null>;

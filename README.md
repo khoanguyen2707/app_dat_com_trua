@@ -125,7 +125,7 @@ Combo free ổn định: **Neon** (PostgreSQL free, không hết hạn) + **Rend
 | Thực đơn | `GET /dishes` · `POST/PATCH/DELETE /dishes/:id` *(admin)* |
 | Thanh toán | `GET /payment` · `PATCH /payment` *(admin)* |
 | Thông báo | `GET /notifications` · `PATCH /notifications/read` |
-| Lấy cơm | `POST /pickup/today` (bốc người, header `x-pickup-token`) · `GET /pickup/today` · `GET /pickup/history` *(admin)* |
+| Lấy cơm | `POST /pickup/today` (bốc người, header `x-pickup-token`) · `GET /pickup/today` · `GET /pickup/history` *(admin)* · `GET /pickup/stats` *(admin — tỷ lệ đi lấy / số lần đặt của từng người)* |
 | Thành viên | `GET /users` · `PATCH/DELETE /users/:id` *(admin)* |
 
 ---

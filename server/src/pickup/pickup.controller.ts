@@ -47,4 +47,14 @@ export class PickupController {
   history() {
     return this.pickup.history();
   }
+
+  @ApiBearerAuth('JWT-auth')
+  @Roles(Role.ADMIN)
+  @Get('stats')
+  @ApiOperation({
+    summary: 'Admin: bảng tỷ lệ đi lấy cơm / số lần đặt cơm của từng thành viên (sắp theo thứ tự ưu tiên)',
+  })
+  stats() {
+    return this.pickup.stats();
+  }
 }
