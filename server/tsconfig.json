@@ -15,13 +15,11 @@
     "incremental": true,
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "skipLibCheck": true,
-    "strictNullChecks": true,
+    "strict": true,
     "strictPropertyInitialization": false,
-    "noImplicitAny": false,
-    "strictBindCallApply": false,
-    "forceConsistentCasingInFileNames": false,
-    "noFallthroughCasesInSwitch": false,
-    "strict": true
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
   },
   "exclude": ["node_modules", "dist"]
 }
