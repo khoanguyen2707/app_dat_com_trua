@@ -38,16 +38,25 @@ function Switch({
   hint,
   on,
   danger,
+  disabled,
   onToggle,
 }: {
   label: string;
   hint: string;
   on: boolean;
   danger?: boolean;
+  disabled?: boolean;
   onToggle: () => void;
 }) {
   return (
-    <button type="button" className="mm-sw" onClick={onToggle} role="switch" aria-checked={on}>
+    <button
+      type="button"
+      className="mm-sw"
+      onClick={onToggle}
+      role="switch"
+      aria-checked={on}
+      disabled={disabled}
+    >
       <span className="mm-sw-txt">
         <b>{label}</b>
         <span className="muted small">{hint}</span>
@@ -99,6 +108,14 @@ export function MemberManager({ onChanged }: { onChanged: () => void }) {
     if (!needle) return users;
     return users.filter((u) => fold(u.fullName).includes(needle) || fold(u.email).includes(needle));
   }, [users, q]);
+
+  /**
+   * Số admin đang hoạt động. Server từ chối hạ quyền / khoá / xoá người admin đang hoạt động
+   * CUỐI CÙNG (giữ cho app luôn còn người quản trị); ở đây khoá sẵn công tắc để không ai bấm
+   * vào rồi mới ăn lỗi.
+   */
+  const activeAdmins = useMemo(() => users.filter((u) => u.role === 'ADMIN' && u.active).length, [users]);
+  const isLastAdmin = (u: User) => u.role === 'ADMIN' && !!u.active && activeAdmins <= 1;
 
   const counts = useMemo(
     () => ({
@@ -256,6 +273,7 @@ export function MemberManager({ onChanged }: { onChanged: () => void }) {
           const open = openId === u.id;
           const s = statsBy.get(u.id);
           const rank = queueRank.get(u.id);
+          const lastAdmin = isLastAdmin(u);
           return (
             <div className={cls('mm-item', open && 'open')} key={u.id}>
               <button type="button" className="mm-head" onClick={() => toggleOpen(u)} aria-expanded={open}>
@@ -272,6 +290,7 @@ export function MemberManager({ onChanged }: { onChanged: () => void }) {
                     <span className="muted small mm-mail">{u.teamsEmail || u.email}</span>
                     {rank != null && <span className="mm-badge rank">{t.member.queueRank(rank)}</span>}
                     {u.id === me?.id && <span className="mm-badge">{t.member.badgeYou}</span>}
+                    {lastAdmin && <span className="mm-badge">{t.member.badgeLastAdmin}</span>}
                     {!u.active && <span className="mm-badge off">{t.member.badgeLocked}</span>}
                     {u.pickupOptOut && <span className="mm-badge">{t.member.badgeOptOut}</span>}
                     {!u.teamsEmail && <span className="mm-badge warn">{t.member.badgeNoTeams}</span>}
@@ -314,14 +333,18 @@ export function MemberManager({ onChanged }: { onChanged: () => void }) {
                   <div className="mm-switches">
                     <Switch
                       label={t.member.optActive}
-                      hint={u.active ? t.member.optActiveOn : t.member.optActiveOff}
+                      hint={lastAdmin ? t.member.lastAdminHint : u.active ? t.member.optActiveOn : t.member.optActiveOff}
                       on={!!u.active}
+                      disabled={lastAdmin}
                       onToggle={() => void toggleActive(u)}
                     />
                     <Switch
                       label={t.member.optRole}
-                      hint={u.role === 'ADMIN' ? t.member.optRoleOn : t.member.optRoleOff}
+                      hint={
+                        lastAdmin ? t.member.lastAdminHint : u.role === 'ADMIN' ? t.member.optRoleOn : t.member.optRoleOff
+                      }
                       on={u.role === 'ADMIN'}
+                      disabled={lastAdmin}
                       onToggle={() => void toggleRole(u)}
                     />
                     <Switch
@@ -363,7 +386,13 @@ export function MemberManager({ onChanged }: { onChanged: () => void }) {
                   )}
 
                   <div className="mm-acts">
-                    <Button variant="danger" tiny onClick={() => remove(u)} disabled={busy || u.id === me?.id}>
+                    <Button
+                      variant="danger"
+                      tiny
+                      onClick={() => remove(u)}
+                      disabled={busy || u.id === me?.id || lastAdmin}
+                      title={lastAdmin ? t.member.lastAdminHint : undefined}
+                    >
                       {t.actions.delete}
                     </Button>
                     <div className="spacer" />

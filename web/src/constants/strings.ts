@@ -308,6 +308,9 @@ export const t = {
     badgeOptOut: 'Miễn lấy cơm',
     badgeNoTeams: 'Chưa nối Teams',
     badgeYou: 'Bạn',
+    badgeLastAdmin: 'Admin duy nhất',
+    /** Hiện thay cho mô tả công tắc khi người này là admin đang hoạt động cuối cùng. */
+    lastAdminHint: 'Admin duy nhất đang hoạt động — cấp quyền cho người khác trước đã',
 
     fieldFullName: 'Họ tên',
     fieldTeamsEmail: 'Email Teams (Microsoft 365)',

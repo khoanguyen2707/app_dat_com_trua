@@ -420,6 +420,7 @@ tfoot td.col-name { background: #16a34a; color: #fff; } tfoot td.money { color: 
 .mm-switches { display: flex; flex-direction: column; gap: 2px; margin: 6px 0 14px; }
 .mm-sw { display: flex; align-items: center; gap: 12px; width: 100%; padding: 9px 2px; text-align: left; background: none; border-bottom: 1px solid var(--line); }
 .mm-sw:last-child { border-bottom: none; }
+.mm-sw:disabled { cursor: not-allowed; opacity: .55; }
 .mm-sw-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .mm-sw-txt b { font-size: 13.5px; }
 .mm-sw-track { flex: none; width: 44px; height: 26px; border-radius: 999px; background: #e3e5ea; padding: 3px; transition: background .2s var(--ease); }
