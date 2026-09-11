@@ -54,8 +54,7 @@ export function computeLockedDays(startDate: Date | null | undefined, now: Date 
 
   const start = startDayNumber(startDate);
   const today = vnDayNumber(now);
-  const v = vnShift(now);
-  const nowMinutes = v.getUTCHours() * 60 + v.getUTCMinutes();
+  const nowMinutes = vnMinutes(now);
 
   DAY_KEYS.forEach((key, i) => {
     const dayNum = start + i * DAY_MS;
@@ -66,6 +65,12 @@ export function computeLockedDays(startDate: Date | null | undefined, now: Date 
     else locked[key] = true; // tương lai: không cho đặt trước
   });
   return locked;
+}
+
+/** Số phút đã trôi qua kể từ 00:00 theo giờ VN (để so với CUTOFF_MINUTES). */
+export function vnMinutes(now: Date = new Date()): number {
+  const v = vnShift(now);
+  return v.getUTCHours() * 60 + v.getUTCMinutes();
 }
 
 /** Ngày theo lịch VN dạng "YYYY-MM-DD" (mốc để chốt đúng 1 lượt lấy cơm mỗi ngày). */

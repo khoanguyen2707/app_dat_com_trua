@@ -1,6 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
-import { type DayKey, elapsedDayKeys, vnDateStr, vnTodayKey } from '@/common/week-lock';
+import {
+  CUTOFF_LABEL,
+  CUTOFF_MINUTES,
+  type DayKey,
+  elapsedDayKeys,
+  vnDateStr,
+  vnMinutes,
+  vnTodayKey,
+} from '@/common/week-lock';
 
 /** Thông tin người được chọn (đủ để Power Automate @mention trong Teams). */
 type PickedUser = { id: string; fullName: string; email: string; teamsEmail: string | null };
@@ -193,6 +201,9 @@ export class PickupService {
    *
    * Idempotent theo ngày: `PickupAssignment.date` là @unique nên gọi lại trong ngày
    * (kể cả 2 lần gần như đồng thời) đều trả về đúng người đã chốt.
+   *
+   * CHỈ bốc SAU giờ chốt đặt cơm (CUTOFF_MINUTES): vì lượt đã ghi là vĩnh viễn, gọi sớm
+   * sẽ khoá cứng kết quả dựa trên danh sách đặt cơm còn dở dang.
    */
   async draw(): Promise<PickupResult> {
     // Một mốc thời gian duy nhất cho cả lượt bốc: tránh lệch ngày nếu chạy đúng lúc giao ngày.
@@ -204,6 +215,20 @@ export class PickupService {
       include: { user: { select: PICK_SELECT } },
     });
     if (existing) return this.format(existing.user, date, true);
+
+    // Chưa tới giờ chốt thì KHÔNG bốc — danh sách đặt cơm còn thay đổi được.
+    //
+    // Lượt bốc là một chiều: `PickupAssignment.date` @unique nên lần gọi thành công ĐẦU
+    // TIÊN quyết định luôn cả ngày, và không có đường xoá lượt. Không có chặn này thì một
+    // cú gọi lúc 8h sáng (flow Power Automate lệch múi giờ, flow retry, hay người ta thử
+    // endpoint trên Swagger) sẽ chốt người từ nhóm 2-3 người tick sớm, còn những ai đặt
+    // trước giờ chốt sau đó không bao giờ được xét trong ngày hôm đó.
+    //
+    // Trả về `picked: false` chứ không ném lỗi: Power Automate gọi sớm chỉ là không làm gì,
+    // không phải một lần chạy thất bại cần cảnh báo.
+    if (vnMinutes(now) < CUTOFF_MINUTES) {
+      return { date, picked: false, reason: `Chưa tới giờ chốt đặt cơm ${CUTOFF_LABEL} — chưa bốc người đi lấy cơm` };
+    }
 
     const week = await this.prisma.week.findFirst({
       where: { isActive: true },
