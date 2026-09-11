@@ -94,7 +94,9 @@ export class PickupService {
       fullName: user.fullName,
       email: user.email,
       teamsEmail: user.teamsEmail,
-      mentionEmail: user.teamsEmail ?? user.email,
+      // `||` chứ không phải `??`: teamsEmail lưu chuỗi rỗng (admin xoá trắng ô nhập rồi
+      // gửi '' thay vì null) vẫn phải rơi về email app, không được mention rỗng.
+      mentionEmail: user.teamsEmail?.trim() || user.email,
     };
   }
 

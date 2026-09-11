@@ -288,6 +288,62 @@ export const t = {
     roleChanged: (name: string, role: string) => `${name} → ${role}`,
   },
 
+  /** Quản lý thành viên trong Cài đặt (admin) */
+  member: {
+    searchPlaceholder: '🔎 Tìm theo tên hoặc email…',
+    summary: (total: number) => `${total} thành viên`,
+    sumLocked: (n: number) => `${n} đang khoá`,
+    sumNoTeams: (n: number) => `${n} chưa nối Teams`,
+    sumOptOut: (n: number) => `${n} miễn lấy cơm`,
+    none: 'Không có thành viên nào khớp.',
+    expand: 'Xem / sửa chi tiết',
+    collapse: 'Thu gọn',
+
+    badgeLocked: 'Khoá',
+    badgeOptOut: 'Miễn lấy cơm',
+    badgeNoTeams: 'Chưa nối Teams',
+    badgeYou: 'Bạn',
+
+    fieldFullName: 'Họ tên',
+    fieldTeamsEmail: 'Email Teams (Microsoft 365)',
+    teamsPlaceholder: 'ten.ban@congty.com',
+    teamsHint: 'Dùng để @mention đúng người trong Teams khi tới lượt đi lấy cơm. Bỏ trống → Power Automate phải dùng email đăng nhập app, thường KHÔNG mention được.',
+    fieldColor: 'Màu đại diện',
+
+    optRole: 'Quyền quản trị',
+    optRoleOn: 'Admin — sửa được tuần, thực đơn, thành viên',
+    optRoleOff: 'Thành viên — chỉ đặt cơm cho mình',
+    optActive: 'Tài khoản hoạt động',
+    optActiveOn: 'Đăng nhập được, hiện trong bảng tuần',
+    optActiveOff: 'Bị khoá: không đăng nhập, ẩn khỏi bảng tuần',
+    optOptOut: 'Miễn đi lấy cơm',
+    optOptOutOn: 'Không bao giờ bị bốc trong xoay tua',
+    optOptOutOff: 'Vẫn tham gia xoay tua như mọi người',
+
+    statsTitle: 'Xoay tua lấy cơm',
+    statOrders: 'Đã đặt',
+    statPickups: 'Đã đi',
+    statRate: 'Tỷ lệ',
+    statLast: 'Lần cuối',
+    statNever: 'Chưa đi',
+    statDays: (n: number) => `${n} ngày`,
+    statTimes: (n: number) => `${n} lượt`,
+    statsEmpty: 'Chưa có dữ liệu đặt cơm.',
+    statsOptOut: 'Đang miễn đi lấy cơm — không nằm trong xoay tua.',
+    queueRank: (n: number) => `#${n} sắp tới lượt`,
+    queueHint: 'Thứ tự ưu tiên hiện tại (tỷ lệ càng thấp càng sớm tới lượt).',
+
+    saved: 'Đã lưu thành viên',
+    nameRequired: 'Họ tên không được để trống',
+    cannotDeleteSelf: 'Không thể tự xoá tài khoản đang đăng nhập',
+    confirmDelete: (name: string) =>
+      `Xoá hẳn "${name}"?
+
+Toàn bộ lịch sử đặt cơm, đồ uống, thông báo và lượt đi lấy cơm của người này sẽ bị xoá theo — tổng suất/tổng tiền các tuần cũ sẽ thay đổi.
+
+Muốn giữ lịch sử thì bấm Huỷ rồi tắt "Tài khoản hoạt động" thay vì xoá.`,
+  },
+
   password: {
     title: '🔑 Đổi mật khẩu',
     current: 'Mật khẩu hiện tại',

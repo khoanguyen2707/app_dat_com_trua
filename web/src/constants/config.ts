@@ -27,6 +27,12 @@ export const DAYS: { key: DayKey; label: string; full: string }[] = [
   { key: 'sun', label: 'CN', full: 'Chủ nhật' },
 ];
 
+/** Bảng màu avatar thành viên (khớp PALETTE lúc seed ở server) */
+export const MEMBER_COLORS = [
+  '#ff6b35', '#0a84ff', '#22c55e', '#7c5cff', '#ff9f0a',
+  '#ff3b30', '#06b6d4', '#ec4899', '#8b5cf6', '#16181d',
+];
+
 /** Bộ biểu tượng món ăn cho phép chọn */
 export const DISH_EMOJIS = ['🍗', '🍖', '🥩', '🐟', '🥗', '🍛', '🍜', '🍲', '🥘', '🍱', '🍳', '🦐', '🍚', '🥬', '🌶️', '☕', '🥛', '🧋'];
 

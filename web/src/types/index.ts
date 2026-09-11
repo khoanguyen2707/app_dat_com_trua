@@ -25,6 +25,27 @@ export interface User {
   role: Role;
   color?: string | null;
   active?: boolean;
+  /** Email/Object ID Microsoft 365 để @mention trong Teams khi tới lượt đi lấy cơm. */
+  teamsEmail?: string | null;
+  /** true = miễn đi lấy cơm (không bao giờ bị bốc trong xoay tua). */
+  pickupOptOut?: boolean;
+}
+
+/** Số liệu xoay tua lấy cơm của 1 thành viên (GET /pickup/stats — admin). */
+export interface PickupStat {
+  userId: string;
+  fullName: string;
+  email: string;
+  pickupOptOut: boolean;
+  /** Tổng số NGÀY đã đặt cơm (chỉ tính ngày đã diễn ra). */
+  orderCount: number;
+  /** Tổng số lượt đã đi lấy cơm. */
+  pickupCount: number;
+  lastPickup: string | null;
+  /** Tỷ lệ thô đi/đặt — null khi chưa đặt lần nào. */
+  rawRate: number | null;
+  /** Tỷ lệ đã làm mượt — con số thuật toán thực sự dùng để xếp lượt. */
+  rate: number;
 }
 
 export interface Dish {

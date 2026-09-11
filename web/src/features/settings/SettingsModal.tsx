@@ -1,10 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { api } from '@/services/api';
-import { useAuth } from '@/context/AuthContext';
-import type { PaymentConfig, User, Week } from '@/types';
+import type { PaymentConfig, Week } from '@/types';
 import { t } from '@/constants/strings';
-import { cls } from '@/lib/format';
-import { Avatar, Button, Field, IconButton, Modal, toast } from '@/components/ui';
+import { Button, Field, Modal, toast } from '@/components/ui';
+import { MemberManager } from './MemberManager';
 
 export function SettingsModal({
   week,
@@ -16,15 +15,9 @@ export function SettingsModal({
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
-  const { user: me } = useAuth();
   const [label, setLabel] = useState(week.label);
   const [unitPrice, setUnitPrice] = useState(week.unitPrice);
-  const [users, setUsers] = useState<User[]>([]);
   const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    api.users().then(setUsers).catch(() => {});
-  }, []);
 
   const saveWeek = async () => {
     setBusy(true);
@@ -37,25 +30,6 @@ export function SettingsModal({
     } finally {
       setBusy(false);
     }
-  };
-
-  const toggleRole = async (u: User) => {
-    const role = u.role === 'ADMIN' ? 'USER' : 'ADMIN';
-    await api.updateUser(u.id, { role });
-    setUsers((us) => us.map((x) => (x.id === u.id ? { ...x, role } : x)));
-    toast(t.settings.roleChanged(u.fullName, role), '🛡️');
-  };
-  const toggleActive = async (u: User) => {
-    const active = !u.active;
-    await api.updateUser(u.id, { active });
-    setUsers((us) => us.map((x) => (x.id === u.id ? { ...x, active } : x)));
-  };
-  const remove = async (u: User) => {
-    if (!confirm(t.settings.confirmRemove(u.fullName))) return;
-    await api.deleteUser(u.id);
-    setUsers((us) => us.filter((x) => x.id !== u.id));
-    await onSaved();
-    toast(t.settings.removed, '🗑️');
   };
 
   return (
@@ -72,31 +46,7 @@ export function SettingsModal({
       </Button>
 
       <hr style={{ border: 'none', borderTop: '1px solid var(--line)', margin: '20px 0' }} />
-      <h4 style={{ marginBottom: 6 }}>{t.settings.members(users.length)}</h4>
-      <div className="ulist">
-        {users.map((u) => (
-          <div className="urow" key={u.id}>
-            <Avatar name={u.fullName} color={u.color} size={32} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 700, fontSize: 14 }}>
-                {u.fullName} {!u.active && <span className="muted small">{t.settings.locked}</span>}
-              </div>
-              <div className="muted small">{u.email}</div>
-            </div>
-            <button className={cls('pill', u.role === 'ADMIN' ? 'admin' : 'user')} onClick={() => toggleRole(u)} title={t.settings.changeRole}>
-              {u.role}
-            </button>
-            <IconButton title={u.active ? t.settings.lock : t.settings.unlock} onClick={() => toggleActive(u)}>
-              {u.active ? '🔒' : '🔓'}
-            </IconButton>
-            {u.id !== me?.id && (
-              <IconButton title={t.actions.delete} onClick={() => remove(u)}>
-                🗑️
-              </IconButton>
-            )}
-          </div>
-        ))}
-      </div>
+      <MemberManager onChanged={onSaved} />
     </Modal>
   );
 }
