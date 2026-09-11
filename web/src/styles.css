@@ -64,6 +64,8 @@ a { color: var(--brand); }
 .seg { display: flex; background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 4px; margin: 20px 0; }
 .seg button { flex: 1; padding: 9px; border-radius: 9px; font-weight: 600; font-size: 14px; color: var(--muted); transition: all .2s var(--ease); }
 .seg button.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); }
+/* Biến thể nằm trong header dính của modal (vd tab Cài đặt) */
+.seg-modal { margin: 14px 0 0; }
 
 /* fields */
 .field { margin-bottom: 14px; }
@@ -351,9 +353,13 @@ tfoot td.col-name { background: #16a34a; color: #fff; } tfoot td.money { color: 
 .overlay { position: fixed; inset: 0; z-index: 60; background: rgba(16,18,29,.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; padding: 18px; animation: fade .25s ease both; }
 .modal { background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--shadow-lg); width: 100%; max-width: 440px; max-height: 90vh; overflow: auto; animation: modalIn .4s var(--ease) both; }
 .modal.wide { max-width: 920px; }
-.modal-h { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--surface); }
+/* Header dính: gồm hàng tiêu đề + (tuỳ chọn) dải phụ như tab của Cài đặt,
+   để dải tab không trôi mất khi cuộn danh sách dài bên dưới. */
+.modal-h { padding: 18px 22px; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 3; background: var(--surface); }
+.modal-h-row { display: flex; align-items: center; justify-content: space-between; }
 .modal-h h3 { font-size: 18px; } .modal-b { padding: 20px 22px; }
 .modal-actions { display: flex; gap: 10px; margin-top: 6px; } .modal-actions .btn { flex: 1; padding: 12px; }
+.confirm-msg { white-space: pre-line; line-height: 1.6; margin-bottom: 18px; }
 .emoji-pick { display: flex; gap: 7px; flex-wrap: wrap; }
 .emoji-pick button { font-size: 22px; width: 42px; height: 42px; border-radius: 11px; background: var(--surface-2); border: 1.5px solid var(--line); transition: transform .15s var(--ease), border-color .2s; }
 .emoji-pick button.sel { border-color: var(--brand); background: var(--brand-soft); transform: scale(1.05); }
@@ -368,6 +374,10 @@ tfoot td.col-name { background: #16a34a; color: #fff; } tfoot td.money { color: 
 .urow:last-child { border-bottom: none; }
 
 /* ===== quản lý thành viên (Cài đặt → Thành viên) ===== */
+/* Cài đặt — tab Tuần: form ngắn, không kéo ô nhập dài hết 920px cho khó đọc */
+.set-pane { max-width: 460px; }
+.set-h { font-size: 15px; margin-bottom: 12px; }
+
 .mm-top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
 .mm-top h4 { font-size: 15px; }
 .mm-sum { display: flex; flex-wrap: wrap; gap: 4px 10px; }

@@ -5,7 +5,7 @@ import { t } from '@/constants/strings';
 import { vnd } from '@/lib/format';
 import { groupByEmoji } from '@/lib/dishGroup';
 import { useDisclosure } from '@/hooks/useDisclosure';
-import { Button, Card, CardBody, CardHeader, EmptyState, IconButton, toast } from '@/components/ui';
+import { Button, Card, CardBody, CardHeader, confirmDialog, EmptyState, IconButton, toast } from '@/components/ui';
 import { DishModal } from './DishModal';
 import { DayMenuModal } from './DayMenuModal';
 
@@ -33,7 +33,13 @@ export function MenuPanel({
   };
 
   const remove = async (d: Dish) => {
-    if (!confirm(t.menu.confirmDelete(d.name))) return;
+    const ok = await confirmDialog({
+      title: t.menu.confirmDeleteTitle,
+      message: t.menu.confirmDelete(d.name),
+      confirmLabel: t.actions.delete,
+      danger: true,
+    });
+    if (!ok) return;
     await api.deleteDish(d.id);
     await reload();
     toast(t.menu.deleted, '🗑️');

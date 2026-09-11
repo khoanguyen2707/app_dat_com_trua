@@ -5,7 +5,7 @@ import { MEMBER_COLORS } from '@/constants/config';
 import { t } from '@/constants/strings';
 import type { PickupStat, Role, User } from '@/types';
 import { cls } from '@/lib/format';
-import { Avatar, Button, Field, toast } from '@/components/ui';
+import { Avatar, Button, confirmDialog, Field, toast } from '@/components/ui';
 
 /** Các trường admin sửa được trong panel chi tiết. */
 type Draft = { fullName: string; teamsEmail: string; color: string };
@@ -59,7 +59,7 @@ function Switch({
   );
 }
 
-export function MemberManager({ onChanged }: { onChanged: () => Promise<void> }) {
+export function MemberManager({ onChanged }: { onChanged: () => void }) {
   const { user: me } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [stats, setStats] = useState<PickupStat[]>([]);
@@ -119,14 +119,19 @@ export function MemberManager({ onChanged }: { onChanged: () => Promise<void> })
     setDraft(draftOf(u));
   };
 
-  /** Ghi 1 thay đổi lên server + đồng bộ lại state tại chỗ (không phải tải lại cả danh sách). */
+  /**
+   * Ghi 1 thay đổi lên server + đồng bộ lại state tại chỗ (không phải tải lại cả danh sách).
+   *
+   * `onChanged()` chỉ ĐÁNH DẤU là có thay đổi — màn hình nền được tải lại một lần duy nhất
+   * lúc đóng Cài đặt, vì nó đang bị modal che kín nên cập nhật ngay là vô ích.
+   */
   const patch = async (u: User, data: Partial<User>, done?: string) => {
     setBusy(true);
     try {
       const saved = await api.updateUser(u.id, data);
       setUsers((us) => us.map((x) => (x.id === u.id ? { ...x, ...saved } : x)));
       if (done) toast(done, '✅');
-      await onChanged();
+      onChanged();
       return true;
     } catch (e: any) {
       toast(e.message || t.errors.save, '⚠️');
@@ -134,6 +139,58 @@ export function MemberManager({ onChanged }: { onChanged: () => Promise<void> })
     } finally {
       setBusy(false);
     }
+  };
+
+  /**
+   * Đổi quyền quản trị — LUÔN hỏi lại. Đây là công tắc nguy hiểm nhất trong màn hình
+   * (cấp quyền = trao toàn quyền lên mọi tài khoản khác; bỏ quyền của chính mình = tự
+   * khoá mình khỏi Cài đặt, không có đường tự cấp lại).
+   */
+  const toggleRole = async (u: User) => {
+    const toAdmin = u.role !== 'ADMIN';
+    const self = u.id === me?.id;
+    const ok = await confirmDialog({
+      title: t.member.confirmRoleTitle,
+      message: toAdmin
+        ? t.member.confirmGrant(u.fullName)
+        : self
+          ? t.member.confirmRevokeSelf
+          : t.member.confirmRevoke(u.fullName),
+      confirmLabel: toAdmin ? t.member.grantBtn : t.member.revokeBtn,
+      danger: !toAdmin,
+    });
+    if (!ok) return;
+    await patch(
+      u,
+      { role: (toAdmin ? 'ADMIN' : 'USER') as Role },
+      toAdmin ? t.member.roleGranted(u.fullName) : t.member.roleRevoked(u.fullName),
+    );
+  };
+
+  /** Khoá tài khoản thì hỏi lại (chặn đăng nhập); mở khoá thì làm luôn — vô hại, gạt lại được. */
+  const toggleActive = async (u: User) => {
+    if (u.active) {
+      const ok = await confirmDialog({
+        title: t.member.confirmLockTitle,
+        message: u.id === me?.id ? t.member.confirmLockSelf : t.member.confirmLock(u.fullName),
+        confirmLabel: t.member.lockBtn,
+        danger: true,
+      });
+      if (!ok) return;
+    }
+    await patch(
+      u,
+      { active: !u.active },
+      u.active ? t.member.lockedToast(u.fullName) : t.member.unlockedToast(u.fullName),
+    );
+  };
+
+  const toggleOptOut = async (u: User) => {
+    await patch(
+      u,
+      { pickupOptOut: !u.pickupOptOut },
+      u.pickupOptOut ? t.member.optOutOffToast(u.fullName) : t.member.optOutOnToast(u.fullName),
+    );
   };
 
   const save = async (u: User) => {
@@ -151,14 +208,20 @@ export function MemberManager({ onChanged }: { onChanged: () => Promise<void> })
 
   const remove = async (u: User) => {
     if (u.id === me?.id) return toast(t.member.cannotDeleteSelf, '⚠️');
-    if (!confirm(t.member.confirmDelete(u.fullName))) return;
+    const ok = await confirmDialog({
+      title: t.member.confirmDeleteTitle,
+      message: t.member.confirmDelete(u.fullName),
+      confirmLabel: t.member.deleteBtn,
+      danger: true,
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       await api.deleteUser(u.id);
       setUsers((us) => us.filter((x) => x.id !== u.id));
       setOpenId(null);
       setDraft(null);
-      await onChanged();
+      onChanged();
       toast(t.settings.removed, '🗑️');
     } catch (e: any) {
       toast(e.message || t.errors.short, '⚠️');
@@ -253,20 +316,20 @@ export function MemberManager({ onChanged }: { onChanged: () => Promise<void> })
                       label={t.member.optActive}
                       hint={u.active ? t.member.optActiveOn : t.member.optActiveOff}
                       on={!!u.active}
-                      onToggle={() => patch(u, { active: !u.active })}
+                      onToggle={() => void toggleActive(u)}
                     />
                     <Switch
                       label={t.member.optRole}
                       hint={u.role === 'ADMIN' ? t.member.optRoleOn : t.member.optRoleOff}
                       on={u.role === 'ADMIN'}
-                      onToggle={() => patch(u, { role: (u.role === 'ADMIN' ? 'USER' : 'ADMIN') as Role })}
+                      onToggle={() => void toggleRole(u)}
                     />
                     <Switch
                       label={t.member.optOptOut}
                       hint={u.pickupOptOut ? t.member.optOptOutOn : t.member.optOptOutOff}
                       on={!!u.pickupOptOut}
                       danger
-                      onToggle={() => patch(u, { pickupOptOut: !u.pickupOptOut })}
+                      onToggle={() => void toggleOptOut(u)}
                     />
                   </div>
 

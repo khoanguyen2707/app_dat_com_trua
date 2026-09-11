@@ -17,6 +17,7 @@ export const t = {
 
   actions: {
     cancel: 'Huỷ',
+    confirm: 'Đồng ý',
     save: 'Lưu',
     add: 'Thêm',
     delete: 'Xoá',
@@ -142,7 +143,8 @@ export const t = {
     emptyIcon: '🍽️',
     empty: 'Chưa có món nào.',
     emptyHintAdmin: ' Bấm ＋ Thêm món.',
-    confirmDelete: (name: string) => `Xoá món "${name}"?`,
+    confirmDeleteTitle: 'Xoá món',
+    confirmDelete: (name: string) => `Xoá món "${name}" khỏi thực đơn?`,
     deleted: 'Đã xoá món',
     modalEdit: 'Sửa món',
     modalCreate: 'Thêm món',
@@ -255,7 +257,8 @@ export const t = {
     active: 'Đang mở',
     meta: (servings: number, total: string, members: number, unitPrice: string) =>
       `${servings} suất • ${total} • ${members} người • ${unitPrice}/suất`,
-    confirmDelete: (label: string) => `Xoá tuần "${label}"? Mọi đăng ký của tuần này sẽ mất.`,
+    confirmDeleteTitle: 'Xoá tuần',
+    confirmDelete: (label: string) => `Xoá tuần "${label}"?\n\nMọi đăng ký cơm, đồ uống và trạng thái thanh toán của tuần này sẽ mất.`,
     deleted: 'Đã xoá tuần',
     viewBtn: 'Xem',
     viewOnlyNote: '🔒 Tuần đã đóng — chỉ xem, không sửa.',
@@ -273,6 +276,8 @@ export const t = {
 
   settings: {
     title: '⚙️ Cài đặt (Admin)',
+    tabWeek: '📅 Tuần',
+    tabMembers: '👥 Thành viên',
     currentWeek: 'Tuần hiện hành',
     fieldLabel: 'Nhãn tuần',
     fieldUnitPrice: 'Đơn giá / suất (đ)',
@@ -333,9 +338,46 @@ export const t = {
     queueRank: (n: number) => `#${n} sắp tới lượt`,
     queueHint: 'Thứ tự ưu tiên hiện tại (tỷ lệ càng thấp càng sớm tới lượt).',
 
+    /* --- đổi quyền quản trị: luôn hỏi lại vì đây là thao tác dễ bấm nhầm nhất --- */
+    confirmRoleTitle: 'Đổi quyền quản trị',
+    confirmGrant: (name: string) =>
+      `Cấp quyền admin cho "${name}"?
+
+Người này sẽ sửa được tuần, đơn giá, thực đơn và quản lý được toàn bộ thành viên — kể cả tài khoản của bạn.`,
+    confirmRevoke: (name: string) =>
+      `Bỏ quyền admin của "${name}"?
+
+Sau thao tác này họ chỉ còn đặt cơm cho chính mình.`,
+    confirmRevokeSelf: `⚠️ Bỏ quyền admin của CHÍNH BẠN?
+
+Bạn sẽ không mở được Cài đặt nữa và KHÔNG tự cấp lại quyền cho mình được — phải nhờ một admin khác. Nếu bạn đang là admin duy nhất thì sẽ không còn ai quản trị được app.`,
+    grantBtn: 'Cấp quyền admin',
+    revokeBtn: 'Bỏ quyền admin',
+    roleGranted: (name: string) => `${name} giờ là admin`,
+    roleRevoked: (name: string) => `${name} giờ là thành viên`,
+
+    /* --- khoá tài khoản --- */
+    confirmLockTitle: 'Khoá tài khoản',
+    confirmLock: (name: string) =>
+      `Khoá tài khoản của "${name}"?
+
+Họ sẽ không đăng nhập được và bị ẩn khỏi bảng tuần.`,
+    confirmLockSelf: `⚠️ Khoá tài khoản CỦA CHÍNH BẠN?
+
+Bạn sẽ không đăng nhập lại được và phải nhờ một admin khác mở khoá. Nếu bạn đang là admin duy nhất thì sẽ không còn ai mở khoá được.`,
+    lockBtn: 'Khoá tài khoản',
+    lockedToast: (name: string) => `Đã khoá ${name}`,
+    unlockedToast: (name: string) => `Đã mở khoá ${name}`,
+
+    /* --- miễn đi lấy cơm --- */
+    optOutOnToast: (name: string) => `${name} được miễn đi lấy cơm`,
+    optOutOffToast: (name: string) => `${name} trở lại xoay tua lấy cơm`,
+
     saved: 'Đã lưu thành viên',
     nameRequired: 'Họ tên không được để trống',
     cannotDeleteSelf: 'Không thể tự xoá tài khoản đang đăng nhập',
+    confirmDeleteTitle: 'Xoá thành viên',
+    deleteBtn: 'Xoá hẳn',
     confirmDelete: (name: string) =>
       `Xoá hẳn "${name}"?
 
