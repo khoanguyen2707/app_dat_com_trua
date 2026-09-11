@@ -4,7 +4,7 @@ import type { Dish, PaymentConfig, Week } from '@/types';
 import { t } from '@/constants/strings';
 import { vnd } from '@/lib/format';
 import { useDisclosure } from '@/hooks/useDisclosure';
-import { Button, Card, CardBody, CardHeader, EmptyState, IconButton, toast } from '@/components/ui';
+import { Button, Card, CardBody, CardHeader, confirmDialog, EmptyState, IconButton, toast } from '@/components/ui';
 import { CreateWeekModal } from './CreateWeekModal';
 import { HistoryWeekModal } from './HistoryWeekModal';
 
@@ -27,7 +27,13 @@ export function HistoryPanel({
   const [viewing, setViewing] = useState<Week | null>(null);
 
   const del = async (w: Week) => {
-    if (!confirm(t.history.confirmDelete(w.label))) return;
+    const ok = await confirmDialog({
+      title: t.history.confirmDeleteTitle,
+      message: t.history.confirmDelete(w.label),
+      confirmLabel: t.actions.delete,
+      danger: true,
+    });
+    if (!ok) return;
     await api.deleteWeek(w.id);
     await reload();
     toast(t.history.deleted, '🗑️');

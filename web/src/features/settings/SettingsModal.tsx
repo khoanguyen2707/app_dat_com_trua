@@ -1,9 +1,16 @@
-import { useState } from 'react';
-import { api } from '@/services/api';
-import type { PaymentConfig, Week } from '@/types';
+import { useRef, useState } from 'react';
+import type { Week } from '@/types';
 import { t } from '@/constants/strings';
-import { Button, Field, Modal, toast } from '@/components/ui';
+import { Modal, Tabs } from '@/components/ui';
+import { WeekSettings } from './WeekSettings';
 import { MemberManager } from './MemberManager';
+
+type SettingsTab = 'week' | 'members';
+
+const TABS = [
+  { key: 'week', label: t.settings.tabWeek },
+  { key: 'members', label: t.settings.tabMembers },
+] as const satisfies readonly { key: SettingsTab; label: string }[];
 
 export function SettingsModal({
   week,
@@ -11,42 +18,42 @@ export function SettingsModal({
   onSaved,
 }: {
   week: Week;
-  payment: PaymentConfig | null;
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
-  const [label, setLabel] = useState(week.label);
-  const [unitPrice, setUnitPrice] = useState(week.unitPrice);
-  const [busy, setBusy] = useState(false);
+  const [tab, setTab] = useState<SettingsTab>('week');
 
-  const saveWeek = async () => {
-    setBusy(true);
-    try {
-      await api.updateWeek(week.id, { label: label.trim(), unitPrice: Number(unitPrice) });
-      toast(t.settings.savedWeek, '⚙️');
-      await onSaved();
-    } catch (e: any) {
-      toast(e.message || t.errors.short, '⚠️');
-    } finally {
-      setBusy(false);
-    }
+  /**
+   * Có thay đổi thành viên nào chưa đồng bộ xuống màn hình nền chưa.
+   *
+   * Trước đây mỗi lần gạt một công tắc là tải lại cả grid + thanh toán + danh sách tuần
+   * (3 request × mỗi lần gạt) trong khi màn hình nền đang bị modal che kín — tốn công vô
+   * ích, rất ì trên API free hay ngủ. Giờ chỉ bật cờ rồi tải lại đúng MỘT lần lúc đóng.
+   */
+  const dirty = useRef(false);
+
+  const close = () => {
+    onClose();
+    if (dirty.current) void onSaved();
   };
 
   return (
-    <Modal open title={t.settings.title} onClose={onClose}>
-      <h4 style={{ marginBottom: 10 }}>{t.settings.currentWeek}</h4>
-      <Field label={t.settings.fieldLabel}>
-        <input value={label} onChange={(e) => setLabel(e.target.value)} />
-      </Field>
-      <Field label={t.settings.fieldUnitPrice}>
-        <input type="number" value={unitPrice} onChange={(e) => setUnitPrice(Number(e.target.value))} />
-      </Field>
-      <Button variant="primary" block onClick={saveWeek} loading={busy}>
-        {t.settings.saveWeek}
-      </Button>
-
-      <hr style={{ border: 'none', borderTop: '1px solid var(--line)', margin: '20px 0' }} />
-      <MemberManager onChanged={onSaved} />
+    <Modal
+      open
+      wide
+      title={t.settings.title}
+      onClose={close}
+      subheader={<Tabs inModal items={TABS} active={tab} onChange={setTab} />}
+    >
+      {tab === 'week' ? (
+        <WeekSettings week={week} onSaved={onSaved} />
+      ) : (
+        <MemberManager
+          onChanged={() => {
+            dirty.current = true;
+          }}
+        />
+      )}
     </Modal>
   );
 }

@@ -91,7 +91,6 @@ export function Dashboard() {
       {settings.open && grid && (
         <SettingsModal
           week={grid.week}
-          payment={payment}
           onClose={settings.onClose}
           onSaved={async () => {
             await Promise.all([reloadGrid(), reloadPayment(), reloadWeeks()]);
