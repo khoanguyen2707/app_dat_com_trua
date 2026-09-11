@@ -49,7 +49,7 @@ docker compose up --build
 - API + Swagger: **http://localhost:3000/docs**
 - Postgres tự bật trong compose (không cần cài gì thêm).
 
-Lần đầu chạy sẽ **tự seed**: admin + 13 thành viên + **thực đơn 25 món ăn/đồ uống** + tuần mẫu 15–20/6/2026.
+Lần đầu chạy sẽ **tự seed**: admin + 12 thành viên + **thực đơn 25 món ăn/đồ uống** + tuần mẫu 15–20/6/2026.
 
 ### Tài khoản mặc định
 
@@ -126,7 +126,13 @@ Combo free ổn định: **Neon** (PostgreSQL free, không hết hạn) + **Rend
 | Thanh toán | `GET /payment` · `PATCH /payment` *(admin)* |
 | Thông báo | `GET /notifications` · `PATCH /notifications/read` |
 | Lấy cơm | `POST /pickup/today` (bốc người, header `x-pickup-token`) · `GET /pickup/today` · `GET /pickup/history` *(admin)* · `GET /pickup/stats` *(admin — tỷ lệ đi lấy / số lần đặt của từng người)* |
+
+> ⏰ **`POST /pickup/today` chỉ bốc SAU giờ chốt đặt cơm (10:21)** — gọi sớm hơn thì trả `picked: false` và **không ghi gì**, nên gọi lúc nào cũng an toàn. Lý do: mỗi ngày chỉ chốt được đúng 1 lượt và không có đường xoá, nên một cú gọi lúc 8h sáng (flow Power Automate lệch múi giờ, flow retry, hay thử endpoint trên Swagger) sẽ khoá cứng kết quả từ nhóm vài người tick sớm. Hẹn giờ flow **sau 10:21** (nhớ đặt đúng timezone — recurrence của Power Automate mặc định theo UTC).
 | Thành viên | `GET /users` · `PATCH/DELETE /users/:id` *(admin)* |
+
+> **Quản lý thành viên**: admin vào **⚙️ Cài đặt → Thành viên** — tìm kiếm (gõ không dấu vẫn ra), sửa họ tên / màu đại diện, nhập **Email Teams**, bật tắt **tài khoản hoạt động**, **quyền admin**, **miễn đi lấy cơm**, kèm số liệu xoay tua của từng người (đã đặt / đã đi / tỷ lệ / lần cuối) và thứ hạng sắp tới lượt.
+>
+> ⚠️ **Email Teams** phải điền thì Power Automate mới @mention đúng người trong Teams. Bỏ trống → flow chỉ nhận được email đăng nhập app (vd `khoa@comtrua.vn`), thường không mention được. Xoá người khỏi app sẽ **xoá luôn** đơn/đồ uống/thông báo/lượt lấy cơm của họ (cascade) và làm đổi tổng suất & tổng tiền các tuần cũ — muốn giữ lịch sử thì tắt **Tài khoản hoạt động** thay vì xoá.
 
 ---
 

@@ -10,6 +10,7 @@ import type {
   NotificationFeed,
   PaymentConfig,
   PaymentStatus,
+  PickupStat,
   User,
   Week,
 } from '@/types';
@@ -85,6 +86,9 @@ export const api = {
   payment: () => request<PaymentConfig>('/payment'),
   updatePayment: (p: Partial<PaymentConfig>) =>
     request<PaymentConfig>('/payment', { method: 'PATCH', body: JSON.stringify(p) }),
+
+  // lấy cơm (admin) — bảng tỷ lệ đi lấy / số lần đặt, sắp theo thứ tự sẽ được ưu tiên
+  pickupStats: () => request<PickupStat[]>('/pickup/stats'),
 
   // users
   users: () => request<User[]>('/users'),

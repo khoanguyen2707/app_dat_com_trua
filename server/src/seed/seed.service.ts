@@ -8,7 +8,6 @@ type Day = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
 const MEMBERS: Array<[string, string, Day[]]> = [
   ['Chương', 'chuong', ['mon', 'tue', 'wed', 'thu', 'fri']],
-  ['Bông', 'bong', []],
   ['Nghĩa', 'nghia', ['mon']],
   ['Hoàng', 'hoang', ['mon', 'tue', 'wed', 'thu']],
   ['Mạnh', 'manh', ['mon', 'tue', 'thu', 'fri']],

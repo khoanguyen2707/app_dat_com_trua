@@ -25,7 +25,9 @@ export class PickupController {
   @Public()
   @Post('today')
   @ApiOperation({
-    summary: 'Bốc người đi lấy cơm hôm nay (xoay tua công bằng) — gọi từ Power Automate. Cần header x-pickup-token.',
+    summary:
+      'Bốc người đi lấy cơm hôm nay (xoay tua công bằng) — gọi từ Power Automate. Cần header x-pickup-token. ' +
+      'Gọi TRƯỚC giờ chốt đặt cơm sẽ không bốc (trả picked=false) để không chốt nhầm từ danh sách chưa đầy đủ.',
   })
   draw(@Headers('x-pickup-token') header?: string, @Query('token') token?: string) {
     this.assertToken(header ?? token);
