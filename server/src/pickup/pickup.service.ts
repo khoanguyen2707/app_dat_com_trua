@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
+import type { AssignPickupDto } from './dto/assign-pickup.dto';
 import {
   CUTOFF_LABEL,
   CUTOFF_MINUTES,
@@ -289,6 +290,50 @@ export class PickupService {
       throw new Error('Không ghi được lượt lấy cơm');
     }
     return this.format(chosen, date, false);
+  }
+
+  /**
+   * Admin ghi tay lượt đi lấy cơm cho một ngày (tạo mới hoặc đổi người).
+   *
+   * `draw()` cố tình một chiều: chỉ bốc sau giờ chốt và không có đường xoá. Nhưng khi nó
+   * KHÔNG chạy được — flow Power Automate chết giữa chừng, connection Teams hỏng, API ngủ
+   * quá lâu — thì ngày đó trống, mà người thật vẫn đã đi lấy cơm. Không có cửa này thì số
+   * liệu xoay tua sai vĩnh viễn và phải sửa thẳng dưới database.
+   *
+   * Vì vậy đây là endpoint ADMIN, không phải cửa máy-tới-máy như `POST /pickup/today`:
+   * nó ghi đè được kết quả bốc nên phải có người chịu trách nhiệm đứng sau.
+   *
+   * Upsert theo `date` (@unique): ngày chưa có thì tạo, đã có thì đổi người.
+   * `alreadyAssigned` trong kết quả = ngày đó TRƯỚC ĐÓ đã có lượt (tức lần gọi này là ghi đè).
+   */
+  async assign(dto: AssignPickupDto): Promise<PickupResult> {
+    const date = dto.date ?? vnDateStr();
+
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+      select: PICK_SELECT,
+    });
+    if (!user) throw new NotFoundException(`Không tìm thấy thành viên với email ${dto.email}`);
+
+    // weekId chỉ để tham chiếu (schema cho phép null) — không có tuần đang mở vẫn ghi được lượt.
+    const week = await this.prisma.week.findFirst({
+      where: { isActive: true },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true },
+    });
+
+    const existing = await this.prisma.pickupAssignment.findUnique({
+      where: { date },
+      select: { userId: true },
+    });
+
+    await this.prisma.pickupAssignment.upsert({
+      where: { date },
+      create: { date, userId: user.id, weekId: week?.id ?? null },
+      update: { userId: user.id, weekId: week?.id ?? null },
+    });
+
+    return this.format(user, date, Boolean(existing));
   }
 
   /** Lịch sử lượt gần đây (admin xem để kiểm chứng sự công bằng). */
