@@ -1,9 +1,10 @@
-import { Controller, Get, Headers, Post, Query, UnauthorizedException } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Post, Query, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '@/common/decorators/public.decorator';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { Role } from '@/common/enums/role.enum';
+import { AssignPickupDto } from './dto/assign-pickup.dto';
 import { PickupService } from './pickup.service';
 
 @ApiTags('pickup')
@@ -40,6 +41,18 @@ export class PickupController {
   today(@Headers('x-pickup-token') header?: string, @Query('token') token?: string) {
     this.assertToken(header ?? token);
     return this.pickup.today();
+  }
+
+  @ApiBearerAuth('JWT-auth')
+  @Roles(Role.ADMIN)
+  @Post('assign')
+  @ApiOperation({
+    summary:
+      'Admin: ghi tay lượt đi lấy cơm cho một ngày (tạo mới hoặc đổi người). Dùng khi flow không bốc được ' +
+      'hoặc bốc sai người. Bỏ trống date = hôm nay.',
+  })
+  assign(@Body() dto: AssignPickupDto) {
+    return this.pickup.assign(dto);
   }
 
   @ApiBearerAuth('JWT-auth')
