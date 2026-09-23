@@ -74,6 +74,8 @@ export interface DayDetail {
   eat: boolean;
   food: string[];
   drinks: DrinkItem[];
+  /** Ghi chú cho người đi mua, vd "ít cơm". Chuỗi rỗng = xoá ghi chú của ngày đó. */
+  note?: string;
 }
 
 export interface Week {
@@ -136,6 +138,8 @@ export interface GridMember {
   role: Role;
   days: Record<DayKey, boolean>;
   items?: Record<DayKey, DayItems>;
+  /** Ghi chú theo ngày; ngày không ghi thì không có khoá. */
+  notes?: Partial<Record<DayKey, string>>;
   servings: number;
   foodTotal?: number;
   drinksTotal?: number;

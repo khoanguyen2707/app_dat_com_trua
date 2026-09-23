@@ -63,8 +63,9 @@ export function MenuPanel({
       <section className="border-b border-line last:border-0">
         <h3 className="flex items-baseline gap-2 bg-subtle px-5 py-2 text-[13px] font-semibold text-ink-2">
           {title}
-          <span className="tnum font-normal normal-case tracking-normal text-ink-4">
-            {t.menu.sectionCount(list.length)}
+          <span className="tnum font-normal text-ink-4">{t.menu.sectionCount(list.length)}</span>
+          <span className="font-normal text-ink-4">
+            {title === t.menu.foodSection ? t.menu.onePriceNote(vnd(grid.week.unitPrice)) : t.menu.drinkPriceNote}
           </span>
         </h3>
         {groupByEmoji(list).map((g) => (
@@ -82,7 +83,10 @@ export function MenuPanel({
                   )}
                 >
                   <span className="text-[13px]">{d.name}</span>
-                  <span className="tnum text-[13px] font-medium text-ink-3">{vnd(d.price)}</span>
+                  {/* Món ăn ăn theo suất nên giá không nói lên điều gì; chỉ đồ uống mới tính riêng. */}
+                  {d.category === 'DRINK' && (
+                    <span className="tnum text-[13px] font-medium text-drink">{vnd(d.price)}</span>
+                  )}
                   {isAdmin && (
                     <span className="flex gap-0.5 opacity-0 transition-opacity group-hover/dish:opacity-100 focus-within:opacity-100">
                       <IconButton className="size-6" title={t.actions.edit} onClick={() => setEditing(d)}>

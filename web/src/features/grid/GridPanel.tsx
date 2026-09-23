@@ -3,7 +3,7 @@ import { api } from '@/services/api';
 import type { DayDetail, DayItems, DayKey, Dish, DrinkItem, Grid, GridMember } from '@/types';
 import { DAYS } from '@/constants/config';
 import { t } from '@/constants/strings';
-import { CupSoda, Download, Lock, Utensils, X } from 'lucide-react';
+import { CupSoda, Download, Lock, StickyNote, Utensils, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { vnd } from '@/lib/format';
 import { exportGridCSV } from '@/lib/csv';
@@ -261,7 +261,14 @@ export function GridPanel({
                     }
                   >
                     {cellMark(m, day)}
-                    {on && hasDrink(m, day) && <CupSoda className="absolute -bottom-0.5 -left-0.5 size-3 text-info" />}
+                    {m.notes?.[day] && (
+                      <span className="absolute -left-1 -top-1" title={m.notes[day]}>
+                        <StickyNote className="size-3.5 rounded-full bg-surface text-ink-3" />
+                      </span>
+                    )}
+                    {on && hasDrink(m, day) && (
+                      <CupSoda className="absolute -bottom-1 -left-1 size-3.5 rounded-full bg-surface text-drink" />
+                    )}
                   </button>
                 </div>
               );
@@ -316,7 +323,13 @@ export function GridPanel({
                         <div className={cellClass(m, d.key)} onClick={(e) => onCell(m, d.key, e.currentTarget)}>
                           {cellMark(m, d.key)}
                           {m.days[d.key] && hasDrink(m, d.key) && (
-                            <CupSoda className="absolute -bottom-0.5 -left-0.5 size-3 text-info" />
+                            <CupSoda className="absolute -bottom-1 -left-1 size-3.5 rounded-full bg-surface text-drink" />
+                          )}
+                          {m.notes?.[d.key] && (
+                            /* title: rê chuột đọc được ghi chú mà không phải mở phiếu */
+                            <span className="absolute -left-1 -top-1" title={m.notes[d.key]}>
+                              <StickyNote className="size-3.5 rounded-full bg-surface text-ink-3" />
+                            </span>
                           )}
                           {hasAny(m, d.key) && canEditDay(m, d.key) && (
                             <button

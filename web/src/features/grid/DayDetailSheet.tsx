@@ -4,6 +4,9 @@ import type { DayKey, Dish, Grid, GridMember } from '@/types';
 import { DAYS } from '@/constants/config';
 import { t } from '@/constants/strings';
 import { Check, Lock, Minus, Plus } from 'lucide-react';
+
+/** Khớp với MaxLength của DTO phía server. */
+const NOTE_MAX = 200;
 import { cn } from '@/lib/cn';
 import { vnd } from '@/lib/format';
 import { groupByEmoji } from '@/lib/dishGroup';
@@ -47,6 +50,7 @@ export function DayDetailSheet({
   const [qty, setQty] = useState<Record<string, number>>(() =>
     Object.fromEntries((current?.drinks ?? []).map((d) => [d.dishId, d.qty])),
   );
+  const [note, setNote] = useState(member.notes?.[day] ?? '');
   const [saving, setSaving] = useState(false);
 
   // Lọc theo thực đơn ngày: ngày nào admin đã đăng menu thì chỉ hiện món đó
@@ -92,6 +96,7 @@ export function DayDetailSheet({
         eat,
         food: eat ? food : [],
         drinks: chosenDrinks.map(([dishId, n]) => ({ dishId, qty: n })),
+        note: note.trim(),
       };
       if (member.userId === meId) await api.setMyDay(grid.week.id, day, detail);
       else await api.setUserDay(member.userId, grid.week.id, day, detail);
@@ -256,6 +261,31 @@ export function DayDetailSheet({
             );
           })}
         </div>
+      )}
+
+      {/* Ghi chú cho người đi mua */}
+      <div className="mt-4 mb-1.5 text-[13px] font-semibold text-ink-2">{t.grid.detail.noteSection}</div>
+      {editable ? (
+        <>
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            maxLength={NOTE_MAX}
+            rows={2}
+            placeholder={t.grid.detail.notePlaceholder}
+            className="w-full resize-y rounded-ui border border-line bg-surface px-3 py-2 text-[13px] outline-none focus:border-brand"
+          />
+          <div className="mt-1 flex items-center justify-between text-[12px] text-ink-4">
+            <span>{t.grid.detail.noteHint}</span>
+            <span className="tnum">
+              {note.length}/{NOTE_MAX}
+            </span>
+          </div>
+        </>
+      ) : note ? (
+        <div className="rounded-ui border border-line bg-subtle px-3 py-2 text-[13px]">{note}</div>
+      ) : (
+        <div className="text-[13px] text-ink-3">{t.grid.detail.noteEmpty}</div>
       )}
 
       {/* Tổng minh bạch */}

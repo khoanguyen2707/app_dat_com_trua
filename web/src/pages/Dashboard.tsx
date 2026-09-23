@@ -11,7 +11,9 @@ import { TopBar } from '@/components/layout/TopBar';
 import { TabBar } from '@/components/layout/TabBar';
 import { HeroStats } from '@/components/layout/HeroStats';
 import { GridPanel } from '@/features/grid/GridPanel';
+import { TodayOrders } from '@/features/grid/TodayOrders';
 import { MenuPanel } from '@/features/menu/MenuPanel';
+import { TodayMenuPanel } from '@/features/menu/TodayMenuPanel';
 import { PaymentPanel } from '@/features/payment/PaymentPanel';
 import { StatsPanel } from '@/features/stats/StatsPanel';
 import { HistoryPanel } from '@/features/history/HistoryPanel';
@@ -60,6 +62,7 @@ export function Dashboard() {
             <>
               <HeroStats grid={grid} />
 
+              {tab === 'grid' && <TodayOrders grid={grid} dishes={dishes} />}
               {tab === 'grid' && (
                 <GridPanel
                   grid={grid}
@@ -117,15 +120,7 @@ export function Dashboard() {
                   }}
                 />
               )}
-              {tab === 'menu' && (
-                <MenuPanel
-                  dishes={dishes}
-                  isAdmin={false}
-                  reload={reloadDishes}
-                  grid={grid}
-                  reloadGrid={reloadGrid}
-                />
-              )}
+              {tab === 'menu' && <TodayMenuPanel grid={grid} dishes={dishes} />}
             </>
           )}
         </main>

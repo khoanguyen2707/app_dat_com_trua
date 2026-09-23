@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Clock, CupSoda, Lock, Pencil, Plus } from 'lucide-react';
+import { Clock, CupSoda, Lock, Pencil, Plus, StickyNote } from 'lucide-react';
 import type { DayKey, Dish, Grid, GridMember } from '@/types';
 import { DAYS } from '@/constants/config';
 import { t } from '@/constants/strings';
@@ -53,6 +53,21 @@ export function MyOrderPanel({
     return (me.days[key] ? grid.week.unitPrice : 0) + drinks;
   };
 
+  /**
+   * Ô trống mang ba nghĩa khác nhau, không thể dùng chung một chữ:
+   * ngày đã qua mà bỏ trống là "Không đặt", hôm nay còn hạn là "Chưa đặt",
+   * còn ngày mai trở đi thì đơn giản là chưa tới lượt — luật chỉ cho đặt
+   * trong ngày nên không ai "không đặt" một ngày chưa đến.
+   */
+  const todayIndex = today ? DAYS.findIndex((d) => d.key === today) : -1;
+  const emptyLabel = (key: DayKey) => {
+    const i = DAYS.findIndex((d) => d.key === key);
+    if (todayIndex === -1) return t.me.dayEmptyPast;
+    if (i > todayIndex) return t.me.dayFuture;
+    if (i === todayIndex) return t.me.dayEmptyToday;
+    return t.me.dayEmptyPast;
+  };
+
   const restOfWeek = DAYS.filter((d) => d.key !== today);
 
   return (
@@ -66,6 +81,7 @@ export function MyOrderPanel({
           cutoff={grid.cutoff?.label}
           cost={dayCost(today)}
           summary={summary(today)}
+          note={me.notes?.[today]}
           onEdit={() => setEditing(today)}
         />
       ) : (
@@ -90,6 +106,7 @@ export function MyOrderPanel({
           <div className="divide-y divide-line">
             {restOfWeek.map((d) => {
               const { food, drinks } = summary(d.key);
+              const note = me.notes?.[d.key];
               const has = me.days[d.key] || drinks > 0;
               return (
                 <button
@@ -118,7 +135,13 @@ export function MyOrderPanel({
                         )}
                       </span>
                     ) : (
-                      <span className="text-ink-4">{t.me.dayEmpty}</span>
+                      <span className="text-ink-4">{emptyLabel(d.key)}</span>
+                    )}
+                    {note && (
+                      <div className="mt-1 flex items-start gap-1.5 text-[12px] text-ink-3">
+                        <StickyNote className="mt-0.5 size-3.5 shrink-0" />
+                        {note}
+                      </div>
                     )}
                   </div>
                   <div className="tnum shrink-0 text-right text-[13px] font-medium">
@@ -157,6 +180,7 @@ function TodayCard({
   cutoff,
   cost,
   summary,
+  note,
   onEdit,
 }: {
   me: GridMember;
@@ -166,6 +190,7 @@ function TodayCard({
   cutoff?: string;
   cost: number;
   summary: { food: (Dish | undefined)[]; drinks: number };
+  note?: string;
   onEdit: () => void;
 }) {
   const dayInfo = DAYS.find((d) => d.key === day);
@@ -209,6 +234,12 @@ function TodayCard({
           </div>
         ) : (
           <p className="text-[13px] text-ink-3">{t.me.orderedNothing}</p>
+        )}
+        {note && (
+          <div className="mt-2.5 flex items-start gap-2 rounded-ui border border-line bg-subtle px-3 py-2 text-[13px]">
+            <StickyNote className="mt-0.5 size-4 shrink-0 text-ink-4" />
+            {note}
+          </div>
         )}
       </div>
 

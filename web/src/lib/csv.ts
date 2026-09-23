@@ -18,6 +18,9 @@ export function exportGridCSV(grid: Grid, dishes: Dish[]) {
     const parts: string[] = [];
     if (m.days[key]) parts.push(food.length ? food.join(', ') : 'Cơm');
     if (drinks.length) parts.push('Nước: ' + drinks.join(', '));
+    // Ghi chú đi kèm ngay trong ô: người cầm file đi mua cần đọc nó cùng lúc với món.
+    const note = m.notes?.[key];
+    if (note) parts.push('Ghi chú: ' + note);
     return parts.join('\n');
   };
 
