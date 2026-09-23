@@ -4,6 +4,7 @@ import { tabsFor, type TabKey } from '@/constants/config';
 import { t } from '@/constants/strings';
 import { cn } from '@/lib/cn';
 import { Avatar, Pill } from '@/components/ui';
+import { VersionTag } from './VersionTag';
 
 /**
  * Điều hướng chính ở desktop (cột trái cố định). Dưới lg nó được TabBar +
@@ -73,6 +74,7 @@ export function Sidebar({
           {isAdmin && <SideAction icon={<Settings className="size-4" />} label={t.topbar.settings} onClick={onOpenSettings} />}
           <SideAction icon={<LogOut className="size-4" />} label={t.topbar.logout} onClick={logout} />
         </div>
+        <VersionTag className="mt-2 px-2.5" />
       </div>
     </aside>
   );

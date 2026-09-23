@@ -125,7 +125,9 @@ Combo free ổn định: **Neon** (PostgreSQL free, không hết hạn) + **Rend
 | Thực đơn | `GET /dishes` · `POST/PATCH/DELETE /dishes/:id` *(admin)* |
 | Thanh toán | `GET /payment` · `PATCH /payment` *(admin)* |
 | Thông báo | `GET /notifications` · `PATCH /notifications/read` |
-| Lấy cơm | `POST /pickup/today` (bốc người, header `x-pickup-token`) · `GET /pickup/today` · `GET /pickup/history` *(admin)* · `GET /pickup/stats` *(admin — tỷ lệ đi lấy / số lần đặt của từng người)* |
+| Lấy cơm | `POST /pickup/today` (bốc người, header `x-pickup-token`) · `GET /pickup/today` · `POST /pickup/assign` *(admin — ghi tay)* · `DELETE /pickup/assign?date=` *(admin — xoá lượt, bỏ trống = hôm nay)* · `GET /pickup/history` *(admin)* · `GET /pickup/stats` *(admin — tỷ lệ đi lấy / số lần đặt của từng người)* |
+
+> 🗑️ **`DELETE /pickup/assign` xoá lượt của một ngày.** Có ngày lượt đã bốc nhưng rốt cuộc không ai đi — đơn không kịp gửi cho quán nên không có cơm. Để nguyên thì người được bốc bị tính oan một lượt và tỉ lệ đi/đặt (thứ quyết định thứ tự xoay tua) lệch đi. Xoá xong ngày đó coi như chưa bốc nên `POST /pickup/today` bốc lại được — vì vậy chỉ admin gọi được.
 
 > ⏰ **`POST /pickup/today` chỉ bốc SAU giờ chốt đặt cơm (10:15)** — gọi sớm hơn thì trả `picked: false` và **không ghi gì**, nên gọi lúc nào cũng an toàn. Lý do: mỗi ngày chỉ chốt được đúng 1 lượt và không có đường xoá, nên một cú gọi lúc 8h sáng (flow Power Automate lệch múi giờ, flow retry, hay thử endpoint trên Swagger) sẽ khoá cứng kết quả từ nhóm vài người tick sớm. Hẹn giờ flow **sau 10:15** (nhớ đặt đúng timezone — recurrence của Power Automate mặc định theo UTC).
 | Gửi đơn cho quán | `POST /dispatch/today` (flow hỏi mức nhắc, header `x-pickup-token`) · `GET /dispatch/today` (xem, không ghi) · `POST /dispatch/today/sent-hook` (nút trong Teams) · `GET /dispatch/today/status` · `POST/DELETE /dispatch/today/sent` |
@@ -192,6 +194,26 @@ Vòng lặp thoát khi `level` = `idle`; giới hạn **Count 4 / Timeout PT20M*
 Trong app, khối **Đơn hôm nay** hiện dải trạng thái *"Chưa gửi cho quán"* / *"Đã gửi lúc 10:18 · Khoa"* và nút bấm tương ứng — cả nhóm nhìn thấy đơn đã đi hay chưa. Đây mới là thứ ngăn sự cố lặp lại, chứ không phải cái tin nhắn nhắc.
 
 > Ngày không ai đặt cơm thì hệ thống **im hoàn toàn**. Đổi lại, một flow chết sẽ trông giống hệt một ngày không ai đặt — nếu muốn phân biệt thì cho flow ping một kênh log riêng.
+
+---
+
+## 6c. Phiên bản — app đã cập nhật chưa?
+
+Web và API deploy riêng nhau, nên có lúc một bên đã mới còn bên kia vẫn chạy code cũ. Triệu chứng thì khó hiểu: giao diện gọi một endpoint mà bản API cũ chưa có, và tất cả những gì thấy được là `404`.
+
+**Số bản tự tăng.** Workflow [`.github/workflows/version.yml`](.github/workflows/version.yml) chạy mỗi lần code vào `main` (merge PR hoặc push thẳng): tăng patch version của `web/package.json` và `server/package.json`, rồi đẩy lại một commit `chore(release): vX.Y.Z [skip ci]`. Không phải nhớ bump tay.
+
+**App tự nói nó là bản nào.** Góc dưới sidebar và cuối màn đăng nhập hiện `Bản 1.0.4`. Rê chuột thấy thêm commit, lúc build và bản của API.
+
+| Nguồn | Lấy từ đâu |
+|---|---|
+| Version của web | `web/package.json`, Vite nhúng lúc build |
+| Commit của web | `RENDER_GIT_COMMIT` Render đặt sẵn khi build; chạy máy local ghi `dev` |
+| Version + commit của API | `GET /health` |
+
+**Lệch bản thì nói thẳng.** Web hỏi `/health` lúc mở app; nếu hai bên khác số bản, dòng version chuyển sang màu cảnh báo và ghi `Web 1.0.4 · API 1.0.3 — lệch bản`. Đó là dấu hiệu một trong hai chưa deploy xong.
+
+> ⚠️ Workflow đẩy commit thẳng vào `main`. Nếu bật branch protection bắt buộc qua PR thì nó sẽ bị chặn — khi đó cho `github-actions[bot]` vào danh sách bypass, hoặc bỏ workflow và bump tay.
 
 ---
 
