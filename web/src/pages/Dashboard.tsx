@@ -118,7 +118,9 @@ export function Dashboard() {
                   }}
                 />
               )}
-              {tab === 'menu' && <TodayMenuPanel grid={grid} dishes={dishes} />}
+              {tab === 'menu' && (
+                <TodayMenuPanel grid={grid} dishes={dishes} meId={user!.id} reload={reloadGrid} />
+              )}
             </>
           )}
         </main>
