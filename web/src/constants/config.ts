@@ -1,3 +1,4 @@
+import { CalendarDays, CreditCard, History, ListOrdered, PieChart } from 'lucide-react';
 import type { DayKey } from '@/types';
 import { t } from './strings';
 
@@ -46,13 +47,13 @@ export const BANKS: { name: string; bin: string }[] = [
   { name: 'Cake', bin: '546034' }, { name: 'Timo', bin: '963388' },
 ];
 
-/** Các tab điều hướng dưới cùng */
+/** Các mục điều hướng chính (sidebar ở desktop, tab bar ở mobile) */
 export const TABS = [
-  { key: 'grid', icon: '🗓️', label: t.tabs.grid },
-  { key: 'menu', icon: '📋', label: t.tabs.menu },
-  { key: 'pay', icon: '💳', label: t.tabs.pay },
-  { key: 'stats', icon: '📊', label: t.tabs.stats },
-  { key: 'hist', icon: '🕐', label: t.tabs.hist },
+  { key: 'grid', icon: CalendarDays, label: t.tabs.grid },
+  { key: 'menu', icon: ListOrdered, label: t.tabs.menu },
+  { key: 'pay', icon: CreditCard, label: t.tabs.pay },
+  { key: 'stats', icon: PieChart, label: t.tabs.stats },
+  { key: 'hist', icon: History, label: t.tabs.hist },
 ] as const;
 
 export type TabKey = (typeof TABS)[number]['key'];

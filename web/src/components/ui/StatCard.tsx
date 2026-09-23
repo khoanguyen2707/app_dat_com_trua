@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
-import { cls } from '@/lib/format';
+import { cn } from '@/lib/cn';
 
-/** Thẻ chỉ số ở khu hero (nhãn + giá trị + dòng phụ tuỳ chọn) */
+/** Một ô chỉ số trong thanh KPI (nhãn nhỏ phía trên, giá trị bên dưới). */
 export function StatCard({
   label,
   value,
@@ -14,10 +14,10 @@ export function StatCard({
   sub?: ReactNode;
 }) {
   return (
-    <div className="stat">
-      <div className="lbl">{label}</div>
-      <div className={cls('val', brand && 'brand')}>{value}</div>
-      {sub && <div className="stat-sub">{sub}</div>}
+    <div className="px-4 py-2.5">
+      <div className="text-[11px] font-medium uppercase tracking-wide text-ink-4">{label}</div>
+      <div className={cn('tnum mt-0.5 text-xl font-semibold tracking-tight', brand && 'text-brand')}>{value}</div>
+      {sub && <div className="mt-0.5 text-[11px] text-ink-3">{sub}</div>}
     </div>
   );
 }

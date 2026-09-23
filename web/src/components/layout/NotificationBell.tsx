@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNotifications } from '@/hooks/useNotifications';
 import { t } from '@/constants/strings';
-import { cls, timeAgo } from '@/lib/format';
+import { Bell } from 'lucide-react';
+import { cn } from '@/lib/cn';
+import { timeAgo } from '@/lib/format';
 import { IconButton } from '@/components/ui';
 
 /** Chuông thông báo ở header (cho cả admin & user) — poll + dropdown. */
@@ -26,24 +28,31 @@ export function NotificationBell() {
   }, [open, close]);
 
   return (
-    <div className="notif-bell" ref={ref}>
-      <IconButton title={t.notif.title} onClick={() => (open ? close() : setOpen(true))}>
-        🔔
+    <div className="relative" ref={ref}>
+      <IconButton title={t.notif.label} onClick={() => (open ? close() : setOpen(true))}>
+        <Bell className="size-4" />
       </IconButton>
-      {feed.unread > 0 && <span className="notif-dot">{feed.unread > 9 ? '9+' : feed.unread}</span>}
+      {feed.unread > 0 && (
+        <span className="tnum pointer-events-none absolute -right-0.5 -top-0.5 grid min-w-4 place-items-center rounded-full bg-brand px-1 text-[10px] font-semibold text-white">
+          {feed.unread > 9 ? '9+' : feed.unread}
+        </span>
+      )}
 
       {open && (
-        <div className="notif-panel">
-          <div className="notif-h">{t.notif.title}</div>
+        <div className="absolute right-0 z-50 mt-1.5 w-80 overflow-hidden rounded-ui-md border border-line bg-surface shadow-lg">
+          <div className="border-b border-line px-3 py-2 text-[13px] font-semibold">{t.notif.label}</div>
           {feed.items.length === 0 ? (
-            <div className="notif-empty">{t.notif.empty}</div>
+            <div className="px-3 py-8 text-center text-[13px] text-ink-3">{t.notif.empty}</div>
           ) : (
-            <div className="notif-list">
+            <div className="max-h-96 overflow-y-auto">
               {feed.items.map((n) => (
-                <div key={n.id} className={cls('notif-item', !n.read && 'unread')}>
-                  <div className="notif-title">{n.title}</div>
-                  <div className="notif-body">{n.body}</div>
-                  <div className="notif-time">{timeAgo(n.createdAt)}</div>
+                <div
+                  key={n.id}
+                  className={cn('border-b border-line px-3 py-2.5 last:border-0', !n.read && 'bg-brand-soft')}
+                >
+                  <div className="text-[13px] font-medium">{n.title}</div>
+                  <div className="mt-0.5 text-[13px] text-ink-2">{n.body}</div>
+                  <div className="mt-1 text-[11px] text-ink-4">{timeAgo(n.createdAt)}</div>
                 </div>
               ))}
             </div>

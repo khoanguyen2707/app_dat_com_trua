@@ -4,7 +4,9 @@ import { useDashboardData } from '@/hooks/useDashboardData';
 import { useDisclosure } from '@/hooks/useDisclosure';
 import type { TabKey } from '@/constants/config';
 import { t } from '@/constants/strings';
+import { CalendarX2 } from 'lucide-react';
 import { Card, EmptyState, Spinner } from '@/components/ui';
+import { Sidebar } from '@/components/layout/Sidebar';
 import { TopBar } from '@/components/layout/TopBar';
 import { TabBar } from '@/components/layout/TabBar';
 import { HeroStats } from '@/components/layout/HeroStats';
@@ -29,15 +31,24 @@ export function Dashboard() {
   const pendingCount = isAdmin && grid ? grid.members.filter((m) => m.paymentStatus === 'PENDING').length : 0;
 
   return (
-    <div className="app-shell">
-      <TopBar weekLabel={grid?.week.label} onChangePassword={password.onOpen} onOpenSettings={settings.onOpen} />
+    <div className="min-h-dvh bg-bg lg:pl-sidebar">
+      <Sidebar
+        active={tab}
+        onChange={setTab}
+        badges={pendingCount ? { pay: pendingCount } : undefined}
+        onChangePassword={password.onOpen}
+        onOpenSettings={settings.onOpen}
+      />
 
-      <div className="wrap">
+      <div className="flex min-h-dvh flex-col">
+        <TopBar weekLabel={grid?.week.label} onChangePassword={password.onOpen} onOpenSettings={settings.onOpen} />
+
+        <main className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-4">
         {loading ? (
           <Spinner />
         ) : !grid ? (
           <Card>
-            <EmptyState icon="🗓️">
+            <EmptyState icon={<CalendarX2 />}>
               {t.dashboard.noWeekTitle}
               {isAdmin ? t.dashboard.noWeekAdmin : t.dashboard.noWeekMember}
             </EmptyState>
@@ -84,9 +95,10 @@ export function Dashboard() {
             )}
           </>
         )}
-      </div>
+        </main>
 
-      <TabBar active={tab} onChange={setTab} badges={pendingCount ? { pay: pendingCount } : undefined} />
+        <TabBar active={tab} onChange={setTab} badges={pendingCount ? { pay: pendingCount } : undefined} />
+      </div>
 
       {settings.open && grid && (
         <SettingsModal

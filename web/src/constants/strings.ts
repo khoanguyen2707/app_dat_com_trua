@@ -49,6 +49,8 @@ export const t = {
 
   notif: {
     title: '🔔 Thông báo',
+    /** Nhãn trần (không emoji) cho nút chuông đã dùng icon SVG. */
+    label: 'Thông báo',
     empty: 'Chưa có thông báo nào.',
     markAllRead: 'Đánh dấu đã đọc',
   },
@@ -81,27 +83,27 @@ export const t = {
     noWeekAdmin: ' Vào tab Lịch sử để tạo tuần mới.',
     noWeekMember: ' Nhờ admin tạo tuần mới nhé.',
     weekChip: 'Tuần:',
-    statUnitPrice: '🍚 Đơn giá / suất',
-    statTotalServings: '🧮 Tổng số suất',
-    statTotalMoney: '💰 Tổng tiền',
-    statEating: '👥 Đang ăn',
+    statUnitPrice: 'Đơn giá / suất',
+    statTotalServings: 'Tổng số suất',
+    statTotalMoney: 'Tổng tiền',
+    statEating: 'Đang ăn',
   },
 
   grid: {
     title: 'Bảng đăng ký tuần',
     // hướng dẫn chi tiết cho nghiệp vụ mới (mix món + đồ uống + chỉ đặt hôm nay)
     guide: {
-      title: '📖 Cách đặt cơm',
-      order: (price: string) => `🍚 Chạm ô để đặt cơm (${price}/ngày) — bắt buộc chọn ít nhất 1 món.`,
+      title: 'Cách đặt cơm',
+      order: (price: string) => `Chạm ô để đặt cơm (${price}/ngày) — bắt buộc chọn ít nhất 1 món.`,
       detail: (where: string) =>
-        `🍱 Chạm ${where} để mở phiếu chi tiết — chọn món (mix nhiều món vẫn 1 suất) & thêm đồ uống (tính tiền riêng theo giá).`,
+        `Chạm ${where} để mở phiếu chi tiết — chọn món (mix nhiều món vẫn 1 suất) & thêm đồ uống (tính tiền riêng theo giá).`,
       whereMobile: 'tên thành viên',
       whereDesktop: 'ô',
-      today: (cutoff: string) => `⏰ Chỉ đặt cho HÔM NAY, trước ${cutoff} — không đặt trước cho ngày sau.`,
-      cancel: '❌ Nút × (mobile: nút tick) dọn ô: có cơm → bỏ cơm, giữ nước (ô xanh 🥤); ô chỉ nước → bỏ nước.',
-      colors: '🎨 Ô cam 🍚 = có cơm · ô xanh 🥤 = chỉ uống nước.',
-      admin: '👑 Admin: đặt/sửa hộ mọi người, mọi ngày (kể cả ngày đã khoá).',
-      member: '✏️ Bạn chỉ sửa được dòng của mình.',
+      today: (cutoff: string) => `Chỉ đặt cho HÔM NAY, trước ${cutoff} — không đặt trước cho ngày sau.`,
+      cancel: 'Nút × (mobile: nút tick) dọn ô: có cơm → bỏ cơm, giữ nước (ô xanh); ô chỉ nước → bỏ nước.',
+      colors: 'Ô cam = có cơm · ô xanh = chỉ uống nước.',
+      admin: 'Admin: đặt/sửa hộ mọi người, mọi ngày (kể cả ngày đã khoá).',
+      member: 'Bạn chỉ sửa được dòng của mình.',
     },
     locked: 'Đã khoá',
     colMember: 'Thành viên',
@@ -111,7 +113,7 @@ export const t = {
     autoSave: 'Tự động lưu khi tích',
     clearRice: 'Bỏ cơm',
     clearDrink: 'Bỏ nước',
-    exportBtn: '📊 Xuất Excel',
+    exportBtn: 'Xuất Excel',
     exported: 'Đã xuất Excel (CSV)',
     csv: { no: 'STT', name: 'Tên', total: 'TỔNG' },
     // mobile: chọn ngày → list thành viên
