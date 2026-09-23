@@ -146,6 +146,8 @@ export class WeeksService {
         role: u.role,
         days,
         items: itemsByUser.get(u.id) ?? emptyDayItems(),
+        /** Ghi chú đặt cơm theo ngày, vd { wed: 'ít cơm' }. Ngày không ghi thì không có khoá. */
+        notes: (o?.notes as Record<string, string> | null) ?? {},
         servings,
         foodTotal,
         drinksTotal,

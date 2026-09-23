@@ -87,11 +87,26 @@ export class OrdersService {
       }
     }
 
+    // Ghi chú nằm trong một cột JSON theo ngày. Phải đọc trước rồi ghi đè đúng khoá
+    // của ngày này — ghi thẳng cả object sẽ xoá mất ghi chú của các ngày khác.
+    const current: any = await this.prisma.order.findUnique({
+      where: { weekId_userId: { weekId: dto.weekId, userId } },
+      select: { notes: true },
+    });
+    const notes = { ...((current?.notes as Record<string, string>) ?? {}) };
+    if (dto.note === undefined) {
+      // không gửi note -> giữ nguyên ghi chú cũ của ngày đó
+    } else if (dto.note.trim()) {
+      notes[day] = dto.note.trim();
+    } else {
+      delete notes[day];
+    }
+
     await this.prisma.$transaction([
       this.prisma.order.upsert({
         where: { weekId_userId: { weekId: dto.weekId, userId } },
-        update: { [day]: dto.eat },
-        create: { weekId: dto.weekId, userId, [day]: dto.eat },
+        update: { [day]: dto.eat, notes },
+        create: { weekId: dto.weekId, userId, [day]: dto.eat, notes },
       }),
       this.prisma.orderItem.deleteMany({ where: { weekId: dto.weekId, userId, day } }),
       this.prisma.orderItem.createMany({

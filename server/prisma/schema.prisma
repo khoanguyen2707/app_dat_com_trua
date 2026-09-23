@@ -75,6 +75,7 @@ model Order {
   fri       Boolean  @default(false)
   sat       Boolean  @default(false)
   sun       Boolean  @default(false)
+  notes     Json? // Ghi chú đặt cơm theo ngày: { "mon": "ít cơm, không hành", ... }
   paid      Boolean       @default(false) // = (paymentStatus == PAID), giữ cho tương thích
   paymentStatus PaymentStatus @default(UNPAID)
   reportedAt    DateTime? // lúc user bấm "đã chuyển khoản"
