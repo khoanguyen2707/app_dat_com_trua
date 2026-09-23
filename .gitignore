@@ -19,3 +19,5 @@ docs/
 # file tạm / nháp (không commit)
 tmp-test-parse.*
 *.tmp
+# ảnh/snapshot do Playwright MCP sinh ra khi kiểm thử giao diện
+.playwright-mcp/
