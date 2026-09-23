@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Headers, Post, Query, UnauthorizedException } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Post, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '@/common/decorators/public.decorator';
@@ -15,7 +15,12 @@ export class PickupController {
     private readonly config: ConfigService,
   ) {}
 
-  /** Máy-tới-máy (Power Automate): chặn bằng token bí mật trong env PICKUP_TOKEN. */
+  /**
+   * Máy-tới-máy (Power Automate): chặn bằng token bí mật trong env PICKUP_TOKEN.
+   *
+   * CHỈ nhận qua header. Query string bị ghi lại ở access log, log proxy và header
+   * Referer nên bí mật rò ra chỗ không ai nghĩ tới.
+   */
   private assertToken(token?: string): void {
     const expected = this.config.get<string>('PICKUP_TOKEN');
     if (!expected || !token || token !== expected) {
@@ -28,18 +33,19 @@ export class PickupController {
   @ApiOperation({
     summary:
       'Bốc người đi lấy cơm hôm nay (xoay tua công bằng) — gọi từ Power Automate. Cần header x-pickup-token. ' +
-      'Gọi TRƯỚC giờ chốt đặt cơm sẽ không bốc (trả picked=false) để không chốt nhầm từ danh sách chưa đầy đủ.',
+      'Gọi TRƯỚC giờ chốt đặt cơm sẽ không bốc (trả picked=false) để không chốt nhầm từ danh sách chưa đầy đủ. ' +
+      'Token CHỈ nhận qua header x-pickup-token.',
   })
-  draw(@Headers('x-pickup-token') header?: string, @Query('token') token?: string) {
-    this.assertToken(header ?? token);
+  draw(@Headers('x-pickup-token') token?: string) {
+    this.assertToken(token);
     return this.pickup.draw();
   }
 
   @Public()
   @Get('today')
-  @ApiOperation({ summary: 'Xem người đã chốt hôm nay (không bốc mới). Cần token.' })
-  today(@Headers('x-pickup-token') header?: string, @Query('token') token?: string) {
-    this.assertToken(header ?? token);
+  @ApiOperation({ summary: 'Xem người đã chốt hôm nay (không bốc mới). Cần header x-pickup-token.' })
+  today(@Headers('x-pickup-token') token?: string) {
+    this.assertToken(token);
     return this.pickup.today();
   }
 
