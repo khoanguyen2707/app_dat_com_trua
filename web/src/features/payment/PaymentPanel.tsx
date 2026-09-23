@@ -171,27 +171,38 @@ export function PaymentPanel({
                       <div className={cn('truncate text-sm', m.paymentStatus === 'PAID' && 'text-ink-3')}>
                         {m.fullName}
                       </div>
-                      <div className="text-[12px] text-ink-4">
-                        {t.payment.servingsAmount(m.servings, vnd(m.total))}
-                      </div>
+                      <div className="text-[12px] text-ink-4">{t.payment.servings(m.servings)}</div>
                     </button>
-                    <PaymentStatusChip status={m.paymentStatus} />
+                    <div
+                      className={cn(
+                        'tnum shrink-0 text-right text-sm font-medium',
+                        m.paymentStatus === 'PAID' ? 'text-ink-4 line-through' : 'text-ink',
+                      )}
+                    >
+                      {vnd(m.total)}
+                    </div>
+                    {/* Chưa trả là trạng thái mặc định — chip chỉ nói thêm khi khác mặc định. */}
+                    <div className="flex w-28 justify-end">
+                      {m.paymentStatus !== 'UNPAID' && <PaymentStatusChip status={m.paymentStatus} />}
+                    </div>
                     {isAdmin && (
-                      <div className="flex w-32 justify-end">
-                        {m.paymentStatus !== 'PAID' ? (
+                      <div className="flex w-28 justify-end">
+                        {m.paymentStatus === 'PAID' ? (
+                          <Button tiny loading={busyId === m.userId} onClick={() => setStatus(m, 'UNPAID')}>
+                            <Undo2 className="size-3.5" />
+                            {t.payment.undoShort}
+                          </Button>
+                        ) : (
+                          /* Chỉ người đã báo chuyển khoản mới cần admin bấm gấp → nút đậm.
+                             Còn lại để nút nhạt, tránh một cột chục nút xanh gào lên cùng lúc. */
                           <Button
                             tiny
-                            variant="success"
+                            variant={m.paymentStatus === 'PENDING' ? 'success' : 'default'}
                             loading={busyId === m.userId}
                             onClick={() => setStatus(m, 'PAID')}
                           >
                             <Check className="size-3.5" />
                             {t.payment.confirmShort}
-                          </Button>
-                        ) : (
-                          <Button tiny loading={busyId === m.userId} onClick={() => setStatus(m, 'UNPAID')}>
-                            <Undo2 className="size-3.5" />
-                            {t.payment.undoShort}
                           </Button>
                         )}
                       </div>

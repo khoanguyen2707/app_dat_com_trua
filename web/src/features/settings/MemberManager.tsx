@@ -301,7 +301,9 @@ export function MemberManager({ onChanged }: { onChanged: () => void }) {
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-2">
                     <span className="truncate text-sm font-medium">{u.fullName}</span>
-                    <Pill kind={u.role === 'ADMIN' ? 'admin' : 'user'}>{u.role}</Pill>
+                    <Pill kind={u.role === 'ADMIN' ? 'admin' : 'user'}>
+                      {u.role === 'ADMIN' ? t.role.admin : t.role.member}
+                    </Pill>
                     <ChevronDown
                       className={cn('ml-auto size-4 shrink-0 text-ink-4 transition-transform', open && 'rotate-180')}
                       aria-hidden="true"

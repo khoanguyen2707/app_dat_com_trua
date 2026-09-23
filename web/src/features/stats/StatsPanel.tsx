@@ -46,7 +46,7 @@ export function StatsPanel({ grid, weeks }: { grid: Grid; weeks: Week[] }) {
   );
 
   return (
-    <div className="grid gap-4 xl:grid-cols-2">
+    <div className="grid items-start gap-4 xl:grid-cols-2">
       <Card className="xl:row-span-2">
         <CardHeader title={t.stats.byMember} />
         <CardBody>
@@ -77,14 +77,14 @@ export function StatsPanel({ grid, weeks }: { grid: Grid; weeks: Week[] }) {
           {columns(
             DAYS.map((d) => ({ label: d.label, s: grid.totals.perDay[d.key] })),
             maxDay,
-            'bg-brand/80',
+            'bg-brand/75',
           )}
         </CardBody>
       </Card>
 
       <Card>
         <CardHeader title={t.stats.trend} />
-        <CardBody>{columns(trend, maxTrend, 'bg-info/70')}</CardBody>
+        <CardBody>{columns(trend, maxTrend, 'bg-brand/45')}</CardBody>
       </Card>
     </div>
   );
