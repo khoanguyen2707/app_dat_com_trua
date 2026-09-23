@@ -306,6 +306,30 @@ export class PickupService {
    * Upsert theo `date` (@unique): ngày chưa có thì tạo, đã có thì đổi người.
    * `alreadyAssigned` trong kết quả = ngày đó TRƯỚC ĐÓ đã có lượt (tức lần gọi này là ghi đè).
    */
+  /**
+   * Xoá lượt đi lấy cơm của một ngày (bỏ trống = hôm nay).
+   *
+   * Có ngày lượt đã được bốc nhưng rốt cuộc không ai đi: đơn không kịp gửi cho quán
+   * nên không có cơm. Để nguyên thì người được bốc bị tính oan một lượt, và tỉ lệ
+   * đi/đặt của họ — thứ quyết định thứ tự xoay tua — lệch đi.
+   *
+   * Xoá xong thì ngày đó coi như chưa bốc, nên `POST /pickup/today` có thể bốc lại.
+   * Đây là lý do việc này chỉ admin làm được.
+   */
+  async unassign(date?: string) {
+    const day = date ?? vnDateStr();
+    const existing = await this.prisma.pickupAssignment.findUnique({
+      where: { date: day },
+      include: { user: { select: PICK_SELECT } },
+    });
+    if (!existing) {
+      return { date: day, removed: false, reason: 'Ngày này chưa có lượt nào để xoá' };
+    }
+
+    await this.prisma.pickupAssignment.delete({ where: { date: day } });
+    return { date: day, removed: true, fullName: existing.user.fullName, userId: existing.user.id };
+  }
+
   async assign(dto: AssignPickupDto): Promise<PickupResult> {
     const date = dto.date ?? vnDateStr();
 

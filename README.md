@@ -125,7 +125,9 @@ Combo free ổn định: **Neon** (PostgreSQL free, không hết hạn) + **Rend
 | Thực đơn | `GET /dishes` · `POST/PATCH/DELETE /dishes/:id` *(admin)* |
 | Thanh toán | `GET /payment` · `PATCH /payment` *(admin)* |
 | Thông báo | `GET /notifications` · `PATCH /notifications/read` |
-| Lấy cơm | `POST /pickup/today` (bốc người, header `x-pickup-token`) · `GET /pickup/today` · `GET /pickup/history` *(admin)* · `GET /pickup/stats` *(admin — tỷ lệ đi lấy / số lần đặt của từng người)* |
+| Lấy cơm | `POST /pickup/today` (bốc người, header `x-pickup-token`) · `GET /pickup/today` · `POST /pickup/assign` *(admin — ghi tay)* · `DELETE /pickup/assign?date=` *(admin — xoá lượt, bỏ trống = hôm nay)* · `GET /pickup/history` *(admin)* · `GET /pickup/stats` *(admin — tỷ lệ đi lấy / số lần đặt của từng người)* |
+
+> 🗑️ **`DELETE /pickup/assign` xoá lượt của một ngày.** Có ngày lượt đã bốc nhưng rốt cuộc không ai đi — đơn không kịp gửi cho quán nên không có cơm. Để nguyên thì người được bốc bị tính oan một lượt và tỉ lệ đi/đặt (thứ quyết định thứ tự xoay tua) lệch đi. Xoá xong ngày đó coi như chưa bốc nên `POST /pickup/today` bốc lại được — vì vậy chỉ admin gọi được.
 
 > ⏰ **`POST /pickup/today` chỉ bốc SAU giờ chốt đặt cơm (10:15)** — gọi sớm hơn thì trả `picked: false` và **không ghi gì**, nên gọi lúc nào cũng an toàn. Lý do: mỗi ngày chỉ chốt được đúng 1 lượt và không có đường xoá, nên một cú gọi lúc 8h sáng (flow Power Automate lệch múi giờ, flow retry, hay thử endpoint trên Swagger) sẽ khoá cứng kết quả từ nhóm vài người tick sớm. Hẹn giờ flow **sau 10:15** (nhớ đặt đúng timezone — recurrence của Power Automate mặc định theo UTC).
 | Gửi đơn cho quán | `POST /dispatch/today` (flow hỏi mức nhắc, header `x-pickup-token`) · `GET /dispatch/today` (xem, không ghi) · `POST /dispatch/today/sent-hook` (nút trong Teams) · `GET /dispatch/today/status` · `POST/DELETE /dispatch/today/sent` |

@@ -1,6 +1,6 @@
 {
   "name": "com-trua-server",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Backend đặt cơm trưa - NestJS + Prisma + JWT RBAC",
   "private": true,
   "license": "UNLICENSED",

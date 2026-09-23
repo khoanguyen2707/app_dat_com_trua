@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Headers, Post, UnauthorizedException } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Headers, Post, Query, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '@/common/decorators/public.decorator';
@@ -59,6 +59,19 @@ export class PickupController {
   })
   assign(@Body() dto: AssignPickupDto) {
     return this.pickup.assign(dto);
+  }
+
+  @ApiBearerAuth('JWT-auth')
+  @Roles(Role.ADMIN)
+  @Delete('assign')
+  @ApiOperation({
+    summary:
+      'Admin: xoá lượt đi lấy cơm của một ngày (bỏ trống date = hôm nay). Dùng khi ngày đó ' +
+      'rốt cuộc không ai đi — không có cơm, hoặc bốc nhầm — để không tính oan một lượt vào ' +
+      'tỉ lệ xoay tua. Xoá xong có thể bốc lại.',
+  })
+  unassign(@Query('date') date?: string) {
+    return this.pickup.unassign(date);
   }
 
   @ApiBearerAuth('JWT-auth')
