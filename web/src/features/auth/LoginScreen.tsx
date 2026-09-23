@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { t } from '@/constants/strings';
 import { MIN_PASSWORD_LENGTH } from '@/constants/config';
 import { Button, Field, Tabs } from '@/components/ui';
+import { VersionTag } from '@/components/layout/VersionTag';
 
 type Mode = 'login' | 'register';
 
@@ -92,6 +93,8 @@ export function LoginScreen() {
         <Button variant="primary" block loading={busy} className="mt-1">
           {mode === 'login' ? t.login.submitLogin : t.login.submitRegister}
         </Button>
+
+        <VersionTag className="mt-4 text-center" />
       </form>
     </div>
   );

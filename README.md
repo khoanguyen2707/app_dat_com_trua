@@ -195,6 +195,26 @@ Trong app, khối **Đơn hôm nay** hiện dải trạng thái *"Chưa gửi ch
 
 ---
 
+## 6c. Phiên bản — app đã cập nhật chưa?
+
+Web và API deploy riêng nhau, nên có lúc một bên đã mới còn bên kia vẫn chạy code cũ. Triệu chứng thì khó hiểu: giao diện gọi một endpoint mà bản API cũ chưa có, và tất cả những gì thấy được là `404`.
+
+**Số bản tự tăng.** Workflow [`.github/workflows/version.yml`](.github/workflows/version.yml) chạy mỗi lần code vào `main` (merge PR hoặc push thẳng): tăng patch version của `web/package.json` và `server/package.json`, rồi đẩy lại một commit `chore(release): vX.Y.Z [skip ci]`. Không phải nhớ bump tay.
+
+**App tự nói nó là bản nào.** Góc dưới sidebar và cuối màn đăng nhập hiện `Bản 1.0.4`. Rê chuột thấy thêm commit, lúc build và bản của API.
+
+| Nguồn | Lấy từ đâu |
+|---|---|
+| Version của web | `web/package.json`, Vite nhúng lúc build |
+| Commit của web | `RENDER_GIT_COMMIT` Render đặt sẵn khi build; chạy máy local ghi `dev` |
+| Version + commit của API | `GET /health` |
+
+**Lệch bản thì nói thẳng.** Web hỏi `/health` lúc mở app; nếu hai bên khác số bản, dòng version chuyển sang màu cảnh báo và ghi `Web 1.0.4 · API 1.0.3 — lệch bản`. Đó là dấu hiệu một trong hai chưa deploy xong.
+
+> ⚠️ Workflow đẩy commit thẳng vào `main`. Nếu bật branch protection bắt buộc qua PR thì nó sẽ bị chặn — khi đó cho `github-actions[bot]` vào danh sách bypass, hoặc bỏ workflow và bump tay.
+
+---
+
 ## 7. Biến môi trường (server/.env)
 
 | Biến | Ý nghĩa |

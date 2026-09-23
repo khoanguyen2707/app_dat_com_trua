@@ -1,0 +1,58 @@
+name: Version
+
+# Mỗi lần code vào main (merge PR hoặc push thẳng) thì tăng patch version của cả
+# hai package. Nhờ đó mở app ra là biết bản đang chạy có phải bản mới nhất không.
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  bump:
+    name: Tăng patch version
+    runs-on: ubuntu-latest
+    # Chính commit do job này tạo cũng là một push vào main. Không chặn thì workflow
+    # tự gọi lại chính nó mãi mãi. GitHub bỏ qua commit có "[skip ci]", đây là lớp
+    # chặn thứ hai phòng khi quy ước tiền tố commit bị đổi.
+    if: ${{ !startsWith(github.event.head_commit.message, 'chore(release):') }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # cần token ghi được để đẩy commit tăng version trở lại main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Tính bản kế tiếp
+        id: next
+        run: |
+          set -euo pipefail
+          current=$(node -p "require('./web/package.json').version")
+          IFS=. read -r major minor patch <<< "$current"
+          next="$major.$minor.$((patch + 1))"
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          echo "next=$next" >> "$GITHUB_OUTPUT"
+          echo "$current -> $next"
+
+      - name: Ghi version vào cả hai package
+        run: |
+          set -euo pipefail
+          npm --prefix web  pkg set version="${{ steps.next.outputs.next }}"
+          npm --prefix server pkg set version="${{ steps.next.outputs.next }}"
+
+      - name: Đẩy commit tăng version
+        run: |
+          set -euo pipefail
+          if git diff --quiet; then
+            echo "Không có gì đổi, bỏ qua."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add web/package.json server/package.json
+          git commit -m "chore(release): v${{ steps.next.outputs.next }} [skip ci]"
+          git push

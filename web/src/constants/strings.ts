@@ -41,6 +41,13 @@ export const t = {
     memberIcon: "👤",
   },
 
+  version: {
+    label: (v: string) => `Bản ${v}`,
+    mismatch: (web: string, api: string) => `Web ${web} · API ${api} — lệch bản`,
+    tooltip: (commit: string, builtAt: string, api: string) =>
+      `Commit ${commit} · build ${builtAt} · API bản ${api}`,
+  },
+
   topbar: {
     changePassword: "Đổi mật khẩu",
     settings: "Cài đặt",
