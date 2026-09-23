@@ -5,7 +5,8 @@
  * lẫn emoji/bullet/giá) → tách thành danh sách món, khớp với danh mục hiện có để
  * biết món nào ĐÃ CÓ / món nào MỚI / món nào trong danh mục KHÔNG bán hôm nay (ẩn).
  *
- * Khoá khớp = bỏ dấu + bỏ HẾT khoảng trắng → "caphê đen" và "Cà phê đen" trùng nhau.
+ * Khoá khớp = bỏ dấu + bỏ HẾT khoảng trắng + gộp từ lặp liền nhau → "caphê đen",
+ * "Cà phê đen" và "Cà phê phê đen" là cùng một món.
  * Cố ý KHÔNG gộp 2 món khác nhau (Mực rim ≠ Tôm rim); chỉ gợi ý "ngờ ngợ" khi gần giống.
  */
 
@@ -74,9 +75,22 @@ export function deburr(s: string): string {
     .trim();
 }
 
-/** Khoá khớp: bỏ dấu + bỏ mọi ký tự không phải chữ/số (gồm khoảng trắng). */
+/**
+ * Khoá khớp: bỏ dấu, bỏ mọi ký tự không phải chữ/số, và **gộp từ lặp liền nhau**.
+ *
+ * Gộp từ lặp là để chống chính lỗi dán tay: admin copy nhầm thành "Cá lóc kho kho"
+ * thì trước đây khoá khác đi và app đẻ ra một món trùng nằm lại trong danh mục mãi.
+ * Chỉ gộp khi hai từ **liền nhau** giống hệt — "Kho quẹt kho" là tên thật, không đụng tới.
+ */
 export function matchKey(s: string): string {
-  return deburr(s).replace(/[^a-z0-9]/g, '');
+  const words = deburr(s)
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
+  const out: string[] = [];
+  for (const w of words) {
+    if (out[out.length - 1] !== w) out.push(w);
+  }
+  return out.join('');
 }
 
 /** Đọc giá kiểu "10k", "12 k", "15.000", "10000" -> số tiền; 0 nếu không có. */

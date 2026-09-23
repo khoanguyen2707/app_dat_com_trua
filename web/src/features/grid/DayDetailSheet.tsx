@@ -22,6 +22,7 @@ export function DayDetailSheet({
   meId,
   locked,
   anchor = null,
+  preselect,
   onClose,
   onSaved,
 }: {
@@ -34,6 +35,8 @@ export function DayDetailSheet({
   locked: boolean;
   /** Ô đã bấm trong bảng tuần (desktop) → mở popover neo vào ô thay vì hộp thoại. */
   anchor?: DOMRect | null;
+  /** Món bấm từ màn Thực đơn → chọn sẵn để không phải tìm lại trong danh sách. */
+  preselect?: string;
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
@@ -45,11 +48,20 @@ export function DayDetailSheet({
   const priceOf = (id: string) => dishMap.get(id)?.price ?? 0;
 
   const current = member.items?.[day];
-  const [eat, setEat] = useState(member.days[day]);
-  const [food, setFood] = useState<string[]>(current?.food ?? []);
-  const [qty, setQty] = useState<Record<string, number>>(() =>
-    Object.fromEntries((current?.drinks ?? []).map((d) => [d.dishId, d.qty])),
-  );
+  /** Món chọn sẵn là đồ uống thì cộng một ly, còn lại thì tick ăn cơm + chọn món. */
+  const preselectDrink = preselect ? dishes.find((d) => d.id === preselect)?.category === 'DRINK' : false;
+
+  const [eat, setEat] = useState(member.days[day] || (!!preselect && !preselectDrink));
+  const [food, setFood] = useState<string[]>(() => {
+    const base = current?.food ?? [];
+    if (!preselect || preselectDrink || base.includes(preselect)) return base;
+    return [...base, preselect];
+  });
+  const [qty, setQty] = useState<Record<string, number>>(() => {
+    const base = Object.fromEntries((current?.drinks ?? []).map((d) => [d.dishId, d.qty]));
+    if (preselect && preselectDrink && !base[preselect]) base[preselect] = 1;
+    return base;
+  });
   const [note, setNote] = useState(member.notes?.[day] ?? '');
   const [saving, setSaving] = useState(false);
 

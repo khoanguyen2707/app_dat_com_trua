@@ -9,7 +9,16 @@ import { Button, Field, Modal, toast } from '@/components/ui';
 /** Ngày hôm nay (mon..sun) để mặc định chọn. */
 const todayKey = (): DayKey => (['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as DayKey[])[new Date().getDay()];
 
-type CreateState = { checked: boolean; category: DishCategory; price: number };
+/**
+ * Quyết định cho một món mới.
+ *
+ * `undecided` chỉ dành cho món **nghi trùng** với món đã có. Trước đây mọi món mới
+ * đều mặc định tick tạo, nên gõ sai một ký tự là danh mục có thêm một món rác nằm
+ * lại vĩnh viễn. Giờ chỗ mập mờ bắt buộc admin chọn, và không áp dụng được cho tới
+ * khi chọn xong.
+ */
+type Decision = 'undecided' | 'create' | 'reuse' | 'skip';
+type CreateState = { decision: Decision; category: DishCategory; price: number };
 const catIcon = (c: DishCategory) => (c === 'DRINK' ? '🥤' : '🍚');
 
 /**
@@ -39,7 +48,12 @@ export function DayMenuModal({ grid, onClose, onApplied }: { grid: Grid; onClose
         Object.fromEntries(
           d.create.map((i) => [
             i.key,
-            { checked: true, category: i.category, price: i.price > 0 ? i.price : i.category === 'MAIN' ? grid.week.unitPrice : 0 },
+            {
+              // nghi trùng -> chưa quyết; món mới rõ ràng -> tạo luôn như cũ
+              decision: i.maybeSameAs ? ('undecided' as Decision) : ('create' as Decision),
+              category: i.category,
+              price: i.price > 0 ? i.price : i.category === 'MAIN' ? grid.week.unitPrice : 0,
+            },
           ]),
         ),
       );
@@ -51,15 +65,28 @@ export function DayMenuModal({ grid, onClose, onApplied }: { grid: Grid; onClose
     }
   };
 
-  const createCount = diff ? diff.create.filter((i) => createState[i.key]?.checked).length : 0;
-  const sellCount = diff ? createCount + diff.matched.filter((i) => matched[i.dishId as string]).length : 0;
+  const createCount = diff ? diff.create.filter((i) => createState[i.key]?.decision === 'create').length : 0;
+  /** Món nghi trùng mà admin chọn "dùng món có sẵn" → bán món cũ, không tạo thêm. */
+  const reuseIds = diff
+    ? diff.create
+        .filter((i) => createState[i.key]?.decision === 'reuse' && i.maybeSameAs)
+        .map((i) => i.maybeSameAs!.id)
+    : [];
+  const undecided = diff ? diff.create.filter((i) => createState[i.key]?.decision === 'undecided').length : 0;
+  const sellCount = diff
+    ? createCount + reuseIds.length + diff.matched.filter((i) => matched[i.dishId as string]).length
+    : 0;
 
   const apply = async () => {
     if (!diff) return;
     const create = diff.create
-      .filter((i) => createState[i.key]?.checked)
+      .filter((i) => createState[i.key]?.decision === 'create')
       .map((i) => ({ name: i.name, category: createState[i.key].category, price: createState[i.key].price || undefined }));
-    const dishIds = diff.matched.filter((i) => matched[i.dishId as string]).map((i) => i.dishId as string);
+    // gộp món bán hôm nay: món cũ đã khớp + món cũ được chọn thay cho bản nghi trùng
+    const dishIds = [
+      ...diff.matched.filter((i) => matched[i.dishId as string]).map((i) => i.dishId as string),
+      ...reuseIds,
+    ];
     if (create.length + dishIds.length === 0) return toast(t.menu.post.nothing, '🍽️');
     setApplying(true);
     try {
@@ -118,7 +145,14 @@ export function DayMenuModal({ grid, onClose, onApplied }: { grid: Grid; onClose
         </>
       ) : (
         <>
-          <div className="rounded-ui border border-line bg-subtle px-3 py-2 text-[13px]">{t.menu.post.summary(createCount, sellCount, diff.hidden.length)}</div>
+          <div className="rounded-ui border border-line bg-subtle px-3 py-2 text-[13px]">
+            {t.menu.post.summary(createCount, sellCount, diff.hidden.length)}
+          </div>
+          {undecided > 0 && (
+            <div className="mt-2 rounded-ui border border-warn-line bg-warn-soft px-3 py-2 text-[13px] text-warn">
+              {t.menu.post.undecided(undecided)}
+            </div>
+          )}
 
           {diff.create.length > 0 && (
             <div className="mt-4">
@@ -131,16 +165,14 @@ export function DayMenuModal({ grid, onClose, onApplied }: { grid: Grid; onClose
                   <div
                     key={i.key}
                     className={cn(
-                      'mb-1.5 flex flex-wrap items-center gap-2 rounded-ui border border-line px-2.5 py-2',
-                      !s.checked && 'opacity-50',
+                      'mb-1.5 flex flex-wrap items-center gap-2 rounded-ui border px-2.5 py-2',
+                      s.decision === 'undecided'
+                        ? 'border-warn-line bg-warn-soft'
+                        : s.decision === 'create'
+                          ? 'border-line'
+                          : 'border-line opacity-60',
                     )}
                   >
-                    <input
-                      type="checkbox"
-                      className="size-4 shrink-0 accent-[var(--color-brand)]"
-                      checked={s.checked}
-                      onChange={(e) => patchCreate(i.key, { checked: e.target.checked })}
-                    />
                     <div className="flex min-w-40 flex-1 flex-col">
                       <b className="text-[13px]">{i.name}</b>
                       {i.maybeSameAs && (
@@ -149,28 +181,69 @@ export function DayMenuModal({ grid, onClose, onApplied }: { grid: Grid; onClose
                         </span>
                       )}
                     </div>
-                    <div className="flex shrink-0 gap-0.5 rounded-ui border border-line bg-subtle p-0.5">
-                      {(['MAIN', 'DRINK'] as const).map((c) => (
-                        <button
-                          key={c}
-                          className={cn(
-                            'rounded-[4px] px-2 py-1 text-[12px] font-medium transition-colors',
-                            s.category === c ? 'bg-surface text-ink' : 'text-ink-3',
-                          )}
-                          onClick={() => patchCreate(i.key, { category: c })}
+
+                    {/* Nghi trùng: bắt chọn rõ ràng. Không có mặc định nào an toàn ở đây —
+                        tạo bừa thì danh mục rác, gộp bừa thì hôm nay ăn nhầm món. */}
+                    {i.maybeSameAs ? (
+                      <div className="flex shrink-0 flex-wrap gap-1.5">
+                        <Button
+                          tiny
+                          variant={s.decision === 'reuse' ? 'primary' : 'default'}
+                          onClick={() => patchCreate(i.key, { decision: 'reuse' })}
                         >
-                          {c === 'MAIN' ? t.menu.post.catMain : t.menu.post.catDrink}
-                        </button>
-                      ))}
-                    </div>
-                    <input
-                      className="tnum h-8 w-24 shrink-0 rounded-ui border border-line px-2 text-[13px] outline-none focus:border-brand"
-                      type="number"
-                      min={0}
-                      step={1000}
-                      value={s.price}
-                      onChange={(e) => patchCreate(i.key, { price: Number(e.target.value) })}
-                    />
+                          {t.menu.post.useExisting(i.maybeSameAs.name)}
+                        </Button>
+                        <Button
+                          tiny
+                          variant={s.decision === 'create' ? 'primary' : 'default'}
+                          onClick={() => patchCreate(i.key, { decision: 'create' })}
+                        >
+                          {t.menu.post.createAnyway}
+                        </Button>
+                        <Button
+                          tiny
+                          variant={s.decision === 'skip' ? 'primary' : 'default'}
+                          onClick={() => patchCreate(i.key, { decision: 'skip' })}
+                        >
+                          {t.menu.post.skipItem}
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        tiny
+                        variant={s.decision === 'create' ? 'primary' : 'default'}
+                        onClick={() => patchCreate(i.key, { decision: s.decision === 'create' ? 'skip' : 'create' })}
+                      >
+                        {s.decision === 'create' ? t.menu.post.willCreate : t.menu.post.skipItem}
+                      </Button>
+                    )}
+
+                    {s.decision === 'create' && (
+                      <>
+                        <div className="flex shrink-0 gap-0.5 rounded-ui border border-line bg-subtle p-0.5">
+                          {(['MAIN', 'DRINK'] as const).map((c) => (
+                            <button
+                              key={c}
+                              className={cn(
+                                'rounded-[4px] px-2 py-1 text-[12px] font-medium transition-colors',
+                                s.category === c ? 'bg-surface text-ink' : 'text-ink-3',
+                              )}
+                              onClick={() => patchCreate(i.key, { category: c })}
+                            >
+                              {c === 'MAIN' ? t.menu.post.catMain : t.menu.post.catDrink}
+                            </button>
+                          ))}
+                        </div>
+                        <input
+                          className="tnum h-8 w-24 shrink-0 rounded-ui border border-line px-2 text-[13px] outline-none focus:border-brand"
+                          type="number"
+                          min={0}
+                          step={1000}
+                          value={s.price}
+                          onChange={(e) => patchCreate(i.key, { price: Number(e.target.value) })}
+                        />
+                      </>
+                    )}
                   </div>
                 );
               })}
@@ -229,7 +302,7 @@ export function DayMenuModal({ grid, onClose, onApplied }: { grid: Grid; onClose
 
           <div className="mt-4 flex justify-end gap-2">
             <Button onClick={() => setDiff(null)}>{t.menu.post.editText}</Button>
-            <Button variant="primary" onClick={apply} loading={applying}>
+            <Button variant="primary" onClick={apply} loading={applying} disabled={undecided > 0}>
               {t.menu.post.applyBtn}
             </Button>
           </div>
