@@ -72,6 +72,7 @@ export const t = {
 
   tabs: {
     order: 'Đặt cơm',
+    overview: 'Tổng kết',
     grid: 'Bảng tuần',
     menu: 'Thực đơn',
     pay: 'Thanh toán',
@@ -306,6 +307,10 @@ export const t = {
   },
 
   stats: {
+    trendSub: 'số suất mỗi tuần',
+    trendNotEnough: 'Cần ít nhất hai tuần mới thấy được xu hướng.',
+    byMemberSub: (n: number) => `${n} người ăn tuần này`,
+    unitServing: 'suất',
     byMember: 'Suất theo thành viên',
     noData: 'Chưa có dữ liệu',
     byDay: 'Suất theo ngày',

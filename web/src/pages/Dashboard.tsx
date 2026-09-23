@@ -15,8 +15,7 @@ import { TodayOrders } from '@/features/grid/TodayOrders';
 import { MenuPanel } from '@/features/menu/MenuPanel';
 import { TodayMenuPanel } from '@/features/menu/TodayMenuPanel';
 import { PaymentPanel } from '@/features/payment/PaymentPanel';
-import { StatsPanel } from '@/features/stats/StatsPanel';
-import { HistoryPanel } from '@/features/history/HistoryPanel';
+import { OverviewPanel } from '@/features/stats/OverviewPanel';
 import { MyOrderPanel } from '@/features/me/MyOrderPanel';
 import { MyPaymentPanel } from '@/features/me/MyPaymentPanel';
 import { MyHistoryPanel } from '@/features/me/MyHistoryPanel';
@@ -86,12 +85,11 @@ export function Dashboard() {
                   reloadPayment={reloadPayment}
                 />
               )}
-              {tab === 'stats' && <StatsPanel grid={grid} weeks={weeks} />}
-              {tab === 'hist' && (
-                <HistoryPanel
+              {tab === 'overview' && (
+                <OverviewPanel
+                  grid={grid}
                   weeks={weeks}
                   dishes={dishes}
-                  isAdmin
                   meId={user!.id}
                   payment={payment}
                   reload={async () => {

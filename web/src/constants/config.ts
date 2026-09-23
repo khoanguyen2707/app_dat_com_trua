@@ -1,4 +1,4 @@
-import { CalendarDays, CreditCard, History, ListOrdered, PieChart, UtensilsCrossed } from 'lucide-react';
+import { BarChart3, CalendarDays, CreditCard, History, ListOrdered, UtensilsCrossed } from 'lucide-react';
 import type { DayKey } from '@/types';
 import { t } from './strings';
 
@@ -57,8 +57,9 @@ export const ADMIN_TABS = [
   { key: 'grid', icon: CalendarDays, label: t.tabs.grid },
   { key: 'menu', icon: ListOrdered, label: t.tabs.menu },
   { key: 'pay', icon: CreditCard, label: t.tabs.pay },
-  { key: 'stats', icon: PieChart, label: t.tabs.stats },
-  { key: 'hist', icon: History, label: t.tabs.hist },
+  // Thống kê và lịch sử tuần trả lời cùng một câu hỏi và mỗi cái quá ít nội dung
+  // để đứng riêng, nên gộp thành một trang tổng kết.
+  { key: 'overview', icon: BarChart3, label: t.tabs.overview },
 ] as const;
 
 export const USER_TABS = [
