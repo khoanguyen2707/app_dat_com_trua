@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
+import { BarChart3 } from 'lucide-react';
 import type { Grid, Week } from '@/types';
 import { DAYS } from '@/constants/config';
 import { t } from '@/constants/strings';
 import { Card, CardBody, CardHeader, EmptyState } from '@/components/ui';
 
 export function StatsPanel({ grid, weeks }: { grid: Grid; weeks: Week[] }) {
+  // Hoãn một nhịp rồi mới đặt chiều dài thật của cột → các thanh chạy từ 0 lên.
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     const timer = setTimeout(() => setMounted(true), 30);
@@ -20,70 +22,63 @@ export function StatsPanel({ grid, weeks }: { grid: Grid; weeks: Week[] }) {
   const trend = [...weeks].reverse().map((w) => ({ label: w.label.split(' ')[0], s: w.servings ?? 0 }));
   const maxTrend = Math.max(1, ...trend.map((x) => x.s));
 
+  /** Biểu đồ cột dọc dùng chung cho "theo ngày" và "xu hướng tuần". */
+  const columns = (data: { label: string; s: number }[], max: number, tone: string) => (
+    <div className="flex h-40 items-end gap-2">
+      {data.map((x, i) => (
+        <div key={i} className="flex min-w-0 flex-1 flex-col items-center gap-1">
+          <span className="tnum text-[12px] font-medium text-ink-2">{x.s}</span>
+          <div
+            className={`w-full rounded-t-[3px] transition-[height] duration-500 ${tone}`}
+            style={{ height: mounted ? `${Math.max((x.s / max) * 100, x.s > 0 ? 4 : 0)}%` : 0 }}
+          />
+          <span className="w-full truncate text-center text-[11px] text-ink-4">{x.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+
   return (
-    <>
-      <Card>
-        <CardHeader icon="📊" title={t.stats.byMember} />
+    <div className="grid gap-4 xl:grid-cols-2">
+      <Card className="xl:row-span-2">
+        <CardHeader title={t.stats.byMember} />
         <CardBody>
           {memberStats.length === 0 ? (
-            <EmptyState icon="📊">{t.stats.noData}</EmptyState>
+            <EmptyState icon={<BarChart3 />}>{t.stats.noData}</EmptyState>
           ) : (
-            memberStats.map((x) => (
-              <div className="bar-row" key={x.name}>
-                <span className="nm">{x.name}</span>
-                <div className="bar-track">
-                  <div className="bar-fill" style={{ width: mounted ? `${(x.s / maxMember) * 100}%` : 0 }}>
-                    {x.s}
+            <div className="flex flex-col gap-2">
+              {memberStats.map((x) => (
+                <div className="flex items-center gap-3" key={x.name}>
+                  <span className="w-28 shrink-0 truncate text-[13px] text-ink-2">{x.name}</span>
+                  <div className="h-5 flex-1 overflow-hidden rounded-ui bg-subtle">
+                    <div
+                      className="h-full rounded-ui bg-brand transition-[width] duration-500"
+                      style={{ width: mounted ? `${(x.s / maxMember) * 100}%` : 0 }}
+                    />
                   </div>
+                  <span className="tnum w-6 shrink-0 text-right text-[13px] font-medium">{x.s}</span>
                 </div>
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </CardBody>
       </Card>
 
       <Card>
-        <CardHeader icon="📆" title={t.stats.byDay} />
+        <CardHeader title={t.stats.byDay} />
         <CardBody>
-          <div className="daycols">
-            {DAYS.map((d) => {
-              const c = grid.totals.perDay[d.key];
-              return (
-                <div className="daycol" key={d.key}>
-                  <div className="vb" style={{ height: mounted ? `${(c / maxDay) * 100}%` : 0 }}>
-                    <span className="n">{c}</span>
-                  </div>
-                  <span className="lab">{d.label}</span>
-                </div>
-              );
-            })}
-          </div>
+          {columns(
+            DAYS.map((d) => ({ label: d.label, s: grid.totals.perDay[d.key] })),
+            maxDay,
+            'bg-brand/80',
+          )}
         </CardBody>
       </Card>
 
       <Card>
-        <CardHeader icon="📈" title={t.stats.trend} />
-        <CardBody>
-          <div className="daycols" style={{ height: 130 }}>
-            {trend.map((x, i) => (
-              <div className="daycol" key={i}>
-                <div
-                  className="vb"
-                  style={{
-                    height: mounted ? `${(x.s / maxTrend) * 100}%` : 0,
-                    background: 'linear-gradient(180deg,#34d27b,#22c55e)',
-                  }}
-                >
-                  <span className="n">{x.s}</span>
-                </div>
-                <span className="lab" style={{ fontSize: 10 }}>
-                  {x.label}
-                </span>
-              </div>
-            ))}
-          </div>
-        </CardBody>
+        <CardHeader title={t.stats.trend} />
+        <CardBody>{columns(trend, maxTrend, 'bg-info/70')}</CardBody>
       </Card>
-    </>
+    </div>
   );
 }

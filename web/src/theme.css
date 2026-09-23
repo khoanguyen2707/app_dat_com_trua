@@ -56,8 +56,12 @@
   .tnum {
     font-variant-numeric: tabular-nums;
   }
-  /* vòng focus dùng chung, thấy rõ khi đi bằng bàn phím */
-  :where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  /*
+   * Vòng focus dùng chung, thấy rõ khi đi bằng bàn phím.
+   * Trừ khung hộp thoại: Modal tự focus vào khung khi mở để bẫy Tab, nếu không
+   * loại ra thì hộp thoại nào vừa mở cũng viền cam quanh cả khung.
+   */
+  :where(button, a, input, select, textarea, [tabindex]):not([role='dialog']):focus-visible {
     outline: 2px solid var(--color-brand);
     outline-offset: 2px;
   }

@@ -63,82 +63,79 @@ export function MemberPayModal({
 
   return (
     <Modal open title={t.payment.modalTitle(member.fullName)} onClose={onClose}>
-      <div className="center">
-        <img
-          src={vietqr(payment, amount, info)}
-          alt="QR"
-          style={{ width: 240, maxWidth: '100%', borderRadius: 16, boxShadow: 'var(--shadow)' }}
-        />
-        <div className="small muted" style={{ marginTop: 10 }}>
-          {t.payment.amountToTransfer}
-        </div>
-        <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--brand)' }}>{vnd(amount)}</div>
-        <div className="pay-breakdown">
-          <div>
-            <span>{t.payment.breakdownRice(member.servings)}</span>
-            <span>{vnd(foodTotal)}</span>
-          </div>
-          {drinksTotal > 0 && (
-            <div>
-              <span>{t.payment.breakdownDrink}</span>
-              <span>{vnd(drinksTotal)}</span>
-            </div>
-          )}
-          <div className="sum">
-            <span>{t.payment.breakdownTotal}</span>
-            <span>{vnd(amount)}</span>
-          </div>
-        </div>
-        <div className="acct-row" style={{ marginTop: 16, textAlign: 'left' }}>
-          <div>
-            <div className="k">{t.payment.transferNote}</div>
-            <div className="v" style={{ fontSize: 14 }}>
-              {info}
-            </div>
-          </div>
-        </div>
-        <div className="pay-status-row">
-          <PaymentStatusChip status={status} />
-          {status === 'PENDING' && member.reportedAt && (
-            <span className="small muted">{t.payment.reportedAt(hhmm(member.reportedAt))}</span>
-          )}
-          {status === 'PAID' && member.paidAt && (
-            <span className="small muted">{t.payment.paidAt(hhmm(member.paidAt))}</span>
-          )}
-        </div>
-
-        {isAdmin ? (
-          <div className="modal-actions">
-            {status !== 'PAID' && (
-              <Button variant="success" loading={busy} onClick={() => setStatus('PAID')}>
-                {t.payment.confirmBtn}
-              </Button>
-            )}
-            {status !== 'UNPAID' && (
-              <Button loading={busy} onClick={() => setStatus('UNPAID')}>
-                {t.payment.rejectBtn}
-              </Button>
-            )}
-          </div>
-        ) : isMine ? (
-          status === 'PAID' ? (
-            <div className="pay-note done">{t.payment.paidDone}</div>
-          ) : status === 'PENDING' ? (
-            <div className="modal-actions">
-              <span className="pay-note wait">{t.payment.reportWaiting}</span>
-              <Button loading={busy} onClick={() => report(false)}>
-                {t.payment.reportCancel}
-              </Button>
-            </div>
-          ) : (
-            <div className="modal-actions">
-              <Button variant="primary" loading={busy} onClick={() => report(true)}>
-                {t.payment.reportBtn}
-              </Button>
-            </div>
-          )
-        ) : null}
+      <div className="flex flex-col items-center">
+        <img src={vietqr(payment, amount, info)} alt="QR" className="w-60 max-w-full rounded-ui-md border border-line" />
+        <div className="mt-3 text-[13px] text-ink-3">{t.payment.amountToTransfer}</div>
+        <div className="tnum text-2xl font-semibold tracking-tight text-brand">{vnd(amount)}</div>
       </div>
+
+      <div className="mx-auto mt-3 w-full max-w-xs text-[13px]">
+        <div className="flex justify-between py-0.5 text-ink-3">
+          <span>{t.payment.breakdownRice(member.servings)}</span>
+          <span className="tnum">{vnd(foodTotal)}</span>
+        </div>
+        {drinksTotal > 0 && (
+          <div className="flex justify-between py-0.5 text-ink-3">
+            <span>{t.payment.breakdownDrink}</span>
+            <span className="tnum">{vnd(drinksTotal)}</span>
+          </div>
+        )}
+        <div className="mt-1 flex justify-between border-t border-line pt-1.5 font-semibold">
+          <span>{t.payment.breakdownTotal}</span>
+          <span className="tnum text-brand">{vnd(amount)}</span>
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-ui-md border border-line bg-subtle px-3 py-2">
+        <div className="text-[11px] font-medium uppercase tracking-wide text-ink-4">{t.payment.transferNote}</div>
+        <div className="font-medium">{info}</div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+        <PaymentStatusChip status={status} />
+        {status === 'PENDING' && member.reportedAt && (
+          <span className="text-[13px] text-ink-3">{t.payment.reportedAt(hhmm(member.reportedAt))}</span>
+        )}
+        {status === 'PAID' && member.paidAt && (
+          <span className="text-[13px] text-ink-3">{t.payment.paidAt(hhmm(member.paidAt))}</span>
+        )}
+      </div>
+
+      {isAdmin ? (
+        <div className="mt-4 flex justify-end gap-2">
+          {status !== 'PAID' && (
+            <Button variant="success" loading={busy} onClick={() => setStatus('PAID')}>
+              {t.payment.confirmBtn}
+            </Button>
+          )}
+          {status !== 'UNPAID' && (
+            <Button loading={busy} onClick={() => setStatus('UNPAID')}>
+              {t.payment.rejectBtn}
+            </Button>
+          )}
+        </div>
+      ) : isMine ? (
+        status === 'PAID' ? (
+          <div className="mt-4 rounded-ui border border-ok-line bg-ok-soft px-3 py-2.5 text-center text-[13px] font-medium text-ok">
+            {t.payment.paidDone}
+          </div>
+        ) : status === 'PENDING' ? (
+          <div className="mt-4 flex items-center gap-2">
+            <span className="flex-1 rounded-ui border border-warn-line bg-warn-soft px-3 py-2 text-[13px] font-medium text-warn">
+              {t.payment.reportWaiting}
+            </span>
+            <Button loading={busy} onClick={() => report(false)}>
+              {t.payment.reportCancel}
+            </Button>
+          </div>
+        ) : (
+          <div className="mt-4 flex justify-end">
+            <Button variant="primary" loading={busy} onClick={() => report(true)}>
+              {t.payment.reportBtn}
+            </Button>
+          </div>
+        )
+      ) : null}
     </Modal>
   );
 }

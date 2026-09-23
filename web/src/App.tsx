@@ -10,7 +10,7 @@ export function App() {
     <>
       <ActivityIndicator />
       {loading ? (
-        <div className="login-screen">
+        <div className="grid min-h-dvh place-items-center bg-bg">
           <Spinner />
         </div>
       ) : user ? (
