@@ -117,6 +117,42 @@ export function computeTodayKey(startDate: Date | null | undefined, now: Date = 
   return i >= 0 && i < DAY_KEYS.length ? DAY_KEYS[i] : null;
 }
 
+/**
+ * Thứ 2 (00:00 UTC) của tuần chứa `now`, tính theo lịch VN.
+ *
+ * Trả về cùng dạng với cột `startDate` trong DB: mốc 00:00 UTC của một ngày
+ * dương lịch, không phải một thời điểm thực.
+ */
+export function currentWeekStart(now: Date = new Date()): Date {
+  const v = vnShift(now);
+  const dow = v.getUTCDay(); // 0=CN, 1=T2, ... 6=T7
+  const backToMonday = dow === 0 ? 6 : dow - 1;
+  return new Date(Date.UTC(v.getUTCFullYear(), v.getUTCMonth(), v.getUTCDate()) - backToMonday * DAY_MS);
+}
+
+/**
+ * Tuần hiện hành đã hết hạn chưa — nếu rồi thì trả mốc thứ 2 của tuần PHẢI mở.
+ *
+ * Trả null khi không cần làm gì: tuần chưa có startDate (không khoá theo ngày),
+ * hôm nay vẫn nằm trong tuần đó, hoặc tuần đang mở nằm ở tương lai (admin mở sẵn
+ * tuần sau — không được kéo ngược về hiện tại).
+ *
+ * Nghỉ nhiều tuần thì nhảy thẳng tới tuần hiện tại: đây là lý do hàm trả về mốc
+ * tuần này chứ không phải "startDate + 7 ngày".
+ */
+export function weekRollover(activeStart: Date | null | undefined, now: Date = new Date()): Date | null {
+  if (!activeStart) return null;
+  const current = currentWeekStart(now);
+  return startDayNumber(activeStart) < current.getTime() ? current : null;
+}
+
+/** Nhãn tuần "d/M/yyyy - d/M/yyyy" từ thứ 2 tới chủ nhật. */
+export function nextWeekLabel(weekStart: Date): string {
+  const end = new Date(weekStart.getTime() + 6 * DAY_MS);
+  const fmt = (d: Date) => `${d.getUTCDate()}/${d.getUTCMonth() + 1}/${d.getUTCFullYear()}`;
+  return `${fmt(weekStart)} - ${fmt(end)}`;
+}
+
 /** Nhãn ngày dương lịch "d/M" cho từng cột (để FE hiển thị). */
 export function computeDayDates(startDate: Date | null | undefined): Record<DayKey, string | null> {
   const out = Object.fromEntries(DAY_KEYS.map((d) => [d, null])) as Record<DayKey, string | null>;
