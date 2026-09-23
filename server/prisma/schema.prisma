@@ -43,6 +43,7 @@ model User {
   orderItems OrderItem[]
   notifications Notification[]
   pickups    PickupAssignment[]
+  dispatches DailyDispatch[]
 
   @@map("users")
 }
@@ -142,6 +143,25 @@ model OrderItem {
 /// Lịch sử "lượt đi lấy cơm" — xoay tua công bằng giữa những người có đặt cơm.
 /// date = ngày theo lịch VN ("YYYY-MM-DD"); @unique để 1 ngày chỉ chốt đúng 1 người
 /// (idempotent: Power Automate gọi lại trong ngày vẫn ra cùng người, không bốc lại).
+/**
+ * Trạng thái gửi đơn cho quán trong một ngày.
+ *
+ * Tách khỏi PickupAssignment vì có ngày không bốc người đi lấy cơm nhưng vẫn cần
+ * biết đơn đã gửi hay chưa.
+ */
+model DailyDispatch {
+  id         String    @id @default(cuid())
+  date       String    @unique @db.VarChar(10) // "YYYY-MM-DD" theo lịch VN
+  sentAt     DateTime? // lúc có người bấm "đã gửi quán"
+  sentById   String?
+  reminded   String    @default("idle") // mức nhắc cao nhất đã bắn: idle | first | second | escalate
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  sentBy     User?     @relation(fields: [sentById], references: [id], onDelete: SetNull)
+
+  @@map("daily_dispatch")
+}
+
 model PickupAssignment {
   id        String   @id @default(cuid())
   date      String   @unique @db.VarChar(10)

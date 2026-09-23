@@ -1,6 +1,6 @@
 # 🍱 Đặt Cơm Trưa — Full-stack (NestJS + Prisma + React)
 
-Ứng dụng đặt cơm trưa cho nhóm: mỗi người **tự đăng ký tài khoản**, **tích ngày ăn theo tuần** (mix nhiều món/ngày vẫn 1 suất, thêm **đồ uống** tính tiền riêng), hệ thống **tự tính suất & tiền**. **Khoá đặt theo giờ/ngày** (chỉ đặt hôm nay trước giờ chốt 10:21). **Thanh toán QR** (VietQR điền sẵn số tiền) theo quy trình **user báo đã chuyển → admin xác nhận**, kèm **chuông thông báo**. Có thống kê, lịch sử tuần (xem lại; **vẫn thanh toán/đối soát tuần cũ nếu còn nợ**), và **chọn người đi lấy cơm xoay tua công bằng** (tag vào Microsoft Teams qua Power Automate). **Admin** quản lý món ăn, thành viên, đơn giá, thông tin thanh toán, phân quyền.
+Ứng dụng đặt cơm trưa cho nhóm: mỗi người **tự đăng ký tài khoản**, **tích ngày ăn theo tuần** (mix nhiều món/ngày vẫn 1 suất, thêm **đồ uống** tính tiền riêng), hệ thống **tự tính suất & tiền**. **Khoá đặt theo giờ/ngày** (chỉ đặt hôm nay trước giờ chốt 10:15). **Thanh toán QR** (VietQR điền sẵn số tiền) theo quy trình **user báo đã chuyển → admin xác nhận**, kèm **chuông thông báo**. Có thống kê, lịch sử tuần (xem lại; **vẫn thanh toán/đối soát tuần cũ nếu còn nợ**), và **chọn người đi lấy cơm xoay tua công bằng** (tag vào Microsoft Teams qua Power Automate). **Admin** quản lý món ăn, thành viên, đơn giá, thông tin thanh toán, phân quyền.
 
 | Phần | Công nghệ |
 |------|-----------|
@@ -127,12 +127,55 @@ Combo free ổn định: **Neon** (PostgreSQL free, không hết hạn) + **Rend
 | Thông báo | `GET /notifications` · `PATCH /notifications/read` |
 | Lấy cơm | `POST /pickup/today` (bốc người, header `x-pickup-token`) · `GET /pickup/today` · `GET /pickup/history` *(admin)* · `GET /pickup/stats` *(admin — tỷ lệ đi lấy / số lần đặt của từng người)* |
 
-> ⏰ **`POST /pickup/today` chỉ bốc SAU giờ chốt đặt cơm (10:21)** — gọi sớm hơn thì trả `picked: false` và **không ghi gì**, nên gọi lúc nào cũng an toàn. Lý do: mỗi ngày chỉ chốt được đúng 1 lượt và không có đường xoá, nên một cú gọi lúc 8h sáng (flow Power Automate lệch múi giờ, flow retry, hay thử endpoint trên Swagger) sẽ khoá cứng kết quả từ nhóm vài người tick sớm. Hẹn giờ flow **sau 10:21** (nhớ đặt đúng timezone — recurrence của Power Automate mặc định theo UTC).
+> ⏰ **`POST /pickup/today` chỉ bốc SAU giờ chốt đặt cơm (10:15)** — gọi sớm hơn thì trả `picked: false` và **không ghi gì**, nên gọi lúc nào cũng an toàn. Lý do: mỗi ngày chỉ chốt được đúng 1 lượt và không có đường xoá, nên một cú gọi lúc 8h sáng (flow Power Automate lệch múi giờ, flow retry, hay thử endpoint trên Swagger) sẽ khoá cứng kết quả từ nhóm vài người tick sớm. Hẹn giờ flow **sau 10:15** (nhớ đặt đúng timezone — recurrence của Power Automate mặc định theo UTC).
+| Gửi đơn cho quán | `POST /dispatch/today` (flow hỏi mức nhắc, header `x-pickup-token`) · `GET /dispatch/today` (xem, không ghi) · `POST /dispatch/today/sent-hook` (nút trong Teams) · `GET /dispatch/today/status` · `POST/DELETE /dispatch/today/sent` |
 | Thành viên | `GET /users` · `PATCH/DELETE /users/:id` *(admin)* |
 
 > **Quản lý thành viên**: admin vào **⚙️ Cài đặt → Thành viên** — tìm kiếm (gõ không dấu vẫn ra), sửa họ tên / màu đại diện, nhập **Email Teams**, bật tắt **tài khoản hoạt động**, **quyền admin**, **miễn đi lấy cơm**, kèm số liệu xoay tua của từng người (đã đặt / đã đi / tỷ lệ / lần cuối) và thứ hạng sắp tới lượt.
 >
 > ⚠️ **Email Teams** phải điền thì Power Automate mới @mention đúng người trong Teams. Bỏ trống → flow chỉ nhận được email đăng nhập app (vd `khoa@comtrua.vn`), thường không mention được. Xoá người khỏi app sẽ **xoá luôn** đơn/đồ uống/thông báo/lượt lấy cơm của họ (cascade) và làm đổi tổng suất & tổng tiền các tuần cũ — muốn giữ lịch sử thì tắt **Tài khoản hoạt động** thay vì xoá.
+
+---
+
+## 6b. Chống quên gửi đơn cho quán
+
+**Vấn đề có thật:** đơn cơm được gửi thủ công qua Zalo. Hôm người phụ trách nghỉ, không ai gửi, cả nhóm không có cơm ăn — và **không ai biết cho tới lúc đói**.
+
+**Vì sao không gửi tự động thẳng vào Zalo:** Zalo OA API không có endpoint đăng vào nhóm chat; gửi cho một người phải nằm trong cửa sổ đã tương tác; ZNS thì tốn phí, phải duyệt template và template quá ngắn để chở danh sách cả nhóm. Các thư viện "Zalo bot" điều khiển app cá nhân vi phạm điều khoản và dễ bị khoá tài khoản. Nên **cú gửi vẫn do người làm** — thứ được tự động hoá là *nhắc* và *phát hiện chưa ai làm*.
+
+### Hai mốc thời gian
+
+| Mốc | Giờ | Ý nghĩa |
+|---|---|---|
+| `CUTOFF_MINUTES` | **10:15** | Chốt đặt cơm trong app, danh sách hoàn chỉnh từ đây |
+| `SHOP_DEADLINE_MINUTES` | **10:30** | Quán ngừng nhận đơn |
+
+Chốt **phải sớm hơn** giờ quán đóng: khoảng giữa hai mốc chính là thời gian còn lại để gửi đơn. Bằng nhau thì không còn chỗ nào để gửi và cơ chế nhắc mất ý nghĩa. Sửa cả hai ở [`server/src/common/week-lock.ts`](server/src/common/week-lock.ts).
+
+### Lịch nhắc — suy ra từ hai mốc, không cắm cứng
+
+`POST /dispatch/today` trả về `level`, các mốc chia đều trong khoảng chốt → quán đóng nên cửa sổ hẹp thì tự co:
+
+| level | Khi nào | Nội dung |
+|---|---|---|
+| `first` | ngay giờ chốt | Đơn hôm nay + nút "Đã gửi quán" |
+| `second` | ⅓ quãng còn lại | Nhắc lại, kèm số phút còn lại |
+| `escalate` | ⅔ quãng còn lại | Báo gấp, tag rộng hơn |
+| `idle` | ngoài khung, đã gửi, mức đã nhắc rồi, hoặc **không ai đặt cơm** | Flow không phải làm gì |
+
+Gọi lại trong cùng một mức trả `idle`, nên flow chạy 5 phút/lần cũng không spam. Sau `SHOP_DEADLINE` thì im — nhắc lúc đó chỉ gây hoảng chứ không cứu được bữa trưa.
+
+### Dựng flow Power Automate
+
+1. **Recurrence** mỗi 5 phút, khung 10:15–10:30 giờ VN *(recurrence mặc định theo UTC — nhớ đặt timezone)*.
+2. **HTTP** `POST {APP_API}/dispatch/today`, header `x-pickup-token: <PICKUP_TOKEN>`.
+3. **Condition** `level` khác `idle` thì mới đi tiếp.
+4. **Post message in a chat or channel**: dùng thẳng `html` trong response (đã dựng sẵn, không phải nối chuỗi), @mention từng người trong mảng `mentions[].email` — gồm **người đi lấy cơm hôm nay và toàn bộ admin**, để một người nghỉ thì người kia vẫn thấy.
+5. Thêm **Adaptive Card** nút "Đã gửi quán" → `POST {APP_API}/dispatch/today/sent-hook` với body `{ "email": "<người bấm>" }` để ghi đúng ai đã gửi.
+
+Trong app, khối **Đơn hôm nay** hiện dải trạng thái *"Chưa gửi cho quán"* / *"Đã gửi lúc 10:18 · Khoa"* và nút bấm tương ứng — cả nhóm nhìn thấy đơn đã đi hay chưa. Đây mới là thứ ngăn sự cố lặp lại, chứ không phải cái tin nhắn nhắc.
+
+> Ngày không ai đặt cơm thì hệ thống **im hoàn toàn**. Đổi lại, một flow chết sẽ trông giống hệt một ngày không ai đặt — nếu muốn phân biệt thì cho flow ping một kênh log riêng.
 
 ---
 
@@ -146,7 +189,7 @@ Combo free ổn định: **Neon** (PostgreSQL free, không hết hạn) + **Rend
 | `DEFAULT_PASSWORD` | Mật khẩu mặc định cho thành viên seed |
 | `SEED_DEMO` | `true` để seed mẫu (đặt `false` khi đã có dữ liệu thật) |
 | `CORS_ORIGIN` | Origin của frontend (vd `https://comtrua.vn`) |
-| `PICKUP_TOKEN` | Token bí mật để Power Automate gọi `POST /pickup/today` (bốc người đi lấy cơm). Bỏ trống = endpoint từ chối mọi request |
+| `PICKUP_TOKEN` | Token bí mật để Power Automate gọi `POST /pickup/today` (bốc người đi lấy cơm) **và** `POST /dispatch/today` (nhắc gửi đơn). Bỏ trống = cả hai endpoint từ chối mọi request |
 | `MENU_WEBHOOK_URL` | URL trigger của flow Power Automate nhận thực đơn vừa đăng. Bỏ trống = tắt (vẫn đăng thực đơn bình thường, chỉ không báo Teams) |
 | `MENU_WEBHOOK_TOKEN` | Bí mật gửi kèm header `x-menu-token` để flow chặn request lạ |
 | `APP_URL` | Link app chèn vào tin nhắn Teams (vd `https://com-trua.vercel.app`) |

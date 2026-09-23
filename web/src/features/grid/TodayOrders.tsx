@@ -1,9 +1,11 @@
-import { useMemo, useState } from 'react';
-import { ChevronDown, ClipboardList, Copy, CupSoda, StickyNote } from 'lucide-react';
-import type { DayKey, Dish, Grid } from '@/types';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Check, ChevronDown, ClipboardList, Copy, CupSoda, Send, StickyNote } from 'lucide-react';
+import { api } from '@/services/api';
+import type { DayKey, DispatchStatus, Dish, Grid } from '@/types';
 import { DAYS } from '@/constants/config';
 import { t } from '@/constants/strings';
 import { cn } from '@/lib/cn';
+import { hhmm } from '@/lib/format';
 import { Button, Card, CardBody, CardHeader, toast } from '@/components/ui';
 
 /**
@@ -14,6 +16,10 @@ import { Button, Card, CardBody, CardHeader, toast } from '@/components/ui';
  */
 export function TodayOrders({ grid, dishes }: { grid: Grid; dishes: Dish[] }) {
   const [open, setOpen] = useState(false);
+  /* Trạng thái gửi đơn cho quán — cả nhóm nhìn thấy đơn đã đi hay chưa, đó mới là
+     thứ ngăn chuyện quên đặt, chứ không phải cái tin nhắn nhắc. */
+  const [dispatch, setDispatch] = useState<DispatchStatus | null>(null);
+  const [busy, setBusy] = useState(false);
   const today = grid.todayKey ?? null;
   const dishMap = useMemo(() => new Map(dishes.map((d) => [d.id, d])), [dishes]);
 
@@ -33,6 +39,32 @@ export function TodayOrders({ grid, dishes }: { grid: Grid; dishes: Dish[] }) {
         };
       });
   }, [grid.members, today, dishMap]);
+
+  const loadDispatch = useCallback(async () => {
+    try {
+      setDispatch(await api.dispatchStatus());
+    } catch {
+      setDispatch(null); // không có trạng thái thì thà ẩn còn hơn hiện sai
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadDispatch();
+  }, [loadDispatch]);
+
+  const toggleSent = async (sent: boolean) => {
+    setBusy(true);
+    try {
+      if (sent) await api.markDispatchSent();
+      else await api.clearDispatchSent();
+      toast(sent ? t.grid.today.markedSent : t.grid.today.markedUnsent, sent ? '✅' : '↩️');
+      await loadDispatch();
+    } catch (e: any) {
+      toast(e.message || t.errors.short, '⚠️');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   if (!today) return null;
 
@@ -60,6 +92,18 @@ export function TodayOrders({ grid, dishes }: { grid: Grid; dishes: Dish[] }) {
         action={
           <div className="flex items-center gap-2">
             <span className="text-[13px] text-ink-3">{t.grid.today.servings(servings)}</span>
+            {rows.length > 0 &&
+              dispatch &&
+              (dispatch.sent ? (
+                <Button tiny loading={busy} onClick={() => toggleSent(false)}>
+                  {t.grid.today.undoSent}
+                </Button>
+              ) : (
+                <Button tiny variant="primary" loading={busy} onClick={() => toggleSent(true)}>
+                  <Send className="size-3.5" />
+                  {t.grid.today.markSent}
+                </Button>
+              ))}
             {rows.length > 0 && (
               <Button tiny onClick={copyList}>
                 <Copy className="size-3.5" />
@@ -72,6 +116,23 @@ export function TodayOrders({ grid, dishes }: { grid: Grid; dishes: Dish[] }) {
           </div>
         }
       />
+      {rows.length > 0 && dispatch && (
+        <div
+          className={cn(
+            'flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-line px-5 py-2 text-[13px]',
+            dispatch.sent ? 'bg-ok-soft text-ok' : 'bg-warn-soft text-warn',
+          )}
+        >
+          {dispatch.sent ? <Check className="size-4 shrink-0" /> : <Send className="size-4 shrink-0" />}
+          <span className="font-medium">
+            {dispatch.sent && dispatch.sentAt
+              ? t.grid.today.sentAt(hhmm(dispatch.sentAt), dispatch.sentBy ?? '—')
+              : t.grid.today.notSent}
+          </span>
+          <span className="text-ink-3">{t.grid.today.deadline(dispatch.shopDeadline)}</span>
+        </div>
+      )}
+
       {open && (
         <CardBody flush>
           {rows.length === 0 ? (

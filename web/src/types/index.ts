@@ -170,6 +170,18 @@ export interface Grid {
   cutoff?: { minutes: number; label: string };
 }
 
+/** Trạng thái gửi đơn cơm cho quán trong ngày. */
+export interface DispatchStatus {
+  date: string;
+  sent: boolean;
+  sentAt: string | null;
+  sentBy: string | null;
+  servings: number;
+  cutoff: string;
+  shopDeadline: string;
+  minutesLeft: number;
+}
+
 export interface PaymentConfig {
   groupName: string;
   bankName: string;

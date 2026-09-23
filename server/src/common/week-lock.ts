@@ -3,7 +3,7 @@
  *
  * Luật (user thường — admin luôn sửa được mọi ngày):
  *  - Ngày đã qua (so với hôm nay): khoá.
- *  - Hôm nay: khoá nếu đã quá GIỜ CHỐT (10:21 sáng giờ VN).
+ *  - Hôm nay: khoá nếu đã quá GIỜ CHỐT (10:15 sáng giờ VN).
  *  - Ngày tương lai: khoá — KHÔNG cho đặt cơm/nước trước.
  *  => User chỉ đặt được cho HÔM NAY, trước giờ chốt.
  *  - Tuần chưa có startDate: không khoá ngày nào (trả về toàn false).
@@ -26,8 +26,17 @@ export const DAY_LABEL: Record<DayKey, string> = {
 };
 
 const VN_OFFSET_MS = 7 * 60 * 60 * 1000; // UTC+7
-export const CUTOFF_MINUTES = 10 * 60 + 21; // 10:21 giờ VN
-export const CUTOFF_LABEL = '10:21';
+/**
+ * Giờ chốt đặt cơm, và giờ quán ngừng nhận đơn.
+ *
+ * Chốt PHẢI sớm hơn giờ quán đóng: danh sách chỉ hoàn chỉnh sau giờ chốt, nên
+ * khoảng giữa hai mốc chính là thời gian còn lại để gửi đơn sang quán. Bằng nhau
+ * thì không còn chỗ nào để gửi, và cơ chế nhắc mất luôn ý nghĩa.
+ */
+export const CUTOFF_MINUTES = 10 * 60 + 15; // 10:15 giờ VN
+export const CUTOFF_LABEL = '10:15';
+export const SHOP_DEADLINE_MINUTES = 10 * 60 + 30; // 10:30 giờ VN
+export const SHOP_DEADLINE_LABEL = '10:30';
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Date có các trường UTC = giờ VN tại thời điểm `now`. */
