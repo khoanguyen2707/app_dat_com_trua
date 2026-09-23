@@ -5,7 +5,7 @@
 | Phần | Công nghệ |
 |------|-----------|
 | Backend (`server/`) | NestJS 11, Prisma 7 (PostgreSQL), JWT access/refresh, RBAC (ADMIN/USER), Swagger |
-| Frontend (`web/`) | React 18 + Vite + TypeScript |
+| Frontend (`web/`) | React 18 + Vite + TypeScript + Tailwind CSS v4 (token trong `src/theme.css`) + icon lucide |
 | Hạ tầng | Docker, docker-compose, GitHub Actions CI, render.yaml |
 
 > `index.html` ở thư mục gốc là **bản prototype offline 1 file** (không cần server) — *bản cũ, KHÔNG có các tính năng mới* (mix món, đồ uống, khoá giờ, trạng thái thanh toán, thông báo). Giữ lại để tham khảo nhanh; app thật là `server/` + `web/`.

@@ -89,7 +89,7 @@ export function GridPanel({
 
   const [saving, setSaving] = useState(false);
   const [day, setDay] = useState<DayKey>(() => DAYS.find((d) => !locked[d.key])?.key ?? 'mon');
-  const [picked, setPicked] = useState<{ m: GridMember; day: DayKey } | null>(null);
+  const [picked, setPicked] = useState<{ m: GridMember; day: DayKey; anchor?: DOMRect } | null>(null);
 
   /** Có được sửa ô (member, ngày): tự mình/admin VÀ (admin hoặc ngày chưa khoá). */
   const canEditDay = (m: GridMember, key: DayKey) =>
@@ -121,9 +121,14 @@ export function GridPanel({
     }
   };
 
-  /** Tap ô → mở phiếu chi tiết (đặt cơm + chọn món / thêm nước). Bỏ cơm nhanh bằng nút × trên ô. */
-  const onCell = (m: GridMember, key: DayKey) => {
-    if (!readOnly || m.days[key] || m.items?.[key]) setPicked({ m, day: key });
+  /**
+   * Tap ô → mở phiếu chi tiết (đặt cơm + chọn món / thêm nước).
+   * Truyền kèm vị trí ô để phiếu mở thành popover ngay cạnh ô thay vì hộp thoại
+   * che cả bảng. Bỏ cơm nhanh vẫn bằng nút × trên ô.
+   */
+  const onCell = (m: GridMember, key: DayKey, el: HTMLElement) => {
+    if (!readOnly || m.days[key] || m.items?.[key])
+      setPicked({ m, day: key, anchor: el.getBoundingClientRect() });
   };
 
   const lockMine = (m: GridMember, key: DayKey) => !isAdmin && m.userId === meId && locked[key];
@@ -293,7 +298,7 @@ export function GridPanel({
                     </td>
                     {DAYS.map((d) => (
                       <td key={d.key} className="px-1 py-1.5">
-                        <div className={cellClass(m, d.key)} onClick={() => onCell(m, d.key)}>
+                        <div className={cellClass(m, d.key)} onClick={(e) => onCell(m, d.key, e.currentTarget)}>
                           {cellMark(m, d.key)}
                           {m.days[d.key] && hasDrink(m, d.key) && (
                             <CupSoda className="absolute -bottom-0.5 -left-0.5 size-3 text-info" />
@@ -358,6 +363,7 @@ export function GridPanel({
           grid={grid}
           member={picked.m}
           day={picked.day}
+          anchor={picked.anchor ?? null}
           dishes={dishes}
           isAdmin={isAdmin && !readOnly}
           meId={meId}

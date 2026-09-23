@@ -7,7 +7,8 @@ import { Check, Lock, Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { vnd } from '@/lib/format';
 import { groupByEmoji } from '@/lib/dishGroup';
-import { Avatar, Button, IconButton, Modal, toast } from '@/components/ui';
+import { Avatar, Button, IconButton, toast } from '@/components/ui';
+import { DetailShell } from './DetailShell';
 
 export function DayDetailSheet({
   grid,
@@ -17,6 +18,7 @@ export function DayDetailSheet({
   isAdmin,
   meId,
   locked,
+  anchor = null,
   onClose,
   onSaved,
 }: {
@@ -27,6 +29,8 @@ export function DayDetailSheet({
   isAdmin: boolean;
   meId: string;
   locked: boolean;
+  /** Ô đã bấm trong bảng tuần (desktop) → mở popover neo vào ô thay vì hộp thoại. */
+  anchor?: DOMRect | null;
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
@@ -100,8 +104,8 @@ export function DayDetailSheet({
   };
 
   return (
-    <Modal
-      open
+    <DetailShell
+      anchor={anchor}
       onClose={onClose}
       title={
         <span className="flex items-center gap-2">
@@ -278,6 +282,6 @@ export function DayDetailSheet({
           </Button>
         </div>
       )}
-    </Modal>
+    </DetailShell>
   );
 }
