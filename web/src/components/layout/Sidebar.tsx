@@ -1,6 +1,6 @@
 import { KeyRound, LogOut, Settings, UtensilsCrossed } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { TABS, type TabKey } from '@/constants/config';
+import { tabsFor, type TabKey } from '@/constants/config';
 import { t } from '@/constants/strings';
 import { cn } from '@/lib/cn';
 import { Avatar, Pill } from '@/components/ui';
@@ -35,7 +35,7 @@ export function Sidebar({
       </div>
 
       <nav className="flex flex-col gap-0.5 px-2">
-        {TABS.map((tab) => {
+        {tabsFor(isAdmin).map((tab) => {
           const Icon = tab.icon;
           const n = badges?.[tab.key] ?? 0;
           return (

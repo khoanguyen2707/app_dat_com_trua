@@ -1,4 +1,4 @@
-import { CalendarDays, CreditCard, History, ListOrdered, PieChart } from 'lucide-react';
+import { CalendarDays, CreditCard, History, ListOrdered, PieChart, UtensilsCrossed } from 'lucide-react';
 import type { DayKey } from '@/types';
 import { t } from './strings';
 
@@ -47,8 +47,13 @@ export const BANKS: { name: string; bin: string }[] = [
   { name: 'Cake', bin: '546034' }, { name: 'Timo', bin: '963388' },
 ];
 
-/** Các mục điều hướng chính (sidebar ở desktop, tab bar ở mobile) */
-export const TABS = [
+/**
+ * Điều hướng chính (sidebar ở desktop, tab bar ở mobile).
+ *
+ * Hai vai trò nhìn hai app khác nhau: admin vận hành cả nhóm, còn thành viên chỉ
+ * lo suất cơm của chính mình nên không có bảng tuần lẫn thống kê.
+ */
+export const ADMIN_TABS = [
   { key: 'grid', icon: CalendarDays, label: t.tabs.grid },
   { key: 'menu', icon: ListOrdered, label: t.tabs.menu },
   { key: 'pay', icon: CreditCard, label: t.tabs.pay },
@@ -56,4 +61,14 @@ export const TABS = [
   { key: 'hist', icon: History, label: t.tabs.hist },
 ] as const;
 
-export type TabKey = (typeof TABS)[number]['key'];
+export const USER_TABS = [
+  { key: 'order', icon: UtensilsCrossed, label: t.tabs.order },
+  { key: 'pay', icon: CreditCard, label: t.tabs.pay },
+  { key: 'hist', icon: History, label: t.tabs.hist },
+  { key: 'menu', icon: ListOrdered, label: t.tabs.menu },
+] as const;
+
+export type TabKey = (typeof ADMIN_TABS)[number]['key'] | (typeof USER_TABS)[number]['key'];
+export type TabItem = { key: TabKey; icon: typeof CalendarDays; label: string };
+
+export const tabsFor = (isAdmin: boolean): readonly TabItem[] => (isAdmin ? ADMIN_TABS : USER_TABS);

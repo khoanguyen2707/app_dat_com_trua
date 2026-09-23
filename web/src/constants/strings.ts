@@ -71,11 +71,41 @@ export const t = {
   },
 
   tabs: {
+    order: 'Đặt cơm',
     grid: 'Bảng tuần',
     menu: 'Thực đơn',
     pay: 'Thanh toán',
     stats: 'Thống kê',
     hist: 'Lịch sử',
+  },
+
+  /** Các màn dành riêng cho thành viên (không phải admin). */
+  me: {
+    orderTitle: 'Đặt cơm tuần này',
+    todayHeading: (day: string, date: string) => `${day}, ${date}`,
+    openUntil: (cutoff: string) => `Đặt được tới ${cutoff} hôm nay`,
+    closedToday: (cutoff: string) => `Đã qua ${cutoff} — hôm nay chốt rồi`,
+    notInWeek: 'Hôm nay không nằm trong tuần đang mở.',
+    orderedNothing: 'Hôm nay bạn chưa đặt gì.',
+    orderCta: 'Đặt cơm hôm nay',
+    editCta: 'Sửa suất hôm nay',
+    viewCta: 'Xem chi tiết',
+    restOfWeek: 'Còn lại trong tuần',
+    weekTotal: 'Cả tuần',
+    dayEmpty: 'Không đặt',
+    drinkCount: (n: number) => `${n} đồ uống`,
+
+    payTitle: 'Thanh toán của tôi',
+    payNothing: 'Tuần này bạn chưa đặt suất nào, không có gì phải trả.',
+    payAmount: 'Bạn cần chuyển',
+
+    histTitle: 'Lịch sử của tôi',
+    histEmpty: 'Chưa có tuần nào trước đó.',
+    histNone: 'Tuần này bạn không đặt suất nào.',
+    histMore: 'Xem thêm',
+    histLoading: 'Đang tải…',
+    histServings: (n: number) => `${n} suất`,
+    histPay: 'Trả',
   },
 
   dashboard: {
