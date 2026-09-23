@@ -52,6 +52,31 @@
   html {
     font-family: var(--font-sans);
   }
+  h1, h2, h3, h4 {
+    margin: 0;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  a {
+    color: var(--color-brand);
+  }
+  body {
+    background: var(--color-bg);
+    color: var(--color-ink);
+  }
+  /* iOS phóng to trang khi focus input có cỡ chữ < 16px */
+  @media (max-width: 640px) {
+    input, select, textarea {
+      font-size: 16px;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
   /* số tiền / số liệu luôn thẳng cột */
   .tnum {
     font-variant-numeric: tabular-nums;

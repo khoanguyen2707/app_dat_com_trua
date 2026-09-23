@@ -22,17 +22,24 @@ export function StatsPanel({ grid, weeks }: { grid: Grid; weeks: Week[] }) {
   const trend = [...weeks].reverse().map((w) => ({ label: w.label.split(' ')[0], s: w.servings ?? 0 }));
   const maxTrend = Math.max(1, ...trend.map((x) => x.s));
 
-  /** Biểu đồ cột dọc dùng chung cho "theo ngày" và "xu hướng tuần". */
+  /**
+   * Biểu đồ cột dọc dùng chung cho "theo ngày" và "xu hướng tuần".
+   * Thân cột định vị tuyệt đối trong một ô `flex-1`: chiều cao theo % chỉ ăn khi
+   * cha có chiều cao xác định, mà ô flex-1 trong khung `h-40` thì có.
+   */
   const columns = (data: { label: string; s: number }[], max: number, tone: string) => (
-    <div className="flex h-40 items-end gap-2">
+    <div className="flex h-40 gap-2">
       {data.map((x, i) => (
-        <div key={i} className="flex min-w-0 flex-1 flex-col items-center gap-1">
-          <span className="tnum text-[12px] font-medium text-ink-2">{x.s}</span>
-          <div
-            className={`w-full rounded-t-[3px] transition-[height] duration-500 ${tone}`}
-            style={{ height: mounted ? `${Math.max((x.s / max) * 100, x.s > 0 ? 4 : 0)}%` : 0 }}
-          />
-          <span className="w-full truncate text-center text-[11px] text-ink-4">{x.label}</span>
+        // max-w: một tuần duy nhất thì cột không phình ra hết thẻ
+        <div key={i} className="flex min-w-0 max-w-20 flex-1 flex-col gap-1">
+          <span className="tnum text-center text-[12px] font-medium text-ink-2">{x.s}</span>
+          <div className="relative flex-1">
+            <div
+              className={`absolute inset-x-0 bottom-0 rounded-t-[3px] transition-[height] duration-500 ${tone}`}
+              style={{ height: mounted ? `${Math.max((x.s / max) * 100, x.s > 0 ? 3 : 0)}%` : 0 }}
+            />
+          </div>
+          <span className="truncate text-center text-[11px] text-ink-4">{x.label}</span>
         </div>
       ))}
     </div>

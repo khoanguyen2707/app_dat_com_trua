@@ -26,8 +26,10 @@ export function WeekSettings({ week, onSaved }: { week: Week; onSaved: () => Pro
   };
 
   return (
-    <div className="set-pane">
-      <h4 className="set-h">{t.settings.currentWeek}</h4>
+    <div className="max-w-sm">
+      <h4 className="mb-3 text-[12px] font-semibold uppercase tracking-wide text-ink-4">
+        {t.settings.currentWeek}
+      </h4>
       <Field label={t.settings.fieldLabel}>
         <input value={label} onChange={(e) => setLabel(e.target.value)} />
       </Field>

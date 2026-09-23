@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { onInflight } from '@/services/http';
-import { cls } from '@/lib/format';
+import { cn } from '@/lib/cn';
 import { t } from '@/constants/strings';
 
 type Phase = 'idle' | 'loading' | 'hiding';
@@ -34,8 +35,16 @@ export function ActivityIndicator() {
 
   if (phase === 'idle') return null;
   return (
-    <div className={cls('activity', phase === 'hiding' && 'hide')} aria-live="polite">
-      <span className="activity-spin" aria-hidden="true" />
+    <div
+      className={cn(
+        'pointer-events-none fixed bottom-20 left-1/2 z-80 inline-flex -translate-x-1/2 items-center gap-2',
+        'whitespace-nowrap rounded-full bg-ink px-4 py-2 text-[13px] font-medium text-white shadow-lg',
+        'transition-opacity duration-300',
+        phase === 'hiding' ? 'opacity-0' : 'opacity-100',
+      )}
+      aria-live="polite"
+    >
+      <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
       <span>{t.activity.loading}</span>
     </div>
   );

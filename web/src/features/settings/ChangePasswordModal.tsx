@@ -31,7 +31,7 @@ export function ChangePasswordModal({ onClose }: { onClose: () => void }) {
       <Field label={t.password.new}>
         <input type="password" value={newPassword} onChange={(e) => setNew(e.target.value)} minLength={MIN_PASSWORD_LENGTH} />
       </Field>
-      <div className="modal-actions">
+      <div className="mt-4 flex justify-end gap-2">
         <Button onClick={onClose}>{t.actions.cancel}</Button>
         <Button variant="primary" onClick={save} loading={busy}>
           {t.password.submit}

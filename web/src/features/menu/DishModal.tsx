@@ -3,7 +3,7 @@ import { api } from '@/services/api';
 import type { Dish, DishCategory } from '@/types';
 import { DISH_EMOJIS, DEFAULT_DISH_PRICE } from '@/constants/config';
 import { t } from '@/constants/strings';
-import { cls } from '@/lib/format';
+import { cn } from '@/lib/cn';
 import { Button, Field, Modal, toast } from '@/components/ui';
 
 export function DishModal({ dish, onClose, onSaved }: { dish: Dish | null; onClose: () => void; onSaved: () => void }) {
@@ -33,19 +33,34 @@ export function DishModal({ dish, onClose, onSaved }: { dish: Dish | null; onClo
   return (
     <Modal open title={dish ? t.menu.modalEdit : t.menu.modalCreate} onClose={onClose}>
       <Field label={t.menu.fieldCategory}>
-        <div className="seg">
-          <button className={cls(category === 'MAIN' && 'active')} onClick={() => setCategory('MAIN')}>
-            {t.menu.catMain}
-          </button>
-          <button className={cls(category === 'DRINK' && 'active')} onClick={() => setCategory('DRINK')}>
-            {t.menu.catDrink}
-          </button>
+        <div className="flex gap-0.5 rounded-ui-md border border-line bg-subtle p-0.5">
+          {(['MAIN', 'DRINK'] as const).map((c) => (
+            <button
+              key={c}
+              type="button"
+              className={cn(
+                'flex-1 rounded-[5px] px-3 py-1.5 text-[13px] font-medium transition-colors',
+                category === c ? 'bg-surface text-ink' : 'text-ink-3 hover:text-ink',
+              )}
+              onClick={() => setCategory(c)}
+            >
+              {c === 'MAIN' ? t.menu.catMain : t.menu.catDrink}
+            </button>
+          ))}
         </div>
       </Field>
       <Field label={t.menu.fieldEmoji}>
-        <div className="emoji-pick">
+        <div className="flex flex-wrap gap-1">
           {DISH_EMOJIS.map((e) => (
-            <button key={e} className={cls(emoji === e && 'sel')} onClick={() => setEmoji(e)}>
+            <button
+              key={e}
+              type="button"
+              className={cn(
+                'grid size-9 place-items-center rounded-ui border text-lg transition-colors',
+                emoji === e ? 'border-brand bg-brand-soft' : 'border-line hover:border-line-strong',
+              )}
+              onClick={() => setEmoji(e)}
+            >
               {e}
             </button>
           ))}
@@ -60,7 +75,7 @@ export function DishModal({ dish, onClose, onSaved }: { dish: Dish | null; onClo
       <Field label={t.menu.fieldPrice}>
         <input type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))} />
       </Field>
-      <div className="modal-actions">
+      <div className="mt-4 flex justify-end gap-2">
         <Button onClick={onClose}>{t.actions.cancel}</Button>
         <Button variant="primary" onClick={save} loading={busy}>
           {dish ? t.actions.save : t.actions.add}

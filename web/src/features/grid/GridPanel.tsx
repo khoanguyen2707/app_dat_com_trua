@@ -338,7 +338,9 @@ export function GridPanel({
       )}
 
       <div className="flex items-center justify-between border-t border-line px-4 py-2.5">
-        <span className="text-[13px] text-ink-3">{saving ? t.actions.saving : t.grid.autoSave}</span>
+        {/* Mobile đã có dòng trạng thái ngay dưới danh sách ngày → ở đây chỉ hiện từ lg. */}
+        <span className="hidden text-[13px] text-ink-3 lg:inline">{saving ? t.actions.saving : t.grid.autoSave}</span>
+        <span className="lg:hidden" />
         <Button
           tiny
           onClick={() => {
