@@ -1,19 +1,4 @@
-import type {
-  AuthResult,
-  DayDetail,
-  DayKey,
-  Dish,
-  DishCategory,
-  Grid,
-  MenuApplyResult,
-  MenuDiff,
-  NotificationFeed,
-  PaymentConfig,
-  PaymentStatus,
-  PickupStat,
-  User,
-  Week,
-} from '@/types';
+import type { AuthResult, DayDetail, DayKey, Dish, DishCategory, DispatchStatus, Grid, MenuApplyResult, MenuDiff, NotificationFeed, PaymentConfig, PaymentStatus, PickupStat, User, Week } from '@/types';
 import { request } from './http';
 
 export const api = {
@@ -55,6 +40,11 @@ export const api = {
   // thanh toán
   reportMyPayment: (weekId: string, report: boolean) =>
     request('/orders/me/payment', { method: 'PATCH', body: JSON.stringify({ weekId, report }) }),
+  // gửi đơn cho quán
+  dispatchStatus: () => request<DispatchStatus>('/dispatch/today/status'),
+  markDispatchSent: () => request('/dispatch/today/sent', { method: 'POST' }),
+  clearDispatchSent: () => request('/dispatch/today/sent', { method: 'DELETE' }),
+
   setPaymentStatus: (weekId: string, userId: string, status: PaymentStatus) =>
     request('/orders/payment', { method: 'PATCH', body: JSON.stringify({ weekId, userId, status }) }),
 

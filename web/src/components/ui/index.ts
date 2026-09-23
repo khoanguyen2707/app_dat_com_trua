@@ -8,6 +8,5 @@ export { IconButton } from './IconButton';
 export { Modal } from './Modal';
 export { Pill } from './Pill';
 export { Spinner } from './Spinner';
-export { StatCard } from './StatCard';
 export { Tabs } from './Tabs';
 export { toast } from './Toast';

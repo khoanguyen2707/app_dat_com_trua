@@ -3,7 +3,7 @@
  *
  * Luật (user thường — admin luôn sửa được mọi ngày):
  *  - Ngày đã qua (so với hôm nay): khoá.
- *  - Hôm nay: khoá nếu đã quá GIỜ CHỐT (10:21 sáng giờ VN).
+ *  - Hôm nay: khoá nếu đã quá GIỜ CHỐT (10:15 sáng giờ VN).
  *  - Ngày tương lai: khoá — KHÔNG cho đặt cơm/nước trước.
  *  => User chỉ đặt được cho HÔM NAY, trước giờ chốt.
  *  - Tuần chưa có startDate: không khoá ngày nào (trả về toàn false).
@@ -26,8 +26,17 @@ export const DAY_LABEL: Record<DayKey, string> = {
 };
 
 const VN_OFFSET_MS = 7 * 60 * 60 * 1000; // UTC+7
-export const CUTOFF_MINUTES = 10 * 60 + 21; // 10:21 giờ VN
-export const CUTOFF_LABEL = '10:21';
+/**
+ * Giờ chốt đặt cơm, và giờ quán ngừng nhận đơn.
+ *
+ * Chốt PHẢI sớm hơn giờ quán đóng: danh sách chỉ hoàn chỉnh sau giờ chốt, nên
+ * khoảng giữa hai mốc chính là thời gian còn lại để gửi đơn sang quán. Bằng nhau
+ * thì không còn chỗ nào để gửi, và cơ chế nhắc mất luôn ý nghĩa.
+ */
+export const CUTOFF_MINUTES = 10 * 60 + 15; // 10:15 giờ VN
+export const CUTOFF_LABEL = '10:15';
+export const SHOP_DEADLINE_MINUTES = 10 * 60 + 30; // 10:30 giờ VN
+export const SHOP_DEADLINE_LABEL = '10:30';
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Date có các trường UTC = giờ VN tại thời điểm `now`. */
@@ -101,6 +110,56 @@ export function elapsedDayKeys(startDate: Date | null | undefined, now: Date = n
   const start = startDayNumber(startDate);
   const today = vnDayNumber(now);
   return DAY_KEYS.filter((_, i) => start + i * DAY_MS <= today);
+}
+
+/**
+ * Cột nào của tuần này là HÔM NAY (lịch VN), null nếu hôm nay nằm ngoài tuần.
+ *
+ * Khác `vnTodayKey`: hàm kia chỉ trả thứ trong tuần, nên khi xem lại một tuần cũ
+ * nó vẫn chỉ vào một cột — sai. Ở đây so đúng ngày dương lịch với startDate.
+ */
+export function computeTodayKey(startDate: Date | null | undefined, now: Date = new Date()): DayKey | null {
+  if (!startDate) return null;
+  const start = startDayNumber(startDate);
+  const today = vnDayNumber(now);
+  const i = Math.round((today - start) / DAY_MS);
+  return i >= 0 && i < DAY_KEYS.length ? DAY_KEYS[i] : null;
+}
+
+/**
+ * Thứ 2 (00:00 UTC) của tuần chứa `now`, tính theo lịch VN.
+ *
+ * Trả về cùng dạng với cột `startDate` trong DB: mốc 00:00 UTC của một ngày
+ * dương lịch, không phải một thời điểm thực.
+ */
+export function currentWeekStart(now: Date = new Date()): Date {
+  const v = vnShift(now);
+  const dow = v.getUTCDay(); // 0=CN, 1=T2, ... 6=T7
+  const backToMonday = dow === 0 ? 6 : dow - 1;
+  return new Date(Date.UTC(v.getUTCFullYear(), v.getUTCMonth(), v.getUTCDate()) - backToMonday * DAY_MS);
+}
+
+/**
+ * Tuần hiện hành đã hết hạn chưa — nếu rồi thì trả mốc thứ 2 của tuần PHẢI mở.
+ *
+ * Trả null khi không cần làm gì: tuần chưa có startDate (không khoá theo ngày),
+ * hôm nay vẫn nằm trong tuần đó, hoặc tuần đang mở nằm ở tương lai (admin mở sẵn
+ * tuần sau — không được kéo ngược về hiện tại).
+ *
+ * Nghỉ nhiều tuần thì nhảy thẳng tới tuần hiện tại: đây là lý do hàm trả về mốc
+ * tuần này chứ không phải "startDate + 7 ngày".
+ */
+export function weekRollover(activeStart: Date | null | undefined, now: Date = new Date()): Date | null {
+  if (!activeStart) return null;
+  const current = currentWeekStart(now);
+  return startDayNumber(activeStart) < current.getTime() ? current : null;
+}
+
+/** Nhãn tuần "d/M/yyyy - d/M/yyyy" từ thứ 2 tới chủ nhật. */
+export function nextWeekLabel(weekStart: Date): string {
+  const end = new Date(weekStart.getTime() + 6 * DAY_MS);
+  const fmt = (d: Date) => `${d.getUTCDate()}/${d.getUTCMonth() + 1}/${d.getUTCFullYear()}`;
+  return `${fmt(weekStart)} - ${fmt(end)}`;
 }
 
 /** Nhãn ngày dương lịch "d/M" cho từng cột (để FE hiển thị). */

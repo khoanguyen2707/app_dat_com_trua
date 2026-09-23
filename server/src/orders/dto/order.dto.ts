@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsIn, IsInt, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
+import { IsArray, IsBoolean, IsIn, IsInt, IsOptional, IsString, MaxLength, Min, ValidateNested } from 'class-validator';
 import { DAY_KEYS, type DayKey } from '@/common/week-lock';
 
 export class UpsertOrderDto {
@@ -67,4 +67,13 @@ export class SetDayDetailDto {
   @ValidateNested({ each: true })
   @Type(() => DrinkItemDto)
   drinks?: DrinkItemDto[];
+
+  @ApiPropertyOptional({
+    example: 'ít cơm, không hành',
+    description: 'Ghi chú cho người đi mua của riêng ngày này. Chuỗi rỗng = xoá ghi chú.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  note?: string;
 }

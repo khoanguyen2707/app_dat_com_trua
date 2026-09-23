@@ -7,8 +7,6 @@ export const initials = (name: string) => {
   return (p[p.length - 1][0] || '?').toUpperCase();
 };
 
-/** Ghép class có điều kiện: cls('a', cond && 'b') -> "a b" */
-export const cls = (...xs: (string | false | undefined | null)[]) => xs.filter(Boolean).join(' ');
 
 /** Bỏ dấu tiếng Việt (cho nội dung chuyển khoản — ngân hàng dễ đọc) */
 export const noAccent = (s: string) =>

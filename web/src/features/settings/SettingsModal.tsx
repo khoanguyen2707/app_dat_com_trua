@@ -40,7 +40,9 @@ export function SettingsModal({
   return (
     <Modal
       open
-      wide
+      /* Tab Tuần chỉ là một form ngắn: ép khổ rộng như tab Thành viên thì nội dung
+         dính trái, thừa nửa phải trống. Cho bề rộng chạy theo tab đang mở. */
+      wide={tab === 'members'}
       title={t.settings.title}
       onClose={close}
       subheader={<Tabs inModal items={TABS} active={tab} onChange={setTab} />}

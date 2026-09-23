@@ -6,7 +6,10 @@ import {
   CUTOFF_MINUTES,
   computeDayDates,
   computeLockedDays,
+  computeTodayKey,
   DAY_KEYS,
+  nextWeekLabel,
+  weekRollover,
   type DayKey,
 } from '@/common/week-lock';
 
@@ -56,7 +59,46 @@ export class WeeksService {
     if (!week) {
       throw new NotFoundException('Chưa có tuần nào đang mở');
     }
-    return this.getGrid(week.id);
+    const rolled = await this.rolloverIfStale(week.startDate);
+    return this.getGrid(rolled?.id ?? week.id);
+  }
+
+  /**
+   * Sang tuần thì tự mở tuần mới, ngay lúc có người mở app.
+   *
+   * Kiểm tra lúc đọc chứ không dùng cron: instance Render free ngủ qua cuối tuần
+   * nên cron không chạy đúng lúc, còn đường này thì luôn kích hoạt vào lần đầu
+   * có người vào app trong tuần mới.
+   *
+   * Trả về tuần vừa tạo, hoặc null khi chưa tới lúc phải tạo.
+   */
+  private async rolloverIfStale(activeStart: Date | null) {
+    const weekStart = weekRollover(activeStart);
+    if (!weekStart) return null;
+
+    return this.prisma.$transaction(async (tx) => {
+      // Hai người cùng mở app một lúc -> cả hai cùng thấy tuần cũ. Query lại trong
+      // transaction để người tới sau dùng tuần người trước vừa tạo, không tạo trùng.
+      const existing = await tx.week.findFirst({ where: { startDate: weekStart } });
+      if (existing) {
+        if (!existing.isActive) {
+          await tx.week.updateMany({ data: { isActive: false }, where: { isActive: true } });
+          await tx.week.update({ where: { id: existing.id }, data: { isActive: true } });
+        }
+        return existing;
+      }
+
+      const previous = await tx.week.findFirst({ where: { isActive: true }, orderBy: { createdAt: 'desc' } });
+      await tx.week.updateMany({ data: { isActive: false }, where: { isActive: true } });
+      return tx.week.create({
+        data: {
+          label: nextWeekLabel(weekStart),
+          startDate: weekStart,
+          unitPrice: previous?.unitPrice ?? 25000,
+          isActive: true,
+        },
+      });
+    });
   }
 
   async getGrid(weekId: string) {
@@ -104,6 +146,8 @@ export class WeeksService {
         role: u.role,
         days,
         items: itemsByUser.get(u.id) ?? emptyDayItems(),
+        /** Ghi chú đặt cơm theo ngày, vd { wed: 'ít cơm' }. Ngày không ghi thì không có khoá. */
+        notes: (o?.notes as Record<string, string> | null) ?? {},
         servings,
         foodTotal,
         drinksTotal,
@@ -127,6 +171,7 @@ export class WeeksService {
       members,
       totals: { perDay, totalServings, totalFood, totalDrinks, totalMoney: totalFood + totalDrinks },
       lockedDays: computeLockedDays(week.startDate),
+      todayKey: computeTodayKey(week.startDate),
       dates: computeDayDates(week.startDate),
       cutoff: { minutes: CUTOFF_MINUTES, label: CUTOFF_LABEL },
     };

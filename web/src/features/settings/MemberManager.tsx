@@ -4,8 +4,9 @@ import { useAuth } from '@/context/AuthContext';
 import { MEMBER_COLORS } from '@/constants/config';
 import { t } from '@/constants/strings';
 import type { PickupStat, Role, User } from '@/types';
-import { cls } from '@/lib/format';
-import { Avatar, Button, confirmDialog, Field, toast } from '@/components/ui';
+import { ChevronDown, Search } from 'lucide-react';
+import { cn } from '@/lib/cn';
+import { Avatar, Button, confirmDialog, Field, Pill, toast } from '@/components/ui';
 
 /** Các trường admin sửa được trong panel chi tiết. */
 type Draft = { fullName: string; teamsEmail: string; color: string };
@@ -51,18 +52,29 @@ function Switch({
   return (
     <button
       type="button"
-      className="mm-sw"
+      className="flex w-full items-center gap-3 rounded-ui border border-line px-3 py-2 text-left transition-colors hover:bg-subtle disabled:cursor-not-allowed disabled:opacity-60"
       onClick={onToggle}
       role="switch"
       aria-checked={on}
       disabled={disabled}
     >
-      <span className="mm-sw-txt">
-        <b>{label}</b>
-        <span className="muted small">{hint}</span>
+      <span className="flex min-w-0 flex-1 flex-col">
+        <b className="text-[13px] font-medium">{label}</b>
+        <span className="text-[12px] text-ink-3">{hint}</span>
       </span>
-      <span className={cls('mm-sw-track', on && 'on', on && danger && 'danger')} aria-hidden="true">
-        <span className="mm-sw-knob" />
+      <span
+        className={cn(
+          'relative h-5 w-9 shrink-0 rounded-full transition-colors',
+          on ? (danger ? 'bg-danger' : 'bg-brand') : 'bg-line-strong',
+        )}
+        aria-hidden="true"
+      >
+        <span
+          className={cn(
+            'absolute top-0.5 size-4 rounded-full bg-white transition-[left]',
+            on ? 'left-[1.125rem]' : 'left-0.5',
+          )}
+        />
       </span>
     </button>
   );
@@ -249,58 +261,69 @@ export function MemberManager({ onChanged }: { onChanged: () => void }) {
 
   return (
     <>
-      <div className="mm-top">
-        <h4>{t.settings.members(users.length)}</h4>
-        <div className="mm-sum small muted">
-          {counts.locked > 0 && <span className="mm-sum-i">{t.member.sumLocked(counts.locked)}</span>}
-          {counts.optOut > 0 && <span className="mm-sum-i">{t.member.sumOptOut(counts.optOut)}</span>}
-          {counts.noTeams > 0 && <span className="mm-sum-i warn">{t.member.sumNoTeams(counts.noTeams)}</span>}
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <h4 className="text-sm font-semibold">{t.settings.members(users.length)}</h4>
+        <div className="flex flex-wrap gap-x-3 text-[12px] text-ink-3">
+          {counts.locked > 0 && <span>{t.member.sumLocked(counts.locked)}</span>}
+          {counts.optOut > 0 && <span>{t.member.sumOptOut(counts.optOut)}</span>}
+          {counts.noTeams > 0 && <span className="text-warn">{t.member.sumNoTeams(counts.noTeams)}</span>}
         </div>
       </div>
 
-      <input
-        className="mm-search"
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder={t.member.searchPlaceholder}
-        aria-label={t.member.searchPlaceholder}
-      />
+      <div className="relative my-3">
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-ink-4" />
+        <input
+          className="h-9 w-full rounded-ui border border-line bg-surface pl-8 pr-3 text-sm outline-none focus:border-brand"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder={t.member.searchPlaceholder}
+          aria-label={t.member.searchPlaceholder}
+        />
+      </div>
 
-      {shown.length === 0 && <div className="muted small mm-empty">{t.member.none}</div>}
+      {shown.length === 0 && <div className="py-6 text-center text-[13px] text-ink-3">{t.member.none}</div>}
 
-      <div className="mm-list">
+      <div className="divide-y divide-line overflow-hidden rounded-ui-md border border-line">
         {shown.map((u) => {
           const open = openId === u.id;
           const s = statsBy.get(u.id);
           const rank = queueRank.get(u.id);
           const lastAdmin = isLastAdmin(u);
           return (
-            <div className={cls('mm-item', open && 'open')} key={u.id}>
-              <button type="button" className="mm-head" onClick={() => toggleOpen(u)} aria-expanded={open}>
-                <Avatar name={u.fullName} color={u.color} size={34} />
-                <span className="mm-id">
-                  <span className="mm-line1">
-                    <span className="mm-name">{u.fullName}</span>
-                    <span className={cls('pill', u.role === 'ADMIN' ? 'admin' : 'user')}>{u.role}</span>
-                    <span className="mm-caret" aria-hidden="true">
-                      {open ? '▴' : '▾'}
-                    </span>
+            <div className={cn(open && 'bg-subtle/50')} key={u.id}>
+              <button
+                type="button"
+                className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-subtle/60"
+                onClick={() => toggleOpen(u)}
+                aria-expanded={open}
+              >
+                <Avatar name={u.fullName} color={u.color} size={32} />
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-2">
+                    <span className="truncate text-sm font-medium">{u.fullName}</span>
+                    <Pill kind={u.role === 'ADMIN' ? 'admin' : 'user'}>
+                      {u.role === 'ADMIN' ? t.role.admin : t.role.member}
+                    </Pill>
+                    <ChevronDown
+                      className={cn('ml-auto size-4 shrink-0 text-ink-4 transition-transform', open && 'rotate-180')}
+                      aria-hidden="true"
+                    />
                   </span>
-                  <span className="mm-meta">
-                    <span className="muted small mm-mail">{u.teamsEmail || u.email}</span>
-                    {rank != null && <span className="mm-badge rank">{t.member.queueRank(rank)}</span>}
-                    {u.id === me?.id && <span className="mm-badge">{t.member.badgeYou}</span>}
-                    {lastAdmin && <span className="mm-badge">{t.member.badgeLastAdmin}</span>}
-                    {!u.active && <span className="mm-badge off">{t.member.badgeLocked}</span>}
-                    {u.pickupOptOut && <span className="mm-badge">{t.member.badgeOptOut}</span>}
-                    {!u.teamsEmail && <span className="mm-badge warn">{t.member.badgeNoTeams}</span>}
+                  <span className="mt-0.5 flex flex-wrap items-center gap-1.5">
+                    <span className="truncate text-[12px] text-ink-3">{u.teamsEmail || u.email}</span>
+                    {rank != null && <span className="rounded-full border border-line bg-subtle px-1.5 py-px text-[11px] text-ink-3">{t.member.queueRank(rank)}</span>}
+                    {u.id === me?.id && <span className="rounded-full border border-line bg-subtle px-1.5 py-px text-[11px] text-ink-3">{t.member.badgeYou}</span>}
+                    {lastAdmin && <span className="rounded-full border border-line bg-subtle px-1.5 py-px text-[11px] text-ink-3">{t.member.badgeLastAdmin}</span>}
+                    {!u.active && <span className="rounded-full border border-line-strong bg-subtle px-1.5 py-px text-[11px] text-ink-2">{t.member.badgeLocked}</span>}
+                    {u.pickupOptOut && <span className="rounded-full border border-line bg-subtle px-1.5 py-px text-[11px] text-ink-3">{t.member.badgeOptOut}</span>}
+                    {!u.teamsEmail && <span className="rounded-full border border-warn-line bg-warn-soft px-1.5 py-px text-[11px] text-warn">{t.member.badgeNoTeams}</span>}
                   </span>
                 </span>
               </button>
 
               {open && draft && (
-                <div className="mm-panel">
-                  <div className="mm-cols">
+                <div className="border-t border-line px-3 py-3">
+                  <div className="grid gap-x-3 sm:grid-cols-2">
                     <Field label={t.member.fieldFullName}>
                       <input value={draft.fullName} onChange={(e) => setDraft({ ...draft, fullName: e.target.value })} />
                     </Field>
@@ -313,15 +336,18 @@ export function MemberManager({ onChanged }: { onChanged: () => void }) {
                       />
                     </Field>
                   </div>
-                  <div className="mm-hint small muted">{t.member.teamsHint}</div>
+                  <div className="-mt-1 mb-3 text-[12px] text-ink-3">{t.member.teamsHint}</div>
 
                   <Field label={t.member.fieldColor}>
-                    <div className="mm-colors">
+                    <div className="flex flex-wrap gap-1.5">
                       {MEMBER_COLORS.map((c) => (
                         <button
                           type="button"
                           key={c}
-                          className={cls('mm-color', draft.color.toLowerCase() === c.toLowerCase() && 'on')}
+                          className={cn(
+                            'size-6 rounded-full border-2 transition-[border-color]',
+                            draft.color.toLowerCase() === c.toLowerCase() ? 'border-ink' : 'border-transparent',
+                          )}
                           style={{ background: c }}
                           onClick={() => setDraft({ ...draft, color: c })}
                           aria-label={c}
@@ -330,7 +356,7 @@ export function MemberManager({ onChanged }: { onChanged: () => void }) {
                     </div>
                   </Field>
 
-                  <div className="mm-switches">
+                  <div className="flex flex-col gap-1.5">
                     <Switch
                       label={t.member.optActive}
                       hint={lastAdmin ? t.member.lastAdminHint : u.active ? t.member.optActiveOn : t.member.optActiveOff}
@@ -356,36 +382,36 @@ export function MemberManager({ onChanged }: { onChanged: () => void }) {
                     />
                   </div>
 
-                  <div className="mm-stats-h small">
+                  <div className="mb-1.5 mt-4 flex items-center gap-2 text-[13px]">
                     <b>{t.member.statsTitle}</b>
-                    {rank != null && <span className="mm-rank small">{t.member.queueRank(rank)}</span>}
+                    {rank != null && <span className="text-[12px] text-ink-3">{t.member.queueRank(rank)}</span>}
                   </div>
                   {u.pickupOptOut ? (
-                    <div className="mm-stats-note small muted">{t.member.statsOptOut}</div>
+                    <div className="text-[13px] text-ink-3">{t.member.statsOptOut}</div>
                   ) : !s || s.orderCount === 0 ? (
-                    <div className="mm-stats-note small muted">{t.member.statsEmpty}</div>
+                    <div className="text-[13px] text-ink-3">{t.member.statsEmpty}</div>
                   ) : (
-                    <div className="mm-stats">
-                      <div className="mm-stat">
-                        <span className="k">{t.member.statOrders}</span>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                      <div className="flex flex-col rounded-ui border border-line px-2.5 py-1.5">
+                        <span className="text-[12px] text-ink-3">{t.member.statOrders}</span>
                         <b>{t.member.statDays(s.orderCount)}</b>
                       </div>
-                      <div className="mm-stat">
-                        <span className="k">{t.member.statPickups}</span>
+                      <div className="flex flex-col rounded-ui border border-line px-2.5 py-1.5">
+                        <span className="text-[12px] text-ink-3">{t.member.statPickups}</span>
                         <b>{t.member.statTimes(s.pickupCount)}</b>
                       </div>
-                      <div className="mm-stat">
-                        <span className="k">{t.member.statRate}</span>
+                      <div className="flex flex-col rounded-ui border border-line px-2.5 py-1.5">
+                        <span className="text-[12px] text-ink-3">{t.member.statRate}</span>
                         <b>{s.rawRate == null ? '—' : `${Math.round(s.rawRate * 100)}%`}</b>
                       </div>
-                      <div className="mm-stat">
-                        <span className="k">{t.member.statLast}</span>
+                      <div className="flex flex-col rounded-ui border border-line px-2.5 py-1.5">
+                        <span className="text-[12px] text-ink-3">{t.member.statLast}</span>
                         <b>{shortDate(s.lastPickup) ?? t.member.statNever}</b>
                       </div>
                     </div>
                   )}
 
-                  <div className="mm-acts">
+                  <div className="mt-4 flex items-center gap-2">
                     <Button
                       variant="danger"
                       tiny
@@ -395,7 +421,7 @@ export function MemberManager({ onChanged }: { onChanged: () => void }) {
                     >
                       {t.actions.delete}
                     </Button>
-                    <div className="spacer" />
+                    <div className="flex-1" />
                     <Button tiny onClick={() => toggleOpen(u)}>
                       {t.actions.cancel}
                     </Button>

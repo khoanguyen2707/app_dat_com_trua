@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { cls } from '@/lib/format';
+import { X } from 'lucide-react';
+import { cn } from '@/lib/cn';
 import { IconButton } from './IconButton';
 
 /** Phần tử có thể nhận focus bên trong modal (dùng cho bẫy Tab). */
@@ -92,16 +93,31 @@ export function Modal({
   // Portal ra <body> để overlay (position: fixed) luôn phủ toàn viewport,
   // không bị "nhốt" trong .card (card có animation/overflow tạo containing-block).
   return createPortal(
-    <div className="overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className={cls('modal', wide && 'wide')} ref={boxRef} tabIndex={-1} role="dialog" aria-modal="true">
-        <div className="modal-h">
-          <div className="modal-h-row">
-            <h3>{title}</h3>
-            <IconButton onClick={onClose}>✕</IconButton>
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-ink/40 p-0 backdrop-blur-[2px] sm:items-start sm:p-6 sm:pt-[8vh]"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div
+        className={cn(
+          'flex max-h-[92vh] w-full flex-col overflow-hidden border border-line bg-surface shadow-pop',
+          'rounded-t-ui-lg sm:rounded-ui-lg',
+          wide ? 'sm:max-w-5xl' : 'sm:max-w-md',
+        )}
+        ref={boxRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+      >
+        <div className="sticky top-0 z-10 border-b border-line bg-surface px-4 py-3">
+          <div className="flex items-center gap-3">
+            <h3 className="text-[15px] font-semibold tracking-tight">{title}</h3>
+            <IconButton className="ml-auto" onClick={onClose} aria-label="Đóng">
+              <X className="size-4" />
+            </IconButton>
           </div>
           {subheader}
         </div>
-        <div className="modal-b">{children}</div>
+        <div className="overflow-y-auto p-4">{children}</div>
       </div>
     </div>,
     document.body,

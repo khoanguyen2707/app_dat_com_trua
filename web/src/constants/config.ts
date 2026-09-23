@@ -1,3 +1,4 @@
+import { BarChart3, CalendarDays, CreditCard, History, ListOrdered, UtensilsCrossed } from 'lucide-react';
 import type { DayKey } from '@/types';
 import { t } from './strings';
 
@@ -46,13 +47,29 @@ export const BANKS: { name: string; bin: string }[] = [
   { name: 'Cake', bin: '546034' }, { name: 'Timo', bin: '963388' },
 ];
 
-/** Các tab điều hướng dưới cùng */
-export const TABS = [
-  { key: 'grid', icon: '🗓️', label: t.tabs.grid },
-  { key: 'menu', icon: '📋', label: t.tabs.menu },
-  { key: 'pay', icon: '💳', label: t.tabs.pay },
-  { key: 'stats', icon: '📊', label: t.tabs.stats },
-  { key: 'hist', icon: '🕐', label: t.tabs.hist },
+/**
+ * Điều hướng chính (sidebar ở desktop, tab bar ở mobile).
+ *
+ * Hai vai trò nhìn hai app khác nhau: admin vận hành cả nhóm, còn thành viên chỉ
+ * lo suất cơm của chính mình nên không có bảng tuần lẫn thống kê.
+ */
+export const ADMIN_TABS = [
+  { key: 'grid', icon: CalendarDays, label: t.tabs.grid },
+  { key: 'menu', icon: ListOrdered, label: t.tabs.menu },
+  { key: 'pay', icon: CreditCard, label: t.tabs.pay },
+  // Thống kê và lịch sử tuần trả lời cùng một câu hỏi và mỗi cái quá ít nội dung
+  // để đứng riêng, nên gộp thành một trang tổng kết.
+  { key: 'overview', icon: BarChart3, label: t.tabs.overview },
 ] as const;
 
-export type TabKey = (typeof TABS)[number]['key'];
+export const USER_TABS = [
+  { key: 'order', icon: UtensilsCrossed, label: t.tabs.order },
+  { key: 'pay', icon: CreditCard, label: t.tabs.pay },
+  { key: 'hist', icon: History, label: t.tabs.hist },
+  { key: 'menu', icon: ListOrdered, label: t.tabs.menu },
+] as const;
+
+export type TabKey = (typeof ADMIN_TABS)[number]['key'] | (typeof USER_TABS)[number]['key'];
+export type TabItem = { key: TabKey; icon: typeof CalendarDays; label: string };
+
+export const tabsFor = (isAdmin: boolean): readonly TabItem[] => (isAdmin ? ADMIN_TABS : USER_TABS);

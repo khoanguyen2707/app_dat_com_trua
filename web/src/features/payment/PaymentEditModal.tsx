@@ -60,7 +60,7 @@ export function PaymentEditModal({
       <Field label={t.payment.accountHolderNoAccent}>
         <input value={holder} onChange={(e) => setHolder(e.target.value)} />
       </Field>
-      <div className="modal-actions">
+      <div className="mt-4 flex justify-end gap-2">
         <Button onClick={onClose}>{t.actions.cancel}</Button>
         <Button variant="primary" onClick={save} loading={busy}>
           {t.actions.save}

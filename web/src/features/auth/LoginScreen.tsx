@@ -1,9 +1,9 @@
 import { useState } from 'react';
+import { AlertCircle, UtensilsCrossed } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { t } from '@/constants/strings';
 import { MIN_PASSWORD_LENGTH } from '@/constants/config';
-import { cls } from '@/lib/format';
-import { Button, Field } from '@/components/ui';
+import { Button, Field, Tabs } from '@/components/ui';
 
 type Mode = 'login' | 'register';
 
@@ -31,34 +31,52 @@ export function LoginScreen() {
   };
 
   return (
-    <div className="login-screen">
-      <form className="login-card" onSubmit={submit}>
-        <div className="login-logo">🍱</div>
-        <h1 className="center" style={{ fontSize: 22 }}>
-          {t.app.name}
-        </h1>
-        <p className="center muted small" style={{ marginTop: 4 }}>
-          {mode === 'login' ? t.login.subtitleLogin : t.login.subtitleRegister}
-        </p>
-
-        <div className="seg">
-          <button type="button" className={cls(mode === 'login' && 'active')} onClick={() => setMode('login')}>
-            {t.login.tabLogin}
-          </button>
-          <button type="button" className={cls(mode === 'register' && 'active')} onClick={() => setMode('register')}>
-            {t.login.tabRegister}
-          </button>
+    <div className="grid min-h-dvh place-items-center bg-bg p-5">
+      <form className="w-full max-w-sm rounded-ui-lg border border-line bg-surface p-7" onSubmit={submit}>
+        <div className="flex flex-col items-center">
+          <span className="grid size-11 place-items-center rounded-ui-md bg-brand text-white">
+            <UtensilsCrossed className="size-5" />
+          </span>
+          <h1 className="mt-3 text-lg font-semibold tracking-tight">{t.app.name}</h1>
+          <p className="mt-1 text-[13px] text-ink-3">
+            {mode === 'login' ? t.login.subtitleLogin : t.login.subtitleRegister}
+          </p>
         </div>
 
-        {err && <div className="err">⚠️ {err}</div>}
+        <Tabs
+          items={[
+            { key: 'login', label: t.login.tabLogin },
+            { key: 'register', label: t.login.tabRegister },
+          ]}
+          active={mode}
+          onChange={setMode}
+        />
+
+        {err && (
+          <div className="mb-3 flex items-start gap-2 rounded-ui border border-danger-line bg-danger-soft px-3 py-2 text-[13px] text-danger">
+            <AlertCircle className="mt-px size-4 shrink-0" />
+            {err}
+          </div>
+        )}
 
         {mode === 'register' && (
           <Field label={t.login.fullName}>
-            <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={t.login.fullNamePlaceholder} required />
+            <input
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder={t.login.fullNamePlaceholder}
+              required
+            />
           </Field>
         )}
         <Field label={t.login.email}>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t.login.emailPlaceholder} required />
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder={t.login.emailPlaceholder}
+            required
+          />
         </Field>
         <Field label={t.login.password}>
           <input
@@ -71,7 +89,7 @@ export function LoginScreen() {
           />
         </Field>
 
-        <Button variant="primary" block loading={busy}>
+        <Button variant="primary" block loading={busy} className="mt-1">
           {mode === 'login' ? t.login.submitLogin : t.login.submitRegister}
         </Button>
       </form>

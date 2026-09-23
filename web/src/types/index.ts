@@ -74,6 +74,8 @@ export interface DayDetail {
   eat: boolean;
   food: string[];
   drinks: DrinkItem[];
+  /** Ghi chú cho người đi mua, vd "ít cơm". Chuỗi rỗng = xoá ghi chú của ngày đó. */
+  note?: string;
 }
 
 export interface Week {
@@ -136,6 +138,8 @@ export interface GridMember {
   role: Role;
   days: Record<DayKey, boolean>;
   items?: Record<DayKey, DayItems>;
+  /** Ghi chú theo ngày; ngày không ghi thì không có khoá. */
+  notes?: Partial<Record<DayKey, string>>;
   servings: number;
   foodTotal?: number;
   drinksTotal?: number;
@@ -158,10 +162,24 @@ export interface Grid {
   };
   /** Ngày bị khoá với user thường (đã qua, hoặc hôm nay đã quá giờ chốt). */
   lockedDays?: Record<DayKey, boolean>;
+  /** Cột nào của tuần này là hôm nay (lịch VN); null khi xem tuần khác. */
+  todayKey?: DayKey | null;
   /** Nhãn ngày dương lịch "d/M" cho mỗi cột. */
   dates?: Record<DayKey, string | null>;
   /** Giờ chốt đặt cơm trong ngày. */
   cutoff?: { minutes: number; label: string };
+}
+
+/** Trạng thái gửi đơn cơm cho quán trong ngày. */
+export interface DispatchStatus {
+  date: string;
+  sent: boolean;
+  sentAt: string | null;
+  sentBy: string | null;
+  servings: number;
+  cutoff: string;
+  shopDeadline: string;
+  minutesLeft: number;
 }
 
 export interface PaymentConfig {

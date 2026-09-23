@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/services/api';
 import type { Dish, Grid, GridMember, PaymentConfig, Week } from '@/types';
+import { Lock } from 'lucide-react';
+import { cn } from '@/lib/cn';
 import { t } from '@/constants/strings';
-import { cls, vnd } from '@/lib/format';
+import { vnd } from '@/lib/format';
 import { Avatar, Modal, Spinner } from '@/components/ui';
 import { GridPanel } from '@/features/grid/GridPanel';
 import { MemberPayModal } from '@/features/payment/MemberPayModal';
@@ -47,8 +49,11 @@ export function HistoryWeekModal({
         <Spinner />
       ) : (
         <>
-          <div className="hint lock">{t.history.viewOnlyNote}</div>
-          <div className="hist-totals">
+          <div className="mb-3 flex items-center gap-2 rounded-ui border border-brand-line bg-brand-soft px-3 py-2 text-[13px] text-brand">
+            <Lock className="size-3.5 shrink-0" />
+            {t.history.viewOnlyNote}
+          </div>
+          <div className="mb-3.5 flex flex-wrap gap-x-4 gap-y-1.5 rounded-ui-md border border-line bg-subtle px-3 py-2 text-[13px] text-ink-3">
             <span>
               <b>{grid.totals.totalServings}</b> {t.grid.colServings.toLowerCase()}
             </span>
@@ -60,31 +65,35 @@ export function HistoryWeekModal({
                 {t.payment.breakdownDrink}: <b>{vnd(drinksTotal)}</b>
               </span>
             )}
-            <span className="tot">
+            <span className="[&_b]:text-brand">
               {t.payment.breakdownTotal}: <b>{vnd(grid.totals.totalMoney)}</b>
             </span>
           </div>
           <GridPanel grid={grid} dishes={dishes} isAdmin={false} meId={meId} reload={async () => {}} readOnly />
 
           {payment && eating.length > 0 && (
-            <div className="hist-pay">
-              <div className="hist-pay-h">💳 {t.payment.title}</div>
-              <div className="hint" style={{ marginBottom: 10 }}>
+            <div className="mt-5 border-t border-line pt-4">
+              <div className="mb-2 text-sm font-semibold">{t.payment.title}</div>
+              <div className="mb-2.5 text-[13px] text-ink-3">
                 {t.payment.memberHintLead}
                 <b>{t.payment.memberHintBold}</b>
                 {t.payment.memberHintTail}
               </div>
-              <div className="member-pay">
+              <div className="divide-y divide-line rounded-ui-md border border-line">
                 {eating.map((m) => (
                   <div
                     key={m.userId}
-                    className={cls('mp', m.paymentStatus === 'PAID' && 'paid')}
+                    className="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-subtle/60"
                     onClick={() => setPicked(m)}
                   >
-                    <Avatar name={m.fullName} color={m.color} size={34} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div className="nm">{m.fullName}</div>
-                      <div className="am">
+                    <Avatar name={m.fullName} color={m.color} size={30} />
+                    <div className="min-w-0 flex-1">
+                      <div
+                        className={cn('truncate text-sm', m.paymentStatus === 'PAID' && 'text-ink-3')}
+                      >
+                        {m.fullName}
+                      </div>
+                      <div className="tnum text-[12px] text-ink-4">
                         {t.payment.servingsAmount(m.servings, vnd(m.total))}
                         {(m.drinksTotal ?? 0) > 0 && ' · 🥤'}
                       </div>

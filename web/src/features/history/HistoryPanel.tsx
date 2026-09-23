@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { CalendarPlus, Eye, History, Trash2 } from 'lucide-react';
 import { api } from '@/services/api';
 import type { Dish, PaymentConfig, Week } from '@/types';
 import { t } from '@/constants/strings';
@@ -42,11 +43,11 @@ export function HistoryPanel({
   return (
     <Card>
       <CardHeader
-        icon="🕐"
         title={t.history.title}
         action={
           isAdmin && (
-            <Button tiny variant="success" onClick={create.onOpen}>
+            <Button tiny variant="primary" onClick={create.onOpen}>
+              <CalendarPlus className="size-3.5" />
               {t.history.newBtn}
             </Button>
           )
@@ -54,33 +55,44 @@ export function HistoryPanel({
       />
       <CardBody flush>
         {weeks.length === 0 ? (
-          <EmptyState icon="🕐">{t.history.empty}</EmptyState>
+          <EmptyState icon={<History />}>{t.history.empty}</EmptyState>
         ) : (
-          weeks.map((w) => (
-            <div className="hist-item" key={w.id}>
-              <div className="ic">📅</div>
-              <div className="info">
-                <b>{w.label}</b> {w.isActive && <span className="badge-active">{t.history.active}</span>}
-                <div className="meta">
-                  {t.history.meta(w.servings ?? 0, vnd(w.total ?? 0), w.memberCount ?? 0, vnd(w.unitPrice))}
+          <div className="divide-y divide-line">
+            {weeks.map((w) => (
+              <div key={w.id} className="group/week flex items-center gap-3 px-4 py-2.5 hover:bg-subtle/60">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <b className="truncate text-sm font-medium">{w.label}</b>
+                    {w.isActive && (
+                      <span className="shrink-0 rounded-full border border-ok-line bg-ok-soft px-2 py-px text-[11px] font-medium text-ok">
+                        {t.history.active}
+                      </span>
+                    )}
+                  </div>
+                  <div className="tnum mt-0.5 text-[12px] text-ink-4">
+                    {t.history.meta(w.servings ?? 0, vnd(w.total ?? 0), w.memberCount ?? 0, vnd(w.unitPrice))}
+                  </div>
                 </div>
+                <Button tiny onClick={() => setViewing(w)}>
+                  <Eye className="size-3.5" />
+                  {t.history.viewBtn}
+                </Button>
+                {isAdmin && (
+                  <IconButton
+                    className="opacity-0 transition-opacity hover:text-danger group-hover/week:opacity-100 focus:opacity-100"
+                    title={t.actions.delete}
+                    onClick={() => del(w)}
+                  >
+                    <Trash2 className="size-4" />
+                  </IconButton>
+                )}
               </div>
-              <Button tiny onClick={() => setViewing(w)}>
-                👁️ {t.history.viewBtn}
-              </Button>
-              {isAdmin && (
-                <IconButton title={t.actions.delete} onClick={() => del(w)}>
-                  🗑️
-                </IconButton>
-              )}
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </CardBody>
       {isAdmin && (
-        <div className="hint" style={{ margin: 16 }}>
-          {t.history.hint}
-        </div>
+        <div className="border-t border-line px-4 py-2.5 text-[13px] text-ink-3">{t.history.hint}</div>
       )}
 
       {create.open && (

@@ -3,11 +3,14 @@ import { api } from '@/services/api';
 import type { DayDetail, DayItems, DayKey, Dish, DrinkItem, Grid, GridMember } from '@/types';
 import { DAYS } from '@/constants/config';
 import { t } from '@/constants/strings';
-import { cls, vnd } from '@/lib/format';
+import { CupSoda, Download, Lock, StickyNote, Utensils, X } from 'lucide-react';
+import { cn } from '@/lib/cn';
+import { vnd } from '@/lib/format';
 import { exportGridCSV } from '@/lib/csv';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { Avatar, Button, Card, CardBody, CardHeader, toast } from '@/components/ui';
 import { DayDetailSheet } from './DayDetailSheet';
+import { GridGuide } from './GridGuide';
 
 /** Tính lại servings + tiền cho TOÀN grid theo đúng công thức backend → cho phép cập nhật lạc quan mà không cần tải lại. */
 function recomputeGrid(grid: Grid, dishMap: Map<string, Dish>): Grid {
@@ -80,13 +83,16 @@ export function GridPanel({
 }) {
   const { week, members, totals } = grid;
   const locked = grid.lockedDays ?? ({} as Record<DayKey, boolean>);
+  const today = grid.todayKey ?? null;
   const dates = grid.dates ?? ({} as Record<DayKey, string | null>);
   const isMobile = useIsMobile();
   const dishMap = useMemo(() => new Map(dishes.map((d) => [d.id, d])), [dishes]);
 
   const [saving, setSaving] = useState(false);
-  const [day, setDay] = useState<DayKey>(() => DAYS.find((d) => !locked[d.key])?.key ?? 'mon');
-  const [picked, setPicked] = useState<{ m: GridMember; day: DayKey } | null>(null);
+  const [day, setDay] = useState<DayKey>(
+    () => grid.todayKey ?? DAYS.find((d) => !locked[d.key])?.key ?? 'mon',
+  );
+  const [picked, setPicked] = useState<{ m: GridMember; day: DayKey; anchor?: DOMRect } | null>(null);
 
   /** Có được sửa ô (member, ngày): tự mình/admin VÀ (admin hoặc ngày chưa khoá). */
   const canEditDay = (m: GridMember, key: DayKey) =>
@@ -118,9 +124,14 @@ export function GridPanel({
     }
   };
 
-  /** Tap ô → mở phiếu chi tiết (đặt cơm + chọn món / thêm nước). Bỏ cơm nhanh bằng nút × trên ô. */
-  const onCell = (m: GridMember, key: DayKey) => {
-    if (!readOnly || m.days[key] || m.items?.[key]) setPicked({ m, day: key });
+  /**
+   * Tap ô → mở phiếu chi tiết (đặt cơm + chọn món / thêm nước).
+   * Truyền kèm vị trí ô để phiếu mở thành popover ngay cạnh ô thay vì hộp thoại
+   * che cả bảng. Bỏ cơm nhanh vẫn bằng nút × trên ô.
+   */
+  const onCell = (m: GridMember, key: DayKey, el: HTMLElement) => {
+    if (!readOnly || m.days[key] || m.items?.[key])
+      setPicked({ m, day: key, anchor: el.getBoundingClientRect() });
   };
 
   const lockMine = (m: GridMember, key: DayKey) => !isAdmin && m.userId === meId && locked[key];
@@ -128,18 +139,40 @@ export function GridPanel({
   /** Ô có "thứ gì đó" để dọn (cơm hoặc nước) → hiện nút × / cho phép tick dọn nhanh. */
   const hasAny = (m: GridMember, key: DayKey) => m.days[key] || hasDrink(m, key);
 
-  /** Icon ô: 🍚 có cơm · 🥤 chỉ nước · 🔒 khoá (ô trống của mình) · trống. */
+  /**
+   * Dấu trong ô. Ô có cơm hiện CHÍNH emoji món người đó chọn (tối đa 2, còn lại
+   * gộp thành "+n") — nhìn bảng là biết cả tuần ai ăn gì, thay vì một icon dĩa
+   * chung chung không nói lên điều gì.
+   */
   const cellMark = (m: GridMember, key: DayKey) => {
-    if (m.days[key]) return '🍚';
-    if (hasDrink(m, key)) return '🥤';
-    if (lockMine(m, key)) return '🔒';
-    return '';
+    if (m.days[key]) {
+      const emojis = (m.items?.[key]?.food ?? []).map((id) => dishMap.get(id)?.emoji).filter(Boolean);
+      if (!emojis.length) return <Utensils className="size-4" />;
+      return (
+        <span className="flex items-center gap-px leading-none">
+          <span className="text-[13px] tracking-[-0.06em]">{emojis.slice(0, 2).join('')}</span>
+          {emojis.length > 2 && <span className="text-[10px] font-semibold">+{emojis.length - 2}</span>}
+        </span>
+      );
+    }
+    if (hasDrink(m, key)) return <CupSoda className="size-4" />;
+    if (lockMine(m, key)) return <Lock className="size-3 text-ink-4" />;
+    return null;
   };
   const cellClass = (m: GridMember, key: DayKey) => {
     const com = m.days[key];
     const drinkOnly = !com && hasDrink(m, key);
     const interactive = canEditDay(m, key) || (!readOnly && (com || m.items?.[key]));
-    return cls('cell', com && 'on', drinkOnly && 'drink', interactive ? 'clickable' : 'ro', lockMine(m, key) && 'locked');
+    return cn(
+      'group/cell relative mx-auto grid h-9 w-14 place-items-center rounded-ui border transition-[background-color,border-color,transform] duration-150',
+      com
+        ? 'animate-pop border-brand-line bg-brand-tint text-brand'
+        : drinkOnly
+          ? 'animate-pop border-drink-line bg-drink-soft text-drink'
+          : 'border-transparent bg-subtle',
+      interactive ? 'cursor-pointer hover:border-brand-line' : 'cursor-default',
+      !com && !drinkOnly && interactive && 'hover:bg-brand-soft',
+    );
   };
 
   /** Tóm tắt món/nước của 1 ngày (cho mobile row): "🐟 🍳  ·  🥤×2" */
@@ -153,143 +186,181 @@ export function GridPanel({
 
   return (
     <Card>
-      <CardHeader icon="🗓️" title={t.grid.title} />
-      {!readOnly && (
-        <div className="grid-guide">
-          <div className="grid-guide-h">{t.grid.guide.title}</div>
-          <ul>
-            <li>{t.grid.guide.order(vnd(week.unitPrice))}</li>
-            <li>{t.grid.guide.detail(isMobile ? t.grid.guide.whereMobile : t.grid.guide.whereDesktop)}</li>
-            {grid.cutoff && <li>{t.grid.guide.today(grid.cutoff.label)}</li>}
-            <li>{t.grid.guide.cancel}</li>
-            <li>{t.grid.guide.colors}</li>
-            <li>{isAdmin ? t.grid.guide.admin : t.grid.guide.member}</li>
-          </ul>
-        </div>
-      )}
+      <CardHeader
+        title={t.grid.title}
+        action={
+          !readOnly && (
+            <GridGuide
+              items={[
+                t.grid.guide.order(vnd(week.unitPrice)),
+                t.grid.guide.detail(isMobile ? t.grid.guide.whereMobile : t.grid.guide.whereDesktop),
+                ...(grid.cutoff ? [t.grid.guide.today(grid.cutoff.label)] : []),
+                t.grid.guide.cancel,
+                t.grid.guide.colors,
+                isAdmin ? t.grid.guide.admin : t.grid.guide.member,
+              ]}
+            />
+          )
+        }
+      />
 
       {isMobile ? (
         /* ===== MOBILE: chọn ngày → danh sách thành viên ===== */
         <CardBody>
-          <div className="day-picker">
+          <div className="-mx-1 flex gap-1 overflow-x-auto pb-2">
             {DAYS.map((d) => (
               <button
                 key={d.key}
-                className={cls('dp', day === d.key && 'active', locked[d.key] && 'lk')}
+                className={cn(
+                  'flex min-w-14 flex-1 flex-col items-center gap-0.5 rounded-ui border px-2 py-1.5 transition-colors',
+                  day === d.key ? 'border-brand bg-brand-soft text-brand' : 'border-line text-ink-2',
+                )}
                 onClick={() => setDay(d.key)}
               >
-                <span className="dpd">{d.label}</span>
-                {dates[d.key] && <span className="dpsub">{dates[d.key]}</span>}
-                {locked[d.key] && <span className="dplock">🔒</span>}
+                <span className="text-[13px] font-medium">{d.label}</span>
+                {dates[d.key] && <span className="text-[11px] text-ink-4">{dates[d.key]}</span>}
+                {locked[d.key] && <Lock className="size-3 text-ink-4" />}
               </button>
             ))}
           </div>
 
-          <div className="day-head">
-            <b>
+          <div className="mt-3 flex items-baseline justify-between">
+            <b className="text-sm">
               {DAYS.find((d) => d.key === day)?.full}
               {dates[day] ? ` • ${dates[day]}` : ''}
             </b>
-            <span className="small muted">{t.grid.eatingDay(totals.perDay[day])}</span>
+            <span className="text-[13px] text-ink-3">{t.grid.eatingDay(totals.perDay[day])}</span>
           </div>
 
-          <div className="day-list">
+          <div className="mt-2 divide-y divide-line rounded-ui-md border border-line">
             {members.map((m) => {
               const on = m.days[day];
               const sub = summary(m, day);
               return (
-                <div key={m.userId} className={cls('dayrow', m.userId === meId && 'me')}>
-                  <Avatar name={m.fullName} color={m.color} size={36} />
-                  <button className="dayrow-info" onClick={() => setPicked({ m, day })}>
-                    <span className="nm">{m.fullName}</span>
-                    {sub && <span className="dayrow-sub">{sub}</span>}
+                <div
+                  key={m.userId}
+                  className={cn('flex items-center gap-2.5 px-3 py-2', m.userId === meId && 'bg-brand-soft/40')}
+                >
+                  <Avatar name={m.fullName} color={m.color} size={32} />
+                  <button className="min-w-0 flex-1 text-left" onClick={() => setPicked({ m, day })}>
+                    <span className="block truncate text-sm font-medium">{m.fullName}</span>
+                    {sub && <span className="block truncate text-[12px] text-ink-3">{sub}</span>}
                   </button>
                   <button
-                    className={cls(
-                      'daytick',
-                      on && 'on',
-                      !on && hasDrink(m, day) && 'drink',
-                      !canEditDay(m, day) && 'ro',
-                      lockMine(m, day) && 'locked',
+                    className={cn(
+                      'relative grid size-9 shrink-0 place-items-center rounded-ui border transition-colors',
+                      on
+                        ? 'border-brand-line bg-brand-soft text-brand'
+                        : hasDrink(m, day)
+                          ? 'border-drink-line bg-drink-soft text-drink'
+                          : 'border-line bg-surface',
+                      !canEditDay(m, day) && 'opacity-60',
                     )}
                     onClick={() =>
                       canEditDay(m, day) && hasAny(m, day) ? clearCell(m, day) : setPicked({ m, day })
                     }
                   >
                     {cellMark(m, day)}
-                    {on && hasDrink(m, day) && <span className="cell-drink">🥤</span>}
+                    {m.notes?.[day] && (
+                      <span className="absolute -left-1 -top-1" title={m.notes[day]}>
+                        <StickyNote className="size-3.5 rounded-full bg-surface text-ink-3" />
+                      </span>
+                    )}
+                    {on && hasDrink(m, day) && (
+                      <CupSoda className="absolute -bottom-1 -left-1 size-3.5 rounded-full bg-surface text-drink" />
+                    )}
                   </button>
                 </div>
               );
             })}
           </div>
 
-          <div className="day-foot">
-            <span className="muted small">{saving ? t.actions.saving : t.grid.autoSave}</span>
+          <div className="mt-3 flex items-center justify-between text-[13px]">
+            <span className="text-ink-3">{saving ? t.actions.saving : t.grid.autoSave}</span>
             <b>{t.grid.dayTotal(totals.perDay[day])}</b>
           </div>
         </CardBody>
       ) : (
         /* ===== DESKTOP: bảng đầy đủ ===== */
         <CardBody flush>
-          <div className="grid-scroll">
-            <table className="grid">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-sm">
               <thead>
-                <tr>
-                  <th className="col-name">{t.grid.colMember}</th>
+                <tr className="border-b border-line">
+                  <th className="sticky left-0 z-10 bg-surface px-4 py-3 text-left text-[13px] font-medium text-ink-3">
+                    {t.grid.colMember}
+                  </th>
                   {DAYS.map((d) => (
-                    <th key={d.key} className={cls(locked[d.key] && 'lk')}>
-                      {d.label}
-                      {dates[d.key] && <span className="dcol">{dates[d.key]}</span>}
-                      {locked[d.key] && <span className="dcol lock">🔒</span>}
+                    <th key={d.key} className={cn('px-1 py-2.5 text-center font-medium', d.key === today && 'bg-brand-soft')}>
+                      <div className={cn('text-[13px]', locked[d.key] ? 'text-ink-4' : 'text-ink')}>{d.label}</div>
+                      <div className="mt-0.5 flex items-center justify-center gap-1 text-[11px] text-ink-4">
+                        {dates[d.key]}
+                        {locked[d.key] && <Lock className="size-3" />}
+                      </div>
+                      {d.key === today && (
+                        <div className="mt-1 text-[10px] font-semibold text-brand">{t.grid.todayTag}</div>
+                      )}
                     </th>
                   ))}
-                  <th>{t.grid.colServings}</th>
-                  <th>{t.grid.colMoney}</th>
+                  <th className="px-3 py-3 text-right text-[13px] font-medium text-ink-3">{t.grid.colServings}</th>
+                  <th className="px-4 py-3 text-right text-[13px] font-medium text-ink-3">{t.grid.colMoney}</th>
                 </tr>
               </thead>
               <tbody>
                 {members.map((m) => (
-                  <tr key={m.userId} className={cls(m.userId === meId && 'me')}>
-                    <td className="col-name">
-                      <div className="namecell">
-                        <Avatar name={m.fullName} color={m.color} size={30} />
-                        <span>{m.fullName}</span>
+                  <tr
+                    key={m.userId}
+                    className={cn('border-b border-line last:border-0 hover:bg-subtle', m.userId === meId && 'bg-brand-soft')}
+                  >
+                    <td className={cn('sticky left-0 z-10 px-4 py-2', m.userId === meId ? 'bg-brand-soft' : 'bg-surface')}>
+                      <div className="flex items-center gap-2">
+                        <Avatar name={m.fullName} color={m.color} size={26} />
+                        <span className={cn('whitespace-nowrap', m.userId === meId && 'font-medium')}>{m.fullName}</span>
                       </div>
                     </td>
                     {DAYS.map((d) => (
-                      <td key={d.key} className="day">
-                        <div className={cellClass(m, d.key)} onClick={() => onCell(m, d.key)}>
+                      <td key={d.key} className={cn('px-1 py-2', d.key === today && 'bg-brand-soft/60')}>
+                        <div className={cellClass(m, d.key)} onClick={(e) => onCell(m, d.key, e.currentTarget)}>
                           {cellMark(m, d.key)}
-                          {m.days[d.key] && hasDrink(m, d.key) && <span className="cell-drink">🥤</span>}
+                          {m.days[d.key] && hasDrink(m, d.key) && (
+                            <CupSoda className="absolute -bottom-1 -left-1 size-3.5 rounded-full bg-surface text-drink" />
+                          )}
+                          {m.notes?.[d.key] && (
+                            /* title: rê chuột đọc được ghi chú mà không phải mở phiếu */
+                            <span className="absolute -left-1 -top-1" title={m.notes[d.key]}>
+                              <StickyNote className="size-3.5 rounded-full bg-surface text-ink-3" />
+                            </span>
+                          )}
                           {hasAny(m, d.key) && canEditDay(m, d.key) && (
                             <button
-                              className="cell-x"
+                              className="absolute -right-1.5 -top-1.5 hidden size-4 place-items-center rounded-full border border-line bg-surface text-ink-3 hover:border-danger-line hover:text-danger group-hover/cell:grid"
                               title={m.days[d.key] ? t.grid.clearRice : t.grid.clearDrink}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 clearCell(m, d.key);
                               }}
                             >
-                              ×
+                              <X className="size-2.5" />
                             </button>
                           )}
                         </div>
                       </td>
                     ))}
-                    <td className="num">{m.servings}</td>
-                    <td className="money">{vnd(m.total)}</td>
+                    <td className="tnum px-3 py-2 text-right text-ink-3">{m.servings}</td>
+                    <td className="tnum px-4 py-2 text-right font-medium">{vnd(m.total)}</td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
-                <tr>
-                  <td className="col-name">{t.grid.totalRow}</td>
+                <tr className="border-t border-line-strong bg-subtle font-semibold">
+                  <td className="sticky left-0 z-10 bg-subtle px-4 py-3 text-[13px] text-ink-2">{t.grid.totalRow}</td>
                   {DAYS.map((d) => (
-                    <td key={d.key}>{totals.perDay[d.key]}</td>
+                    <td key={d.key} className={cn('tnum px-1 py-3 text-center', d.key === today && 'text-brand')}>
+                      {totals.perDay[d.key]}
+                    </td>
                   ))}
-                  <td>{totals.totalServings}</td>
-                  <td className="money">{vnd(totals.totalMoney)}</td>
+                  <td className="tnum px-3 py-2.5 text-right">{totals.totalServings}</td>
+                  <td className="tnum px-4 py-2.5 text-right text-brand">{vnd(totals.totalMoney)}</td>
                 </tr>
               </tfoot>
             </table>
@@ -297,8 +368,10 @@ export function GridPanel({
         </CardBody>
       )}
 
-      <div className="gridfooter">
-        <span className="small muted">{saving ? t.actions.saving : t.grid.autoSave}</span>
+      <div className="flex items-center justify-between border-t border-line px-4 py-2.5">
+        {/* Mobile đã có dòng trạng thái ngay dưới danh sách ngày → ở đây chỉ hiện từ lg. */}
+        <span className="hidden text-[13px] text-ink-3 lg:inline">{saving ? t.actions.saving : t.grid.autoSave}</span>
+        <span className="lg:hidden" />
         <Button
           tiny
           onClick={() => {
@@ -306,6 +379,7 @@ export function GridPanel({
             toast(t.grid.exported, '📊');
           }}
         >
+          <Download className="size-3.5" />
           {t.grid.exportBtn}
         </Button>
       </div>
@@ -315,6 +389,7 @@ export function GridPanel({
           grid={grid}
           member={picked.m}
           day={picked.day}
+          anchor={picked.anchor ?? null}
           dishes={dishes}
           isAdmin={isAdmin && !readOnly}
           meId={meId}

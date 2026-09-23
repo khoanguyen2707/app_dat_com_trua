@@ -53,7 +53,7 @@ export function CreateWeekModal({ onClose, onSaved }: { onClose: () => void; onS
     <Modal open title={t.history.modalTitle} onClose={onClose}>
       <Field label={t.history.fieldStartDate}>
         <input type="date" value={startDate} onChange={(e) => onDate(e.target.value)} />
-        <div className="small muted" style={{ marginTop: 6 }}>
+        <div className="mt-1.5 text-[13px] text-ink-3">
           {t.history.startDateHint}
         </div>
       </Field>
@@ -63,7 +63,7 @@ export function CreateWeekModal({ onClose, onSaved }: { onClose: () => void; onS
       <Field label={t.history.fieldUnitPrice}>
         <input type="number" value={unitPrice} onChange={(e) => setUnitPrice(Number(e.target.value))} />
       </Field>
-      <div className="modal-actions">
+      <div className="mt-4 flex justify-end gap-2">
         <Button onClick={onClose}>{t.actions.cancel}</Button>
         <Button variant="primary" onClick={save} loading={busy}>
           {t.history.createBtn}
