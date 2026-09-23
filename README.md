@@ -165,13 +165,23 @@ Chốt **phải sớm hơn** giờ quán đóng: khoảng giữa hai mốc chín
 
 Gọi lại trong cùng một mức trả `idle`, nên flow chạy 5 phút/lần cũng không spam. Sau `SHOP_DEADLINE` thì im — nhắc lúc đó chỉ gây hoảng chứ không cứu được bữa trưa.
 
-### Dựng flow Power Automate
+### Gắn vào flow **Đặt cơm trưa - HTTP**
 
-1. **Recurrence** mỗi 5 phút, khung 10:15–10:30 giờ VN *(recurrence mặc định theo UTC — nhớ đặt timezone)*.
-2. **HTTP** `POST {APP_API}/dispatch/today`, header `x-pickup-token: <PICKUP_TOKEN>`.
-3. **Condition** `level` khác `idle` thì mới đi tiếp.
-4. **Post message in a chat or channel**: dùng thẳng `html` trong response (đã dựng sẵn, không phải nối chuỗi), @mention từng người trong mảng `mentions[].email` — gồm **người đi lấy cơm hôm nay và toàn bộ admin**, để một người nghỉ thì người kia vẫn thấy.
-5. Thêm **Adaptive Card** nút "Đã gửi quán" → `POST {APP_API}/dispatch/today/sent-hook` với body `{ "email": "<người bấm>" }` để ghi đúng ai đã gửi.
+Phần nhắc nằm chung trong flow đăng thực đơn, không tách flow riêng. Chèn một **nhánh song song** ngay sau `Check_Health` (điểm này rơi đúng giờ chốt, vì `Delay_Until` phía trước đã chờ tới đó), để nhánh nhắc chạy song song với `Delay_1` → bốc người lấy cơm.
+
+Nhánh nhắc gồm **ba khối giống hệt nhau**, cách nhau bởi **Delay 5 phút** — rơi vào khoảng 10:15 / 10:20 / 10:25:
+
+1. **HTTP** `POST {APP_API}/dispatch/today`, header `x-pickup-token: <PICKUP_TOKEN>`
+2. **Parse JSON** body trả về
+3. **Condition** `level` khác `idle` mới đi tiếp
+4. **Apply to each** trên `mentions` (bật *Concurrency = 1*) → **Get an @mention token for a user** (`userId` = `email`) → **Append to string variable**
+5. **Post message in a chat or channel**: chuỗi mention + trường `html` (đã dựng sẵn ở server)
+
+Không cần **Do until**: phần quyết định nằm ở server. Khối nào gọi mà đơn đã gửi, hoặc mức đó đã nhắc rồi, hoặc đã quá giờ quán đóng, thì API trả `level: "idle"` và `Condition` tự bỏ qua.
+
+Thêm **Adaptive Card** nút "Đã gửi quán" → `POST {APP_API}/dispatch/today/sent-hook`, body `{ "email": "<người bấm>" }`. Không có nút này thì hệ thống không biết đơn đã đi và vẫn nhắc đủ ba lần.
+
+> ⚠️ **Cái giá của việc gộp chung:** flow này chạy khi admin đăng thực đơn, không theo lịch. **Hôm nào không đăng thực đơn thì không có lời nhắc nào** — một điểm chết mới thay cho điểm chết cũ. Flow riêng dùng **Recurrence** thì không có điều kiện tiên quyết đó.
 
 Trong app, khối **Đơn hôm nay** hiện dải trạng thái *"Chưa gửi cho quán"* / *"Đã gửi lúc 10:18 · Khoa"* và nút bấm tương ứng — cả nhóm nhìn thấy đơn đã đi hay chưa. Đây mới là thứ ngăn sự cố lặp lại, chứ không phải cái tin nhắn nhắc.
 
