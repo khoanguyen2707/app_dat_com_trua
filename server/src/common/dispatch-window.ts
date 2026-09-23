@@ -57,3 +57,24 @@ export function dispatchLevel({
 export function minutesLeftForShop(now: Date = new Date()): number {
   return Math.max(0, SHOP_DEADLINE_MINUTES - vnMinutes(now));
 }
+
+/** Một người có thể được nhắc. */
+export type Candidate = { name: string; email: string | null; role: 'pickup' | 'admin' };
+
+/**
+ * Đúng MỘT người chịu trách nhiệm gửi đơn ở thời điểm này.
+ *
+ * Trả về một người chứ không phải danh sách là có chủ đích: tin nhắn đi riêng
+ * cho người đó, nên không ai bấm "đã gửi" hộ được — bấm hộ thì hệ thống tưởng
+ * đơn đã đi trong khi chưa.
+ *
+ * Hai mức đầu là việc của người đi lấy cơm hôm nay. Tới mức leo thang thì người
+ * đó rõ ràng đang không xử lý được (nghỉ, bận, không đọc) nên chuyển sang admin.
+ */
+export function pickAssignee(candidates: Candidate[], level: DispatchLevel): Candidate | null {
+  if (!candidates.length) return null;
+  const pickup = candidates.find((c) => c.role === 'pickup');
+  const admin = candidates.find((c) => c.role === 'admin');
+  if (level === 'escalate') return admin ?? pickup ?? null;
+  return pickup ?? admin ?? null;
+}

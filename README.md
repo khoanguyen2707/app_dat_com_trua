@@ -169,17 +169,23 @@ Gọi lại trong cùng một mức trả `idle`, nên flow chạy 5 phút/lần
 
 Phần nhắc nằm chung trong flow đăng thực đơn, không tách flow riêng. Chèn một **nhánh song song** ngay sau `Check_Health` (điểm này rơi đúng giờ chốt, vì `Delay_Until` phía trước đã chờ tới đó), để nhánh nhắc chạy song song với `Delay_1` → bốc người lấy cơm.
 
-Nhánh nhắc gồm **ba khối giống hệt nhau**, cách nhau bởi **Delay 5 phút** — rơi vào khoảng 10:15 / 10:20 / 10:25:
+Nhánh nhắc là **một vòng `Do until`** viết một lần, không copy ba khối:
 
 1. **HTTP** `POST {APP_API}/dispatch/today`, header `x-pickup-token: <PICKUP_TOKEN>`
 2. **Parse JSON** body trả về
 3. **Condition** `level` khác `idle` mới đi tiếp
-4. **Apply to each** trên `mentions` (bật *Concurrency = 1*) → **Get an @mention token for a user** (`userId` = `email`) → **Append to string variable**
-5. **Post message in a chat or channel**: chuỗi mention + trường `html` (đã dựng sẵn ở server)
+4. **Post adaptive card and wait for a response** — *Post in: **Chat with Flow bot***, người nhận là `assignee.email`, thẻ chứa `html` + nút "Đã gửi quán", **Timeout `PT5M`**
+5. Có phản hồi → **HTTP** `POST {APP_API}/dispatch/today/sent-hook` body `{ "email": "<assignee.email>" }`
 
-Không cần **Do until**: phần quyết định nằm ở server. Khối nào gọi mà đơn đã gửi, hoặc mức đó đã nhắc rồi, hoặc đã quá giờ quán đóng, thì API trả `level: "idle"` và `Condition` tự bỏ qua.
+Vòng lặp thoát khi `level` = `idle`; giới hạn **Count 4 / Timeout PT20M**.
 
-Thêm **Adaptive Card** nút "Đã gửi quán" → `POST {APP_API}/dispatch/today/sent-hook`, body `{ "email": "<người bấm>" }`. Không có nút này thì hệ thống không biết đơn đã đi và vẫn nhắc đủ ba lần.
+**Vì sao nhắn riêng chứ không đăng vào nhóm:** thẻ có nút trong nhóm thì ai cũng bấm được, người không gửi bấm hộ là hệ thống tưởng đơn đã đi trong khi chưa. DM thì chỉ đúng người nhận bấm được.
+
+**Vì sao chỉ một người:** server trả sẵn `assignee` — hai mức đầu là người đi lấy cơm hôm nay, tới mức leo thang thì chuyển sang admin vì người trực rõ ràng đang không xử lý. Flow không phải lọc danh sách, không cần `Apply to each` lẫn biến chuỗi mention.
+
+**Timeout 5 phút của thẻ chính là nhịp leo thang** — không cần action `Delay` riêng.
+
+> ⚠️ Teams **không hỗ trợ `Action.Http`** trong Adaptive Card (đó là tính năng của Outlook actionable message). Nút phải là `Action.Submit` và trả về đúng action **"… and wait for a response"** đang chờ.
 
 > ⚠️ **Cái giá của việc gộp chung:** flow này chạy khi admin đăng thực đơn, không theo lịch. **Hôm nào không đăng thực đơn thì không có lời nhắc nào** — một điểm chết mới thay cho điểm chết cũ. Flow riêng dùng **Recurrence** thì không có điều kiện tiên quyết đó.
 

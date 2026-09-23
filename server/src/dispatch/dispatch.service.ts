@@ -2,7 +2,13 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/prisma/prisma.service';
 import { CUTOFF_LABEL, DAY_LABEL, SHOP_DEADLINE_LABEL, vnDateStr, vnTodayKey, type DayKey } from '@/common/week-lock';
-import { dispatchLevel, LEVEL_ORDER, minutesLeftForShop, type DispatchLevel } from '@/common/dispatch-window';
+import {
+  dispatchLevel,
+  LEVEL_ORDER,
+  minutesLeftForShop,
+  pickAssignee,
+  type DispatchLevel,
+} from '@/common/dispatch-window';
 
 /** Một người cần được @mention trong tin nhắn Teams. */
 export type Mention = { name: string; email: string | null; role: 'pickup' | 'admin' };
@@ -18,6 +24,8 @@ export type DispatchStatus = {
   cutoff: string;
   shopDeadline: string;
   minutesLeft: number;
+  /** Đúng một người chịu trách nhiệm lúc này — flow nhắn riêng cho người này. */
+  assignee: Mention | null;
   mentions: Mention[];
   text: string;
   html: string;
@@ -129,6 +137,7 @@ export class DispatchService {
       cutoff: CUTOFF_LABEL,
       shopDeadline: SHOP_DEADLINE_LABEL,
       minutesLeft,
+      assignee: pickAssignee(mentions, level),
       mentions,
       text: this.buildText(day, orders, level, minutesLeft),
       html: this.buildHtml(day, orders, level, minutesLeft),

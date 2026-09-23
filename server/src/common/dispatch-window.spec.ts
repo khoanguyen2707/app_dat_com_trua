@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CUTOFF_MINUTES, SHOP_DEADLINE_MINUTES } from './week-lock';
-import { dispatchLevel, LEVEL_ORDER, minutesLeftForShop } from './dispatch-window';
+import { dispatchLevel, LEVEL_ORDER, minutesLeftForShop, pickAssignee } from './dispatch-window';
 
 /** Một thời điểm giờ VN, quy về UTC (VN = UTC+7). */
 const at = (hhmm: string) => {
@@ -70,5 +70,31 @@ describe('LEVEL_ORDER', () => {
     expect(LEVEL_ORDER.idle).toBeLessThan(LEVEL_ORDER.first);
     expect(LEVEL_ORDER.first).toBeLessThan(LEVEL_ORDER.second);
     expect(LEVEL_ORDER.second).toBeLessThan(LEVEL_ORDER.escalate);
+  });
+});
+
+describe('pickAssignee', () => {
+  const pickup = { name: 'Nhân', email: 'nhan@x.vn', role: 'pickup' as const };
+  const admin = { name: 'Khoa', email: 'khoa@x.vn', role: 'admin' as const };
+
+  it('người đi lấy cơm hôm nay chịu trách nhiệm ở hai mức đầu', () => {
+    expect(pickAssignee([pickup, admin], 'first')).toEqual(pickup);
+    expect(pickAssignee([pickup, admin], 'second')).toEqual(pickup);
+  });
+
+  it('leo thang thì chuyển sang admin — người trực rõ ràng đang không xử lý', () => {
+    expect(pickAssignee([pickup, admin], 'escalate')).toEqual(admin);
+  });
+
+  it('chưa bốc được người trực thì admin gánh ngay từ đầu', () => {
+    expect(pickAssignee([admin], 'first')).toEqual(admin);
+  });
+
+  it('không có ai để nhắc thì trả null chứ không đoán bừa', () => {
+    expect(pickAssignee([], 'first')).toBeNull();
+  });
+
+  it('leo thang mà chỉ có người trực, không có admin, thì vẫn là người trực', () => {
+    expect(pickAssignee([pickup], 'escalate')).toEqual(pickup);
   });
 });
