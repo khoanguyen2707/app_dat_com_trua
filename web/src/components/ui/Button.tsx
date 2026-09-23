@@ -14,8 +14,8 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const VARIANTS: Record<Variant, string> = {
-  default: 'bg-surface text-ink border-line hover:bg-subtle',
-  primary: 'bg-brand text-white border-transparent hover:bg-brand-hover',
+  default: 'bg-surface text-ink-2 border-line hover:border-line-strong hover:text-ink',
+  primary: 'bg-brand text-white border-transparent shadow-card hover:bg-brand-hover',
   success: 'bg-ok text-white border-transparent hover:brightness-110',
   danger: 'bg-danger-soft text-danger border-danger-line hover:bg-danger hover:text-white',
   ghost: 'bg-transparent text-ink-2 border-transparent hover:bg-subtle',
@@ -35,8 +35,9 @@ export function Button({
     <button
       className={cn(
         'inline-flex items-center justify-center gap-1.5 rounded-ui border font-medium',
-        'transition-colors disabled:cursor-not-allowed disabled:opacity-50',
-        tiny ? 'h-7 px-2.5 text-[13px]' : 'h-9 px-3.5 text-sm',
+        'transition-[background-color,border-color,transform] duration-150 active:scale-[0.97]',
+        'disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100',
+        tiny ? 'h-8 px-3 text-[13px]' : 'h-10 px-4 text-sm',
         block && 'w-full',
         VARIANTS[variant],
         className,

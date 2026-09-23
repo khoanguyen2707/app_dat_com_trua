@@ -27,7 +27,7 @@ export function WeekSettings({ week, onSaved }: { week: Week; onSaved: () => Pro
 
   return (
     <div className="max-w-sm">
-      <h4 className="mb-3 text-[12px] font-semibold uppercase tracking-wide text-ink-4">
+      <h4 className="mb-3 text-[13px] font-semibold text-ink-2">
         {t.settings.currentWeek}
       </h4>
       <Field label={t.settings.fieldLabel}>

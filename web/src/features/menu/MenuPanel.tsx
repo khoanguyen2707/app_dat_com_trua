@@ -61,7 +61,7 @@ export function MenuPanel({
   const section = (title: string, list: Dish[]) =>
     list.length > 0 && (
       <section className="border-b border-line last:border-0">
-        <h3 className="flex items-baseline gap-2 bg-subtle px-4 py-1.5 text-[12px] font-semibold uppercase tracking-wide text-ink-3">
+        <h3 className="flex items-baseline gap-2 bg-subtle px-5 py-2 text-[13px] font-semibold text-ink-2">
           {title}
           <span className="tnum font-normal normal-case tracking-normal text-ink-4">
             {t.menu.sectionCount(list.length)}

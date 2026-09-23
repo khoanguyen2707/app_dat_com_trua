@@ -44,8 +44,8 @@ export function Sidebar({
               onClick={() => onChange(tab.key)}
               aria-current={active === tab.key ? 'page' : undefined}
               className={cn(
-                'flex items-center gap-2.5 rounded-ui px-2.5 py-2 text-sm font-medium transition-colors',
-                active === tab.key ? 'bg-brand-soft text-brand' : 'text-ink-2 hover:bg-subtle',
+                'flex items-center gap-2.5 rounded-ui px-3 py-2.5 text-sm font-medium transition-colors',
+                active === tab.key ? 'bg-brand-tint text-brand' : 'text-ink-2 hover:bg-subtle',
               )}
             >
               <Icon className="size-4 shrink-0" />

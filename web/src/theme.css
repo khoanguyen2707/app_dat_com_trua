@@ -1,82 +1,121 @@
 @import 'tailwindcss';
 
 /* =========================================================================
-   Hệ token giao diện — hướng Linear/Vercel: nền trung tính, viền mảnh thay
-   đổ bóng, bo góc nhỏ, cam thương hiệu dùng tiết chế (CTA + trạng thái chọn).
+   Hệ token giao diện — "bảng cơm trưa": nền giấy ấm, mực nâu-đen, cam cho
+   hành động, teal cho đồ uống. Chiều sâu rất tiết chế: thẻ gần như phẳng,
+   chỉ lớp nổi (popover, hộp thoại) mới có bóng rõ.
    ========================================================================= */
 @theme {
-  /* thang xám trung tính */
-  --color-bg: #fafafa;
+  /* nền & mực — sắc ấm, không phải xám trung tính */
+  --color-bg: #f6f4f1;
   --color-surface: #ffffff;
-  --color-subtle: #f4f4f5;
-  --color-line: #e4e4e7;
-  --color-line-strong: #d4d4d8;
-  --color-ink: #18181b;
-  --color-ink-2: #3f3f46;
-  --color-ink-3: #71717a;
-  --color-ink-4: #a1a1aa;
+  --color-subtle: #f4f1ec;
+  --color-line: #e8e3dc;
+  --color-line-strong: #d6cfc5;
+  --color-ink: #211e1b;
+  --color-ink-2: #4a443e;
+  --color-ink-3: #7a736b;
+  --color-ink-4: #a8a09a;
 
-  /* cam thương hiệu — một sắc độ chính, không gradient */
-  --color-brand: #ea580c;
-  --color-brand-hover: #c2410c;
-  --color-brand-soft: #fff7ed;
-  --color-brand-line: #fed7aa;
+  /* cam thương hiệu — hành động chính, ô đã đặt cơm, mục đang chọn */
+  --color-brand: #e85d1f;
+  --color-brand-hover: #cc4c13;
+  --color-brand-soft: #fff2e9;
+  --color-brand-tint: #ffe6d5;
+  --color-brand-line: #f8c8a5;
 
-  /* màu ngữ nghĩa */
-  --color-ok: #15803d;
-  --color-ok-soft: #f0fdf4;
-  --color-ok-line: #bbf7d0;
-  --color-warn: #b45309;
-  --color-warn-soft: #fffbeb;
-  --color-warn-line: #fde68a;
-  --color-danger: #b91c1c;
-  --color-danger-soft: #fef2f2;
-  --color-danger-line: #fecaca;
-  --color-info: #1d4ed8;
-  --color-info-soft: #eff6ff;
-  --color-info-line: #bfdbfe;
+  /* đồ uống dùng teal: mát, tách hẳn khỏi cam của cơm */
+  --color-drink: #0f766e;
+  --color-drink-soft: #eafaf6;
+  --color-drink-line: #a7ded3;
 
-  /* chữ */
-  --font-sans: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
+  /* màu ngữ nghĩa — xanh lá ấm, đỏ đất, hổ phách */
+  --color-ok: #2f7d52;
+  --color-ok-soft: #edf7f0;
+  --color-ok-line: #b6ddc4;
+  --color-warn: #a86413;
+  --color-warn-soft: #fdf5e7;
+  --color-warn-line: #f0d3a0;
+  --color-danger: #b5352b;
+  --color-danger-soft: #fdf1ef;
+  --color-danger-line: #f2c4bd;
+  --color-info: #2b5fb8;
+  --color-info-soft: #eef3fd;
+  --color-info-line: #bdd0f2;
 
-  /* bo góc — nhỏ và đều */
-  --radius-ui: 6px;
-  --radius-ui-md: 8px;
-  --radius-ui-lg: 10px;
+  /* chữ — Be Vietnam Pro vẽ riêng cho tiếng Việt, dấu không bị chật */
+  --font-sans: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
 
-  /* chiều rộng khung */
-  --spacing-sidebar: 240px;
+  /* bo góc — mềm hơn một bậc so với bản trước */
+  --radius-ui: 10px;
+  --radius-ui-md: 14px;
+  --radius-ui-lg: 18px;
+
+  /* bóng pha sắc mực, không phải đen trung tính */
+  --shadow-card: 0 1px 2px rgb(33 30 27 / 0.03), 0 1px 3px rgb(33 30 27 / 0.04);
+  --shadow-pop: 0 4px 12px rgb(33 30 27 / 0.08), 0 16px 40px rgb(33 30 27 / 0.12);
+
+  --spacing-sidebar: 248px;
+
+  /* nảy nhẹ khi tick một ô — phản hồi cho thao tác, không phải hiệu ứng trang trí */
+  --animate-pop: pop 0.24s cubic-bezier(0.34, 1.56, 0.64, 1);
+  @keyframes pop {
+    0% {
+      transform: scale(0.82);
+    }
+    60% {
+      transform: scale(1.06);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  /* popover bung ra từ phía ô vừa bấm */
+  --animate-bloom: bloom 0.16s ease-out;
+  @keyframes bloom {
+    from {
+      opacity: 0;
+      transform: scale(0.96) translateY(-4px);
+    }
+  }
 }
 
 @layer base {
   html {
     font-family: var(--font-sans);
   }
-  h1, h2, h3, h4 {
-    margin: 0;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-  }
-  a {
-    color: var(--color-brand);
-  }
   body {
     background: var(--color-bg);
     color: var(--color-ink);
   }
+  h1,
+  h2,
+  h3,
+  h4 {
+    margin: 0;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  a {
+    color: var(--color-brand);
+  }
   /* iOS phóng to trang khi focus input có cỡ chữ < 16px */
   @media (max-width: 640px) {
-    input, select, textarea {
+    input,
+    select,
+    textarea {
       font-size: 16px;
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
+    *,
+    *::before,
+    *::after {
       animation-duration: 0.01ms !important;
       transition-duration: 0.01ms !important;
     }
   }
-
   /* số tiền / số liệu luôn thẳng cột */
   .tnum {
     font-variant-numeric: tabular-nums;

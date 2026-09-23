@@ -99,7 +99,7 @@ export function Modal({
     >
       <div
         className={cn(
-          'flex max-h-[92vh] w-full flex-col overflow-hidden border border-line bg-surface shadow-lg',
+          'flex max-h-[92vh] w-full flex-col overflow-hidden border border-line bg-surface shadow-pop',
           'rounded-t-ui-lg sm:rounded-ui-lg',
           wide ? 'sm:max-w-5xl' : 'sm:max-w-md',
         )}

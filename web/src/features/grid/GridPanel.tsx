@@ -83,12 +83,15 @@ export function GridPanel({
 }) {
   const { week, members, totals } = grid;
   const locked = grid.lockedDays ?? ({} as Record<DayKey, boolean>);
+  const today = grid.todayKey ?? null;
   const dates = grid.dates ?? ({} as Record<DayKey, string | null>);
   const isMobile = useIsMobile();
   const dishMap = useMemo(() => new Map(dishes.map((d) => [d.id, d])), [dishes]);
 
   const [saving, setSaving] = useState(false);
-  const [day, setDay] = useState<DayKey>(() => DAYS.find((d) => !locked[d.key])?.key ?? 'mon');
+  const [day, setDay] = useState<DayKey>(
+    () => grid.todayKey ?? DAYS.find((d) => !locked[d.key])?.key ?? 'mon',
+  );
   const [picked, setPicked] = useState<{ m: GridMember; day: DayKey; anchor?: DOMRect } | null>(null);
 
   /** Có được sửa ô (member, ngày): tự mình/admin VÀ (admin hoặc ngày chưa khoá). */
@@ -136,9 +139,22 @@ export function GridPanel({
   /** Ô có "thứ gì đó" để dọn (cơm hoặc nước) → hiện nút × / cho phép tick dọn nhanh. */
   const hasAny = (m: GridMember, key: DayKey) => m.days[key] || hasDrink(m, key);
 
-  /** Dấu trong ô: cơm · chỉ nước · khoá (ô trống của mình) · trống. */
+  /**
+   * Dấu trong ô. Ô có cơm hiện CHÍNH emoji món người đó chọn (tối đa 2, còn lại
+   * gộp thành "+n") — nhìn bảng là biết cả tuần ai ăn gì, thay vì một icon dĩa
+   * chung chung không nói lên điều gì.
+   */
   const cellMark = (m: GridMember, key: DayKey) => {
-    if (m.days[key]) return <Utensils className="size-4" />;
+    if (m.days[key]) {
+      const emojis = (m.items?.[key]?.food ?? []).map((id) => dishMap.get(id)?.emoji).filter(Boolean);
+      if (!emojis.length) return <Utensils className="size-4" />;
+      return (
+        <span className="flex items-center gap-px leading-none">
+          <span className="text-[13px] tracking-[-0.06em]">{emojis.slice(0, 2).join('')}</span>
+          {emojis.length > 2 && <span className="text-[10px] font-semibold">+{emojis.length - 2}</span>}
+        </span>
+      );
+    }
     if (hasDrink(m, key)) return <CupSoda className="size-4" />;
     if (lockMine(m, key)) return <Lock className="size-3 text-ink-4" />;
     return null;
@@ -148,14 +164,14 @@ export function GridPanel({
     const drinkOnly = !com && hasDrink(m, key);
     const interactive = canEditDay(m, key) || (!readOnly && (com || m.items?.[key]));
     return cn(
-      'group/cell relative mx-auto grid h-8 w-11 place-items-center rounded-ui border transition-colors',
+      'group/cell relative mx-auto grid h-9 w-14 place-items-center rounded-ui border transition-[background-color,border-color,transform] duration-150',
       com
-        ? 'border-brand-line bg-brand-soft text-brand'
+        ? 'animate-pop border-brand-line bg-brand-tint text-brand'
         : drinkOnly
-          ? 'border-info-line bg-info-soft text-info'
-          : 'border-line bg-surface',
-      interactive ? 'cursor-pointer hover:border-line-strong hover:bg-subtle' : 'cursor-default',
-      com && interactive && 'hover:bg-brand-soft',
+          ? 'animate-pop border-drink-line bg-drink-soft text-drink'
+          : 'border-transparent bg-subtle',
+      interactive ? 'cursor-pointer hover:border-brand-line' : 'cursor-default',
+      !com && !drinkOnly && interactive && 'hover:bg-brand-soft',
     );
   };
 
@@ -236,7 +252,7 @@ export function GridPanel({
                       on
                         ? 'border-brand-line bg-brand-soft text-brand'
                         : hasDrink(m, day)
-                          ? 'border-info-line bg-info-soft text-info'
+                          ? 'border-drink-line bg-drink-soft text-drink'
                           : 'border-line bg-surface',
                       !canEditDay(m, day) && 'opacity-60',
                     )}
@@ -264,40 +280,39 @@ export function GridPanel({
             <table className="w-full border-collapse text-sm">
               <thead>
                 <tr className="border-b border-line">
-                  <th className="sticky left-0 z-10 bg-surface px-4 py-2.5 text-left text-[12px] font-medium uppercase tracking-wide text-ink-4">
+                  <th className="sticky left-0 z-10 bg-surface px-4 py-3 text-left text-[13px] font-medium text-ink-3">
                     {t.grid.colMember}
                   </th>
                   {DAYS.map((d) => (
-                    <th key={d.key} className="px-1 py-2 text-center font-medium">
+                    <th key={d.key} className={cn('px-1 py-2.5 text-center font-medium', d.key === today && 'bg-brand-soft')}>
                       <div className={cn('text-[13px]', locked[d.key] ? 'text-ink-4' : 'text-ink')}>{d.label}</div>
                       <div className="mt-0.5 flex items-center justify-center gap-1 text-[11px] text-ink-4">
                         {dates[d.key]}
                         {locked[d.key] && <Lock className="size-3" />}
                       </div>
+                      {d.key === today && (
+                        <div className="mt-1 text-[10px] font-semibold text-brand">{t.grid.todayTag}</div>
+                      )}
                     </th>
                   ))}
-                  <th className="px-3 py-2.5 text-right text-[12px] font-medium uppercase tracking-wide text-ink-4">
-                    {t.grid.colServings}
-                  </th>
-                  <th className="px-4 py-2.5 text-right text-[12px] font-medium uppercase tracking-wide text-ink-4">
-                    {t.grid.colMoney}
-                  </th>
+                  <th className="px-3 py-3 text-right text-[13px] font-medium text-ink-3">{t.grid.colServings}</th>
+                  <th className="px-4 py-3 text-right text-[13px] font-medium text-ink-3">{t.grid.colMoney}</th>
                 </tr>
               </thead>
               <tbody>
                 {members.map((m) => (
                   <tr
                     key={m.userId}
-                    className={cn('border-b border-line last:border-0 hover:bg-subtle/60', m.userId === meId && 'bg-brand-soft/40')}
+                    className={cn('border-b border-line last:border-0 hover:bg-subtle', m.userId === meId && 'bg-brand-soft')}
                   >
-                    <td className={cn('sticky left-0 z-10 px-4 py-1.5', m.userId === meId ? 'bg-brand-soft/40' : 'bg-surface')}>
+                    <td className={cn('sticky left-0 z-10 px-4 py-2', m.userId === meId ? 'bg-brand-soft' : 'bg-surface')}>
                       <div className="flex items-center gap-2">
                         <Avatar name={m.fullName} color={m.color} size={26} />
                         <span className={cn('whitespace-nowrap', m.userId === meId && 'font-medium')}>{m.fullName}</span>
                       </div>
                     </td>
                     {DAYS.map((d) => (
-                      <td key={d.key} className="px-1 py-1.5">
+                      <td key={d.key} className={cn('px-1 py-2', d.key === today && 'bg-brand-soft/60')}>
                         <div className={cellClass(m, d.key)} onClick={(e) => onCell(m, d.key, e.currentTarget)}>
                           {cellMark(m, d.key)}
                           {m.days[d.key] && hasDrink(m, d.key) && (
@@ -318,18 +333,16 @@ export function GridPanel({
                         </div>
                       </td>
                     ))}
-                    <td className="tnum px-3 py-1.5 text-right text-ink-2">{m.servings}</td>
-                    <td className="tnum px-4 py-1.5 text-right font-medium">{vnd(m.total)}</td>
+                    <td className="tnum px-3 py-2 text-right text-ink-3">{m.servings}</td>
+                    <td className="tnum px-4 py-2 text-right font-medium">{vnd(m.total)}</td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
                 <tr className="border-t border-line-strong bg-subtle font-semibold">
-                  <td className="sticky left-0 z-10 bg-subtle px-4 py-2.5 text-[12px] uppercase tracking-wide text-ink-3">
-                    {t.grid.totalRow}
-                  </td>
+                  <td className="sticky left-0 z-10 bg-subtle px-4 py-3 text-[13px] text-ink-2">{t.grid.totalRow}</td>
                   {DAYS.map((d) => (
-                    <td key={d.key} className="tnum px-1 py-2.5 text-center">
+                    <td key={d.key} className={cn('tnum px-1 py-3 text-center', d.key === today && 'text-brand')}>
                       {totals.perDay[d.key]}
                     </td>
                   ))}

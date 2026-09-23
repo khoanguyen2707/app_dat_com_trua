@@ -6,6 +6,7 @@ import {
   CUTOFF_MINUTES,
   computeDayDates,
   computeLockedDays,
+  computeTodayKey,
   DAY_KEYS,
   type DayKey,
 } from '@/common/week-lock';
@@ -127,6 +128,7 @@ export class WeeksService {
       members,
       totals: { perDay, totalServings, totalFood, totalDrinks, totalMoney: totalFood + totalDrinks },
       lockedDays: computeLockedDays(week.startDate),
+      todayKey: computeTodayKey(week.startDate),
       dates: computeDayDates(week.startDate),
       cutoff: { minutes: CUTOFF_MINUTES, label: CUTOFF_LABEL },
     };

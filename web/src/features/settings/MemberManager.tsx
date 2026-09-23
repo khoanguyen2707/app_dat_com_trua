@@ -391,19 +391,19 @@ export function MemberManager({ onChanged }: { onChanged: () => void }) {
                   ) : (
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                       <div className="flex flex-col rounded-ui border border-line px-2.5 py-1.5">
-                        <span className="text-[11px] uppercase tracking-wide text-ink-4">{t.member.statOrders}</span>
+                        <span className="text-[12px] text-ink-3">{t.member.statOrders}</span>
                         <b>{t.member.statDays(s.orderCount)}</b>
                       </div>
                       <div className="flex flex-col rounded-ui border border-line px-2.5 py-1.5">
-                        <span className="text-[11px] uppercase tracking-wide text-ink-4">{t.member.statPickups}</span>
+                        <span className="text-[12px] text-ink-3">{t.member.statPickups}</span>
                         <b>{t.member.statTimes(s.pickupCount)}</b>
                       </div>
                       <div className="flex flex-col rounded-ui border border-line px-2.5 py-1.5">
-                        <span className="text-[11px] uppercase tracking-wide text-ink-4">{t.member.statRate}</span>
+                        <span className="text-[12px] text-ink-3">{t.member.statRate}</span>
                         <b>{s.rawRate == null ? '—' : `${Math.round(s.rawRate * 100)}%`}</b>
                       </div>
                       <div className="flex flex-col rounded-ui border border-line px-2.5 py-1.5">
-                        <span className="text-[11px] uppercase tracking-wide text-ink-4">{t.member.statLast}</span>
+                        <span className="text-[12px] text-ink-3">{t.member.statLast}</span>
                         <b>{shortDate(s.lastPickup) ?? t.member.statNever}</b>
                       </div>
                     </div>

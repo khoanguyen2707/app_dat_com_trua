@@ -158,6 +158,8 @@ export interface Grid {
   };
   /** Ngày bị khoá với user thường (đã qua, hoặc hôm nay đã quá giờ chốt). */
   lockedDays?: Record<DayKey, boolean>;
+  /** Cột nào của tuần này là hôm nay (lịch VN); null khi xem tuần khác. */
+  todayKey?: DayKey | null;
   /** Nhãn ngày dương lịch "d/M" cho mỗi cột. */
   dates?: Record<DayKey, string | null>;
   /** Giờ chốt đặt cơm trong ngày. */

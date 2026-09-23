@@ -72,7 +72,7 @@ export function DetailShell({
       ref={ref}
       role="dialog"
       aria-modal="false"
-      className="fixed z-50 flex flex-col overflow-hidden rounded-ui-lg border border-line bg-surface shadow-lg"
+      className="animate-bloom fixed z-50 flex flex-col overflow-hidden rounded-ui-lg border border-line bg-surface shadow-pop"
       style={{ width: PANEL_W, left: pos?.left ?? -9999, top: pos?.top ?? -9999, maxHeight: pos?.maxH }}
     >
       <div className="flex items-center gap-2 border-b border-line px-3 py-2">

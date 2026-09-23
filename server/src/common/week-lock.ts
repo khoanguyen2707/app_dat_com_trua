@@ -103,6 +103,20 @@ export function elapsedDayKeys(startDate: Date | null | undefined, now: Date = n
   return DAY_KEYS.filter((_, i) => start + i * DAY_MS <= today);
 }
 
+/**
+ * Cột nào của tuần này là HÔM NAY (lịch VN), null nếu hôm nay nằm ngoài tuần.
+ *
+ * Khác `vnTodayKey`: hàm kia chỉ trả thứ trong tuần, nên khi xem lại một tuần cũ
+ * nó vẫn chỉ vào một cột — sai. Ở đây so đúng ngày dương lịch với startDate.
+ */
+export function computeTodayKey(startDate: Date | null | undefined, now: Date = new Date()): DayKey | null {
+  if (!startDate) return null;
+  const start = startDayNumber(startDate);
+  const today = vnDayNumber(now);
+  const i = Math.round((today - start) / DAY_MS);
+  return i >= 0 && i < DAY_KEYS.length ? DAY_KEYS[i] : null;
+}
+
 /** Nhãn ngày dương lịch "d/M" cho từng cột (để FE hiển thị). */
 export function computeDayDates(startDate: Date | null | undefined): Record<DayKey, string | null> {
   const out = Object.fromEntries(DAY_KEYS.map((d) => [d, null])) as Record<DayKey, string | null>;

@@ -87,7 +87,7 @@ export function MemberPayModal({
       </div>
 
       <div className="mt-4 rounded-ui-md border border-line bg-subtle px-3 py-2">
-        <div className="text-[11px] font-medium uppercase tracking-wide text-ink-4">{t.payment.transferNote}</div>
+        <div className="text-[12px] text-ink-3">{t.payment.transferNote}</div>
         <div className="font-medium">{info}</div>
       </div>
 

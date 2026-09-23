@@ -152,7 +152,7 @@ export function DayDetailSheet({
       {editable && allowedSet && <div className="mt-2 text-[12px] text-ink-4">{t.grid.detail.todayMenuOnly}</div>}
 
       {/* Món ăn */}
-      <div className="mt-4 mb-1.5 text-[12px] font-semibold uppercase tracking-wide text-ink-4">
+      <div className="mt-4 mb-1.5 text-[13px] font-semibold text-ink-2">
         {t.grid.detail.foodSection}
       </div>
       {!editable ? (
@@ -206,14 +206,14 @@ export function DayDetailSheet({
       )}
 
       {/* Đồ uống */}
-      <div className="mt-4 mb-1.5 text-[12px] font-semibold uppercase tracking-wide text-ink-4">
+      <div className="mt-4 mb-1.5 text-[13px] font-semibold text-ink-2">
         {t.grid.detail.drinkSection}
       </div>
       {!editable ? (
         chosenDrinks.length ? (
           <div className="flex flex-col gap-1.5">
             {chosenDrinks.map(([id, n]) => (
-              <div key={id} className="flex items-center gap-2 rounded-ui border border-info-line bg-info-soft px-2.5 py-1.5">
+              <div key={id} className="flex items-center gap-2 rounded-ui border border-drink-line bg-drink-soft px-2.5 py-1.5">
                 <span>{dishMap.get(id)?.emoji}</span>
                 <span className="flex min-w-0 flex-1 flex-col">
                   <b className="truncate text-[13px]">{dishMap.get(id)?.name ?? id}</b>
@@ -235,7 +235,7 @@ export function DayDetailSheet({
                 key={d.id}
                 className={cn(
                   'flex items-center gap-2 rounded-ui border px-2.5 py-1.5',
-                  n > 0 ? 'border-info-line bg-info-soft' : 'border-line bg-surface',
+                  n > 0 ? 'border-drink-line bg-drink-soft' : 'border-line bg-surface',
                 )}
               >
                 <span>{d.emoji}</span>

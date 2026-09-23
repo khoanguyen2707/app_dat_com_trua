@@ -106,6 +106,7 @@ export const t = {
       member: 'Bạn chỉ sửa được dòng của mình.',
     },
     locked: 'Đã khoá',
+    todayTag: 'Hôm nay',
     colMember: 'Thành viên',
     colServings: 'Số suất',
     colMoney: 'Thành tiền',
