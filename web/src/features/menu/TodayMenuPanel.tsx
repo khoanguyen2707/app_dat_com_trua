@@ -39,11 +39,17 @@ export function TodayMenuPanel({
   dishes,
   meId,
   reload,
+  onPick,
 }: {
   grid: Grid;
   dishes: Dish[];
   meId: string;
   reload: () => Promise<void>;
+  /**
+   * Có thì panel chạy ở chế độ "nằm trong popup": bỏ khung thẻ + tiêu đề (popup đã có)
+   * và giao món được chạm cho nơi gọi tự mở phiếu đặt, thay vì chồng thêm một popup.
+   */
+  onPick?: (dishId: string) => void;
 }) {
   const [ordering, setOrdering] = useState<string | null>(null);
 
@@ -65,42 +71,16 @@ export function TodayMenuPanel({
   const drinks = useMemo(() => shown.filter((d) => d.category === 'DRINK'), [shown]);
   const groups = useMemo(() => groupByEmoji(mains), [mains]);
 
-  return (
-    <>
-      <Card>
-        <CardHeader
-          title={t.menu.todayTitle}
-          action={
-            <div className="flex items-center gap-2 text-[13px]">
-              {dayInfo && (
-                <span className="text-ink-3">
-                  {dayInfo.full}
-                  {date ? `, ${date}` : ''}
-                </span>
-              )}
-              {today && (
-                <span
-                  className={cn(
-                    'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-medium',
-                    locked ? 'bg-subtle text-ink-3' : 'bg-brand-soft text-brand',
-                  )}
-                >
-                  {locked ? <Lock className="size-3" /> : <Clock className="size-3" />}
-                  {grid.cutoff &&
-                    (locked ? t.me.closedToday(grid.cutoff.label) : t.me.openUntil(grid.cutoff.label))}
-                </span>
-              )}
-            </div>
-          }
-        />
+  const pick = (id: string) => (onPick ? onPick(id) : setOrdering(id));
 
+  const body = (
+    <>
         {!posted && (
           <div className="flex items-start gap-2 border-b border-line bg-warn-soft px-5 py-2.5 text-[13px] text-warn">
             <Info className="mt-0.5 size-4 shrink-0" />
             {t.menu.notPostedYet}
           </div>
         )}
-
         <CardBody flush>
           {!posted ? (
             <EmptyState icon={<Clock />}>{t.menu.waitingMenu}</EmptyState>
@@ -131,7 +111,7 @@ export function TodayMenuPanel({
                             <button
                               type="button"
                               disabled={!canOrder}
-                              onClick={() => setOrdering(d.id)}
+                              onClick={() => pick(d.id)}
                               className={cn(
                                 'flex w-full items-center gap-3 rounded-ui-md px-2 py-2 text-left transition-colors',
                                 canOrder ? 'hover:bg-brand-soft' : 'cursor-default',
@@ -167,7 +147,7 @@ export function TodayMenuPanel({
                         <button
                           type="button"
                           disabled={!canOrder}
-                          onClick={() => setOrdering(d.id)}
+                          onClick={() => pick(d.id)}
                           className={cn(
                             'flex w-full items-center gap-3 rounded-ui-md px-2 py-2 text-left transition-colors',
                             canOrder ? 'hover:bg-drink-soft' : 'cursor-default',
@@ -185,6 +165,42 @@ export function TodayMenuPanel({
             </>
           )}
         </CardBody>
+    </>
+  );
+
+  // Popup đã có lề riêng; bỏ đi để các section trải kín mép như trong thẻ.
+  if (onPick) return <div className="-m-4">{body}</div>;
+
+  return (
+    <>
+      <Card>
+        <CardHeader
+          title={t.menu.todayTitle}
+          action={
+            <div className="flex items-center gap-2 text-[13px]">
+              {dayInfo && (
+                <span className="text-ink-3">
+                  {dayInfo.full}
+                  {date ? `, ${date}` : ''}
+                </span>
+              )}
+              {today && (
+                <span
+                  className={cn(
+                    'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-medium',
+                    locked ? 'bg-subtle text-ink-3' : 'bg-brand-soft text-brand',
+                  )}
+                >
+                  {locked ? <Lock className="size-3" /> : <Clock className="size-3" />}
+                  {grid.cutoff &&
+                    (locked ? t.me.closedToday(grid.cutoff.label) : t.me.openUntil(grid.cutoff.label))}
+                </span>
+              )}
+            </div>
+          }
+        />
+
+        {body}
       </Card>
 
       {ordering && me && today && (
