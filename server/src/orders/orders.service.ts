@@ -31,8 +31,18 @@ export class OrdersService {
     );
   }
 
+  private noMenuError(day: DayKey): ForbiddenException {
+    return new ForbiddenException(`${DAY_LABEL[day]} chưa có thực đơn — chờ admin đăng thực đơn rồi mới đặt được.`);
+  }
+
+  /** Danh sách dishId admin đã đăng cho ngày `day`; null = chưa đăng. */
+  private postedMenu(week: { dayMenu: unknown }, day: DayKey): Set<string> | null {
+    const ids = ((week.dayMenu as Record<string, string[]> | null) ?? {})[day];
+    return ids && ids.length ? new Set(ids) : null;
+  }
+
   /**
-   * @param enforceLock true khi user tự sửa (chặn ngày đã khoá). Admin sửa hộ thì false.
+   * @param enforceLock true khi user tự sửa (chặn ngày đã khoá / chưa có thực đơn). Admin sửa hộ thì false.
    */
   async upsert(userId: string, dto: UpsertOrderDto, enforceLock = false) {
     const week = await this.prisma.week.findUnique({ where: { id: dto.weekId } });
@@ -50,6 +60,10 @@ export class OrdersService {
         const prev = current ? !!current[key] : false;
         if (locked[key] && days[key] !== prev) {
           throw this.lockError(key);
+        }
+        // Bật thêm ngày chưa có thực đơn thì chặn; tắt đi thì luôn cho.
+        if (days[key] && !prev && !this.postedMenu(week, key)) {
+          throw this.noMenuError(key);
         }
       }
     }
@@ -77,6 +91,18 @@ export class OrdersService {
 
     const food = dto.eat ? (dto.food ?? []) : []; // không ăn cơm thì bỏ luôn món
     const drinks = (dto.drinks ?? []).filter((d) => d.qty > 0);
+
+    // User chỉ đặt được khi admin đã đăng thực đơn ngày đó, và chỉ món trong thực đơn.
+    // Huỷ (không ăn, không uống) thì luôn cho để không kẹt đơn cũ.
+    if (enforceLock && (dto.eat || drinks.length)) {
+      const menu = this.postedMenu(week, day);
+      if (!menu) {
+        throw this.noMenuError(day);
+      }
+      if ([...food, ...drinks.map((d) => d.dishId)].some((id) => !menu.has(id))) {
+        throw new BadRequestException('Có món không nằm trong thực đơn hôm nay');
+      }
+    }
 
     // Chặn dishId rác / không tồn tại (tránh lỗi khoá ngoại)
     const dishIds = [...new Set([...food, ...drinks.map((d) => d.dishId)])];

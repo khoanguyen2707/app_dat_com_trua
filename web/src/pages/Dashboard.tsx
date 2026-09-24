@@ -13,7 +13,6 @@ import { HeroStats } from '@/components/layout/HeroStats';
 import { GridPanel } from '@/features/grid/GridPanel';
 import { TodayOrders } from '@/features/grid/TodayOrders';
 import { MenuPanel } from '@/features/menu/MenuPanel';
-import { TodayMenuPanel } from '@/features/menu/TodayMenuPanel';
 import { PaymentPanel } from '@/features/payment/PaymentPanel';
 import { OverviewPanel } from '@/features/stats/OverviewPanel';
 import { MyOrderPanel } from '@/features/me/MyOrderPanel';
@@ -117,9 +116,6 @@ export function Dashboard() {
                     await Promise.all([reloadWeeks(), reloadGrid()]);
                   }}
                 />
-              )}
-              {tab === 'menu' && (
-                <TodayMenuPanel grid={grid} dishes={dishes} meId={user!.id} reload={reloadGrid} />
               )}
             </>
           )}

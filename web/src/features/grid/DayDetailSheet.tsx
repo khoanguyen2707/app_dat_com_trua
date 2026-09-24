@@ -40,7 +40,9 @@ export function DayDetailSheet({
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
-  const editable = isAdmin || (member.userId === meId && !locked);
+  // Thành viên chỉ đặt được ngày admin đã đăng thực đơn (server cũng chặn y vậy).
+  const hasMenu = !!grid.week.dayMenu?.[day]?.length;
+  const editable = isAdmin || (member.userId === meId && !locked && hasMenu);
   const dayInfo = DAYS.find((d) => d.key === day);
   const date = grid.dates?.[day];
 
@@ -167,6 +169,7 @@ export function DayDetailSheet({
       </button>
 
       {editable && allowedSet && <div className="mt-2 text-[12px] text-ink-4">{t.grid.detail.todayMenuOnly}</div>}
+      {!isAdmin && !hasMenu && <div className="mt-2 text-[12px] text-warn">{t.menu.notPostedYet}</div>}
 
       {/* Món ăn */}
       <div className="mt-4 mb-1.5 text-[13px] font-semibold text-ink-2">

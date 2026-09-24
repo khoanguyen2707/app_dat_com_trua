@@ -65,8 +65,8 @@ export const ADMIN_TABS = [
 export const USER_TABS = [
   { key: 'order', icon: UtensilsCrossed, label: t.tabs.order },
   { key: 'pay', icon: CreditCard, label: t.tabs.pay },
+  // Thực đơn nằm ngay trong tab Đặt cơm: xem món và đặt ở cùng một chỗ.
   { key: 'hist', icon: History, label: t.tabs.hist },
-  { key: 'menu', icon: ListOrdered, label: t.tabs.menu },
 ] as const;
 
 export type TabKey = (typeof ADMIN_TABS)[number]['key'] | (typeof USER_TABS)[number]['key'];

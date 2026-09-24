@@ -7,13 +7,15 @@ import { cn } from '@/lib/cn';
 import { vnd } from '@/lib/format';
 import { Button, Card, CardBody, CardHeader, EmptyState } from '@/components/ui';
 import { DayDetailSheet } from '@/features/grid/DayDetailSheet';
+import { TodayMenuPanel } from '@/features/menu/TodayMenuPanel';
 
 /**
  * Màn đặt cơm của một thành viên.
  *
  * Luật nghiệp vụ là chỉ đặt được cho HÔM NAY và trước giờ chốt, nên hôm nay là
- * nhân vật chính: một thẻ lớn đặt/sửa ngay tại chỗ. Sáu ngày còn lại chỉ để xem
- * lại mình đã ăn gì — thành viên không cần bảng 13 dòng của cả nhóm.
+ * nhân vật chính: một thẻ lớn đặt/sửa ngay tại chỗ, ngay dưới là thực đơn hôm nay
+ * (chạm món để đặt). Admin chưa đăng thực đơn thì chưa cho đặt. Sáu ngày còn lại
+ * chỉ để xem lại mình đã ăn gì — thành viên không cần bảng 13 dòng của cả nhóm.
  */
 export function MyOrderPanel({
   grid,
@@ -82,6 +84,7 @@ export function MyOrderPanel({
           cost={dayCost(today)}
           summary={summary(today)}
           note={me.notes?.[today]}
+          hasMenu={!!grid.week.dayMenu?.[today]?.length}
           onEdit={() => setEditing(today)}
         />
       ) : (
@@ -92,6 +95,8 @@ export function MyOrderPanel({
           </CardBody>
         </Card>
       )}
+
+      {today && <TodayMenuPanel grid={grid} dishes={dishes} meId={meId} reload={reload} />}
 
       <Card>
         <CardHeader
@@ -181,6 +186,7 @@ function TodayCard({
   cost,
   summary,
   note,
+  hasMenu,
   onEdit,
 }: {
   me: GridMember;
@@ -191,6 +197,7 @@ function TodayCard({
   cost: number;
   summary: { food: (Dish | undefined)[]; drinks: number };
   note?: string;
+  hasMenu: boolean;
   onEdit: () => void;
 }) {
   const dayInfo = DAYS.find((d) => d.key === day);
@@ -233,7 +240,7 @@ function TodayCard({
             <span className="tnum ml-auto text-lg font-semibold">{vnd(cost)}</span>
           </div>
         ) : (
-          <p className="text-[13px] text-ink-3">{t.me.orderedNothing}</p>
+          <p className="text-[13px] text-ink-3">{hasMenu || locked ? t.me.orderedNothing : t.menu.notPostedYet}</p>
         )}
         {note && (
           <div className="mt-2.5 flex items-start gap-2 rounded-ui border border-line bg-subtle px-3 py-2 text-[13px]">
@@ -244,7 +251,11 @@ function TodayCard({
       </div>
 
       <div className="mt-4">
-        <Button variant={ordered || locked ? 'default' : 'primary'} onClick={onEdit}>
+        <Button
+          variant={ordered || locked ? 'default' : 'primary'}
+          onClick={onEdit}
+          disabled={!locked && !ordered && !hasMenu}
+        >
           {locked ? (
             t.me.viewCta
           ) : ordered ? (
