@@ -124,6 +124,7 @@ export function DayDetailSheet({
 
   return (
     <DetailShell
+      wide
       anchor={anchor}
       onClose={onClose}
       title={
@@ -133,200 +134,221 @@ export function DayDetailSheet({
         </span>
       }
     >
-      <div className="text-[13px] text-ink-3">
-        <b className="text-ink">{dayInfo?.full}</b>
-        {date && <span> • {date}</span>}
-      </div>
+      {/* Hai cột khi đủ rộng (container query — chạy được cả trong Modal lẫn popover):
+          trái chọn món, phải ghi chú + hoá đơn. Hẹp (mobile) thì xếp dọc như cũ. */}
+      <div className="@container">
+        <div className="grid gap-4 @2xl:grid-cols-[minmax(0,1fr)_280px] @2xl:gap-5">
+          <div className="min-w-0">
+            <div className="text-[13px] text-ink-3">
+              <b className="text-ink">{dayInfo?.full}</b>
+              {date && <span> • {date}</span>}
+            </div>
 
-      {!editable && (
-        <div className="mt-3 flex items-center gap-2 rounded-ui border border-brand-line bg-brand-soft px-3 py-2 text-[13px] text-brand">
-          <Lock className="size-3.5 shrink-0" />
-          {t.grid.detail.lockedView}
-        </div>
-      )}
+            {!editable && (
+              <div className="mt-3 flex items-center gap-2 rounded-ui border border-brand-line bg-brand-soft px-3 py-2 text-[13px] text-brand">
+                <Lock className="size-3.5 shrink-0" />
+                {t.grid.detail.lockedView}
+              </div>
+            )}
 
-      {/* Ăn cơm */}
-      <button
-        className={cn(
-          'mt-3 flex w-full items-center gap-3 rounded-ui-md border px-3 py-2.5 text-left transition-colors',
-          eat ? 'border-brand bg-brand-soft' : 'border-line bg-surface',
-          editable ? 'hover:border-line-strong' : 'cursor-default',
-        )}
-        onClick={() => editable && setEat((v) => !v)}
-      >
-        <span
-          className={cn(
-            'grid size-5 shrink-0 place-items-center rounded border',
-            eat ? 'border-brand bg-brand text-white' : 'border-line-strong bg-surface',
-          )}
-        >
-          {eat && <Check className="size-3.5" />}
-        </span>
-        <span className="flex flex-col">
-          <b className="text-sm">{t.grid.detail.eat}</b>
-          <span className="text-[12px] text-ink-3">{t.grid.detail.eatPrice(vnd(grid.week.unitPrice))}</span>
-        </span>
-      </button>
-
-      {editable && allowedSet && <div className="mt-2 text-[12px] text-ink-4">{t.grid.detail.todayMenuOnly}</div>}
-      {!isAdmin && !hasMenu && <div className="mt-2 text-[12px] text-warn">{t.menu.notPostedYet}</div>}
-
-      {/* Món ăn */}
-      <div className="mt-4 mb-1.5 text-[13px] font-semibold text-ink-2">
-        {t.grid.detail.foodSection}
-      </div>
-      {!editable ? (
-        food.length ? (
-          <div className="flex flex-wrap gap-1.5">
-            {food.map((id) => (
+            {/* Ăn cơm */}
+            <button
+              className={cn(
+                'mt-3 flex w-full items-center gap-3 rounded-ui-md border px-3 py-2.5 text-left transition-colors',
+                eat ? 'border-brand bg-brand-soft' : 'border-line bg-surface',
+                editable ? 'hover:border-line-strong' : 'cursor-default',
+              )}
+              onClick={() => editable && setEat((v) => !v)}
+            >
               <span
-                key={id}
-                className="rounded-ui border border-brand-line bg-brand-soft px-2 py-1 text-[13px] text-brand"
-              >
-                {dishMap.get(id)?.emoji} {dishMap.get(id)?.name ?? id}
-              </span>
-            ))}
-          </div>
-        ) : (
-          <div className="text-[13px] text-ink-3">{t.grid.detail.noFood}</div>
-        )
-      ) : eat ? (
-        <>
-          {needFood && (
-            <div className="mb-2 rounded-ui border border-warn-line bg-warn-soft px-3 py-2 text-[13px] text-warn">
-              {t.grid.detail.needFood}
-            </div>
-          )}
-          {groupByEmoji(mains).map((g) => (
-            <div className="mb-2 flex items-start gap-2" key={g.emoji}>
-              <span className="grid size-7 shrink-0 place-items-center rounded-ui border border-line bg-subtle">
-                {g.emoji}
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {g.dishes.map((d) => (
-                  <button
-                    key={d.id}
-                    className={cn(
-                      'rounded-ui border px-2 py-1 text-[13px] transition-colors',
-                      food.includes(d.id)
-                        ? 'border-brand bg-brand-soft text-brand'
-                        : 'border-line bg-surface hover:border-line-strong',
-                    )}
-                    onClick={() => toggleFood(d.id)}
-                  >
-                    {d.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-        </>
-      ) : (
-        <div className="text-[13px] text-ink-3">{t.grid.detail.foodEnableHint}</div>
-      )}
-
-      {/* Đồ uống */}
-      <div className="mt-4 mb-1.5 text-[13px] font-semibold text-ink-2">
-        {t.grid.detail.drinkSection}
-      </div>
-      {!editable ? (
-        chosenDrinks.length ? (
-          <div className="flex flex-col gap-1.5">
-            {chosenDrinks.map(([id, n]) => (
-              <div key={id} className="flex items-center gap-2 rounded-ui border border-drink-line bg-drink-soft px-2.5 py-1.5">
-                <span>{dishMap.get(id)?.emoji}</span>
-                <span className="flex min-w-0 flex-1 flex-col">
-                  <b className="truncate text-[13px]">{dishMap.get(id)?.name ?? id}</b>
-                  <span className="tnum text-[12px] text-ink-3">{vnd(priceOf(id))}</span>
-                </span>
-                <span className="tnum text-[13px] font-medium">×{n}</span>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-[13px] text-ink-3">{t.grid.detail.noDrink}</div>
-        )
-      ) : (
-        <div className="flex flex-col gap-1.5">
-          {drinks.map((d) => {
-            const n = qty[d.id] ?? 0;
-            return (
-              <div
-                key={d.id}
                 className={cn(
-                  'flex items-center gap-2 rounded-ui border px-2.5 py-1.5',
-                  n > 0 ? 'border-drink-line bg-drink-soft' : 'border-line bg-surface',
+                  'grid size-5 shrink-0 place-items-center rounded border',
+                  eat ? 'border-brand bg-brand text-white' : 'border-line-strong bg-surface',
                 )}
               >
-                <span>{d.emoji}</span>
-                <span className="flex min-w-0 flex-1 flex-col">
-                  <b className="truncate text-[13px]">{d.name}</b>
-                  <span className="tnum text-[12px] text-ink-3">{vnd(d.price)}</span>
-                </span>
-                <div className="flex items-center gap-1">
-                  <IconButton className="size-7" disabled={n === 0} onClick={() => bump(d.id, -1)} aria-label="−">
-                    <Minus className="size-3.5" />
-                  </IconButton>
-                  <span className="tnum w-5 text-center text-[13px] font-medium">{n}</span>
-                  <IconButton className="size-7" onClick={() => bump(d.id, 1)} aria-label="+">
-                    <Plus className="size-3.5" />
-                  </IconButton>
+                {eat && <Check className="size-3.5" />}
+              </span>
+              <span className="flex flex-col">
+                <b className="text-sm">{t.grid.detail.eat}</b>
+                <span className="text-[12px] text-ink-3">{t.grid.detail.eatPrice(vnd(grid.week.unitPrice))}</span>
+              </span>
+            </button>
+
+            {editable && allowedSet && <div className="mt-2 text-[12px] text-ink-4">{t.grid.detail.todayMenuOnly}</div>}
+            {!isAdmin && !hasMenu && <div className="mt-2 text-[12px] text-warn">{t.menu.notPostedYet}</div>}
+
+            {/* Món ăn */}
+            <div className="mt-4 mb-1.5 text-[13px] font-semibold text-ink-2">{t.grid.detail.foodSection}</div>
+            {!editable ? (
+              food.length ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {food.map((id) => (
+                    <span
+                      key={id}
+                      className="rounded-ui border border-brand-line bg-brand-soft px-2 py-1 text-[13px] text-brand"
+                    >
+                      {dishMap.get(id)?.emoji} {dishMap.get(id)?.name ?? id}
+                    </span>
+                  ))}
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              ) : (
+                <div className="text-[13px] text-ink-3">{t.grid.detail.noFood}</div>
+              )
+            ) : eat ? (
+              <>
+                {needFood && (
+                  <div className="mb-2 rounded-ui border border-warn-line bg-warn-soft px-3 py-2 text-[13px] text-warn">
+                    {t.grid.detail.needFood}
+                  </div>
+                )}
+                {groupByEmoji(mains).map((g) => (
+                  <div className="mb-2 flex items-start gap-2" key={g.emoji}>
+                    <span className="grid size-7 shrink-0 place-items-center rounded-ui border border-line bg-subtle">
+                      {g.emoji}
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {g.dishes.map((d) => (
+                        <button
+                          key={d.id}
+                          className={cn(
+                            'rounded-ui border px-2 py-1 text-[13px] transition-colors',
+                            food.includes(d.id)
+                              ? 'border-brand bg-brand-soft text-brand'
+                              : 'border-line bg-surface hover:border-line-strong',
+                          )}
+                          onClick={() => toggleFood(d.id)}
+                        >
+                          {d.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </>
+            ) : (
+              <div className="text-[13px] text-ink-3">{t.grid.detail.foodEnableHint}</div>
+            )}
 
-      {/* Ghi chú cho người đi mua */}
-      <div className="mt-4 mb-1.5 text-[13px] font-semibold text-ink-2">{t.grid.detail.noteSection}</div>
-      {editable ? (
-        <>
-          <textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            maxLength={NOTE_MAX}
-            rows={2}
-            placeholder={t.grid.detail.notePlaceholder}
-            className="w-full resize-y rounded-ui border border-line bg-surface px-3 py-2 text-[13px] outline-none focus:border-brand"
-          />
-          <div className="mt-1 flex items-center justify-between text-[12px] text-ink-4">
-            <span>{t.grid.detail.noteHint}</span>
-            <span className="tnum">
-              {note.length}/{NOTE_MAX}
-            </span>
+            {/* Đồ uống — lưới 2 cột khi rộng để phiếu không bị kéo dài. Chế độ chỉ xem
+                thì hoá đơn bên phải đã liệt kê đủ, không lặp lại ở đây. */}
+            {editable && (
+              <>
+                <div className="mt-4 mb-1.5 text-[13px] font-semibold text-ink-2">{t.grid.detail.drinkSection}</div>
+                <div className="grid gap-1.5 @md:grid-cols-2">
+                  {drinks.map((d) => {
+                    const n = qty[d.id] ?? 0;
+                    return (
+                      <div
+                        key={d.id}
+                        className={cn(
+                          'flex items-center gap-2 rounded-ui border px-2.5 py-1.5',
+                          n > 0 ? 'border-drink-line bg-drink-soft' : 'border-line bg-surface',
+                        )}
+                      >
+                        <span>{d.emoji}</span>
+                        <span className="flex min-w-0 flex-1 flex-col">
+                          <b className="truncate text-[13px]">{d.name}</b>
+                          <span className="tnum text-[12px] text-ink-3">{vnd(d.price)}</span>
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <IconButton className="size-7" disabled={n === 0} onClick={() => bump(d.id, -1)} aria-label="−">
+                            <Minus className="size-3.5" />
+                          </IconButton>
+                          <span className="tnum w-5 text-center text-[13px] font-medium">{n}</span>
+                          <IconButton className="size-7" onClick={() => bump(d.id, 1)} aria-label="+">
+                            <Plus className="size-3.5" />
+                          </IconButton>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
-        </>
-      ) : note ? (
-        <div className="rounded-ui border border-line bg-subtle px-3 py-2 text-[13px]">{note}</div>
-      ) : (
-        <div className="text-[13px] text-ink-3">{t.grid.detail.noteEmpty}</div>
-      )}
 
-      {/* Tổng minh bạch */}
-      <div className="mt-4 rounded-ui-md border border-line bg-subtle px-3 py-2 text-[13px]">
-        <div className="flex justify-between py-0.5">
-          <span className="text-ink-3">{t.grid.detail.riceLabel}</span>
-          <span className="tnum">{vnd(riceCost)}</span>
-        </div>
-        <div className="flex justify-between py-0.5">
-          <span className="text-ink-3">{t.grid.detail.drinkLabel}</span>
-          <span className="tnum">{vnd(drinksCost)}</span>
-        </div>
-        <div className="mt-1 flex justify-between border-t border-line pt-1.5 font-semibold">
-          <span>{t.grid.detail.totalLabel}</span>
-          <span className="tnum text-brand">{vnd(riceCost + drinksCost)}</span>
+          {/* Cột phải: ghi chú + hoá đơn chi tiết + nút lưu */}
+          <aside className="flex min-w-0 flex-col gap-4 @2xl:rounded-ui-md @2xl:border @2xl:border-line @2xl:bg-subtle @2xl:p-4">
+            <div>
+              <div className="mb-1.5 text-[13px] font-semibold text-ink-2">{t.grid.detail.noteSection}</div>
+              {editable ? (
+                <>
+                  <textarea
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    maxLength={NOTE_MAX}
+                    rows={2}
+                    placeholder={t.grid.detail.notePlaceholder}
+                    className="w-full resize-y rounded-ui border border-line bg-surface px-3 py-2 text-[13px] outline-none focus:border-brand"
+                  />
+                  <div className="mt-1 flex items-center justify-between text-[12px] text-ink-4">
+                    <span>{t.grid.detail.noteHint}</span>
+                    <span className="tnum">
+                      {note.length}/{NOTE_MAX}
+                    </span>
+                  </div>
+                </>
+              ) : note ? (
+                <div className="rounded-ui border border-line bg-surface px-3 py-2 text-[13px]">{note}</div>
+              ) : (
+                <div className="text-[13px] text-ink-3">{t.grid.detail.noteEmpty}</div>
+              )}
+            </div>
+
+            {/* Hoá đơn: kể rõ cơm gồm những món nào, nước gồm những ly nào */}
+            <div className="rounded-ui-md border border-line bg-surface px-3 py-2.5 text-[13px]">
+              <div className="flex justify-between font-medium">
+                <span>{t.grid.detail.riceLabel}</span>
+                <span className="tnum">{vnd(riceCost)}</span>
+              </div>
+              {eat && food.length > 0 ? (
+                <ul className="mt-1 space-y-0.5 text-ink-3">
+                  {food.map((id) => (
+                    <li key={id} className="truncate">
+                      {dishMap.get(id)?.emoji} {dishMap.get(id)?.name ?? id}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="mt-1 text-ink-4">{eat ? t.grid.detail.noFood : t.grid.detail.noRice}</div>
+              )}
+
+              <div className="mt-2.5 flex justify-between font-medium">
+                <span>{t.grid.detail.drinkLabel}</span>
+                <span className="tnum">{vnd(drinksCost)}</span>
+              </div>
+              {chosenDrinks.length > 0 ? (
+                <ul className="mt-1 space-y-0.5 text-ink-3">
+                  {chosenDrinks.map(([id, n]) => (
+                    <li key={id} className="flex justify-between gap-2">
+                      <span className="truncate">
+                        {dishMap.get(id)?.emoji} {dishMap.get(id)?.name ?? id} ×{n}
+                      </span>
+                      <span className="tnum shrink-0">{vnd(priceOf(id) * n)}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="mt-1 text-ink-4">{t.grid.detail.noDrink}</div>
+              )}
+
+              <div className="mt-2.5 flex justify-between border-t border-line pt-2 text-[15px] font-semibold">
+                <span>{t.grid.detail.totalLabel}</span>
+                <span className="tnum text-brand">{vnd(riceCost + drinksCost)}</span>
+              </div>
+            </div>
+
+            {editable && (
+              <div className="mt-auto flex justify-end gap-2">
+                <Button onClick={onClose}>{t.actions.cancel}</Button>
+                <Button variant="primary" onClick={save} loading={saving} disabled={needFood}>
+                  {t.actions.save}
+                </Button>
+              </div>
+            )}
+          </aside>
         </div>
       </div>
-
-      {editable && (
-        <div className="mt-4 flex justify-end gap-2">
-          <Button onClick={onClose}>{t.actions.cancel}</Button>
-          <Button variant="primary" onClick={save} loading={saving} disabled={needFood}>
-            {t.actions.save}
-          </Button>
-        </div>
-      )}
     </DetailShell>
   );
 }

@@ -15,6 +15,7 @@ export function Modal({
   onClose,
   children,
   wide = false,
+  size,
 }: {
   open: boolean;
   title: ReactNode;
@@ -24,6 +25,8 @@ export function Modal({
   children: ReactNode;
   /** Modal rộng (vd xem bảng tuần lịch sử). */
   wide?: boolean;
+  /** md = hộp thoại thường, lg = phiếu 2 cột, xl = như `wide`. */
+  size?: 'md' | 'lg' | 'xl';
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
 
@@ -101,7 +104,7 @@ export function Modal({
         className={cn(
           'flex max-h-[92vh] w-full flex-col overflow-hidden border border-line bg-surface shadow-pop',
           'rounded-t-ui-lg sm:rounded-ui-lg',
-          wide ? 'sm:max-w-5xl' : 'sm:max-w-md',
+          { md: 'sm:max-w-md', lg: 'sm:max-w-3xl', xl: 'sm:max-w-5xl' }[size ?? (wide ? 'xl' : 'md')],
         )}
         ref={boxRef}
         tabIndex={-1}

@@ -4,6 +4,8 @@ import { X } from 'lucide-react';
 import { IconButton, Modal } from '@/components/ui';
 
 const PANEL_W = 400;
+/** Phiếu 2 cột (chọn món | hoá đơn). */
+const PANEL_W_WIDE = 760;
 const GAP = 8;
 const MARGIN = 12;
 
@@ -16,33 +18,36 @@ const MARGIN = 12;
  */
 export function DetailShell({
   anchor,
+  wide = false,
   title,
   onClose,
   children,
 }: {
   anchor: DOMRect | null;
+  wide?: boolean;
   title: ReactNode;
   onClose: () => void;
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<{ left: number; top: number; maxH: number } | null>(null);
+  const [pos, setPos] = useState<{ left: number; top: number; maxH: number; w: number } | null>(null);
 
   // Đo trước khi trình duyệt vẽ → popover không nhấp nháy ở vị trí sai.
   useLayoutEffect(() => {
     if (!anchor) return;
     const vw = window.innerWidth;
+    const panelW = Math.min(wide ? PANEL_W_WIDE : PANEL_W, vw - 2 * MARGIN);
     const vh = window.innerHeight;
     const below = vh - anchor.bottom - GAP - MARGIN;
     const above = anchor.top - GAP - MARGIN;
     // Chỗ nào rộng hơn thì mở về phía đó; luôn chừa MARGIN với mép màn hình.
     const openDown = below >= above;
-    const maxH = Math.max(220, Math.min(560, openDown ? below : above));
+    const maxH = Math.max(220, Math.min(wide ? 680 : 560, openDown ? below : above));
     const h = ref.current?.offsetHeight ?? maxH;
     const top = openDown ? anchor.bottom + GAP : Math.max(MARGIN, anchor.top - GAP - Math.min(h, maxH));
-    const left = Math.min(Math.max(MARGIN, anchor.left + anchor.width / 2 - PANEL_W / 2), vw - PANEL_W - MARGIN);
-    setPos({ left, top, maxH });
-  }, [anchor]);
+    const left = Math.min(Math.max(MARGIN, anchor.left + anchor.width / 2 - panelW / 2), vw - panelW - MARGIN);
+    setPos({ left, top, maxH, w: panelW });
+  }, [anchor, wide]);
 
   useEffect(() => {
     if (!anchor) return;
@@ -61,7 +66,7 @@ export function DetailShell({
 
   if (!anchor) {
     return (
-      <Modal open title={title} onClose={onClose}>
+      <Modal open size={wide ? 'lg' : 'md'} title={title} onClose={onClose}>
         {children}
       </Modal>
     );
@@ -73,7 +78,7 @@ export function DetailShell({
       role="dialog"
       aria-modal="false"
       className="animate-bloom fixed z-50 flex flex-col overflow-hidden rounded-ui-lg border border-line bg-surface shadow-pop"
-      style={{ width: PANEL_W, left: pos?.left ?? -9999, top: pos?.top ?? -9999, maxHeight: pos?.maxH }}
+      style={{ width: pos?.w ?? PANEL_W, left: pos?.left ?? -9999, top: pos?.top ?? -9999, maxHeight: pos?.maxH }}
     >
       <div className="flex items-center gap-2 border-b border-line px-3 py-2">
         <div className="min-w-0 flex-1 text-sm font-semibold">{title}</div>
