@@ -1,4 +1,4 @@
-import type { AuthResult, DayDetail, DayKey, Dish, DishCategory, DispatchStatus, Grid, MenuApplyResult, MenuDiff, NotificationFeed, PaymentConfig, PaymentStatus, PickupStat, Role, User, Week } from '@/types';
+import type { AuthResult, DayDetail, DayKey, Debtor, Dish, DishCategory, DispatchStatus, Grid, MenuApplyResult, MenuDiff, NotificationFeed, PaymentConfig, PaymentStatus, PickupStat, Role, User, Week } from '@/types';
 import { request } from './http';
 
 export const api = {
@@ -38,6 +38,13 @@ export const api = {
   // thanh toán
   reportMyPayment: (weekId: string, report: boolean) =>
     request('/orders/me/payment', { method: 'PATCH', body: JSON.stringify({ weekId, report }) }),
+  reportMyPayments: (weekIds: string[], report: boolean) =>
+    request('/orders/me/payment/bulk', { method: 'PATCH', body: JSON.stringify({ weekIds, report }) }),
+  // công nợ nhiều tuần
+  myDebts: () => request<Debtor>('/debts/me'),
+  debts: () => request<Debtor[]>('/debts'),
+  setPaymentStatusBulk: (userId: string, weekIds: string[], status: PaymentStatus) =>
+    request('/orders/payment/bulk', { method: 'PATCH', body: JSON.stringify({ userId, weekIds, status }) }),
   // gửi đơn cho quán
   dispatchStatus: () => request<DispatchStatus>('/dispatch/today/status'),
   markDispatchSent: () => request('/dispatch/today/sent', { method: 'POST' }),

@@ -195,3 +195,27 @@ export interface AuthResult {
   refreshToken: string;
   user: User;
 }
+
+/** Một tuần còn nợ (chưa được admin xác nhận) của 1 người. */
+export interface DebtWeek {
+  weekId: string;
+  weekLabel: string;
+  unitPrice: number;
+  days: Record<DayKey, boolean>;
+  servings: number;
+  foodTotal: number;
+  drinks: { name: string; qty: number; price: number }[];
+  drinksTotal: number;
+  total: number;
+  status: Exclude<PaymentStatus, 'PAID'>;
+  reportedAt: string | null;
+}
+
+/** Tổng công nợ của 1 người trên mọi tuần. */
+export interface Debtor {
+  userId: string;
+  fullName: string;
+  weeks: DebtWeek[];
+  total: number;
+  pendingTotal: number;
+}

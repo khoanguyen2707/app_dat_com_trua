@@ -2,7 +2,14 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import { PrismaService } from '@/prisma/prisma.service';
 import { NotificationsService } from '@/notifications/notifications.service';
 import { CUTOFF_LABEL, computeLockedDays, DAY_KEYS, DAY_LABEL, type DayKey } from '@/common/week-lock';
-import { ReportPaymentDto, SetDayDetailDto, SetPaymentStatusDto, UpsertOrderDto } from './dto/order.dto';
+import {
+  ReportPaymentBulkDto,
+  ReportPaymentDto,
+  SetDayDetailDto,
+  SetPaymentStatusBulkDto,
+  SetPaymentStatusDto,
+  UpsertOrderDto,
+} from './dto/order.dto';
 
 const vnd = (n: number) => n.toLocaleString('vi-VN') + 'đ';
 
@@ -222,5 +229,72 @@ export class OrdersService {
       });
     }
     return { ok: true };
+  }
+
+  /**
+   * User báo (hoặc huỷ báo) đã chuyển khoản gộp nhiều tuần → PENDING/UNPAID.
+   * Chỉ gửi admin 1 thông báo cho cả lần chuyển. Tuần đã PAID hoặc 0đ thì bỏ qua.
+   */
+  async reportPayments(userId: string, dto: ReportPaymentBulkDto) {
+    const weekIds = [...new Set(dto.weekIds)];
+    const infos = await Promise.all(weekIds.map((weekId) => this.orderInfo(weekId, userId)));
+    const targets = infos.filter((i) => i.order.paymentStatus !== 'PAID' && (!dto.report || i.total > 0));
+    if (!targets.length) {
+      throw new BadRequestException('Không có khoản nào cần thanh toán.');
+    }
+
+    await this.prisma.order.updateMany({
+      where: { userId, weekId: { in: targets.map((i) => i.order.weekId) }, paymentStatus: { not: 'PAID' } },
+      data: dto.report
+        ? { paymentStatus: 'PENDING', reportedAt: new Date() }
+        : { paymentStatus: 'UNPAID', reportedAt: null },
+    });
+
+    if (dto.report) {
+      const total = targets.reduce((a, i) => a + i.total, 0);
+      await this.notifications.createFor(await this.notifications.adminIds(), {
+        type: 'PAYMENT_PENDING',
+        title: '💸 Yêu cầu xác nhận thanh toán',
+        body: `${targets[0].fullName} báo đã chuyển ${vnd(total)} — ${targets.length} tuần: ${targets
+          .map((i) => i.label)
+          .join(', ')}`.slice(0, 255),
+        weekId: targets.length === 1 ? targets[0].order.weekId : undefined,
+      });
+    }
+    return { ok: true, count: targets.length };
+  }
+
+  /** Admin xác nhận / trả lại nhiều tuần của 1 thành viên một lần → 1 thông báo cho user. */
+  async setPaymentStatusBulk(dto: SetPaymentStatusBulkDto) {
+    const weekIds = [...new Set(dto.weekIds)];
+    const infos = await Promise.all(weekIds.map((weekId) => this.orderInfo(weekId, dto.userId)));
+    const paid = dto.status === 'PAID';
+    await this.prisma.order.updateMany({
+      where: { userId: dto.userId, weekId: { in: weekIds } },
+      data: {
+        paymentStatus: dto.status,
+        paid,
+        paidAt: paid ? new Date() : null,
+        ...(dto.status === 'UNPAID' ? { reportedAt: null } : {}),
+      },
+    });
+
+    const labels = infos.map((i) => i.label).join(', ');
+    if (dto.status === 'PAID') {
+      await this.notifications.createFor([dto.userId], {
+        type: 'PAYMENT_CONFIRMED',
+        title: '✅ Đã xác nhận thanh toán',
+        body: `Admin đã xác nhận bạn thanh toán ${infos.length} tuần: ${labels}. Cảm ơn!`.slice(0, 255),
+        weekId: infos.length === 1 ? weekIds[0] : undefined,
+      });
+    } else if (dto.status === 'UNPAID') {
+      await this.notifications.createFor([dto.userId], {
+        type: 'PAYMENT_REJECTED',
+        title: '↩️ Chưa nhận được tiền',
+        body: `Admin chưa nhận được khoản ${labels}, vui lòng kiểm tra lại.`.slice(0, 255),
+        weekId: infos.length === 1 ? weekIds[0] : undefined,
+      });
+    }
+    return { ok: true, count: infos.length };
   }
 }
