@@ -62,6 +62,26 @@ describe('buildDebtReport', () => {
     expect(r.text).not.toContain('#pay');
   });
 
+  it('thay tên người có email bằng placeholder để flow @mention, admin cũng được tag', () => {
+    const r = buildDebtReport(
+      groupDebts([
+        order({ userId: 'an', fullName: 'An', email: 'an@x.com', weekId: 'a' }),
+        order({ userId: 'binh', fullName: 'Bình', weekId: 'a' }),
+      ]),
+      'https://x.app',
+      [{ name: 'Admin', email: 'admin@x.com' }],
+    );
+    expect(r.mentions).toEqual([
+      { key: '@@M0@@', name: 'An', email: 'an@x.com', role: 'debtor' },
+      { key: '@@M1@@', name: 'Admin', email: 'admin@x.com', role: 'admin' },
+    ]);
+    expect(r.html).toContain('<b>@@M0@@</b>');
+    expect(r.html).toContain('<b>Bình</b>');
+    expect(r.html).toContain('cc @@M1@@');
+    expect(r.htmlPlain).toContain('<b>An</b>');
+    expect(r.htmlPlain).not.toContain('@@M');
+  });
+
   it('escape tên trong html', () => {
     const r = buildDebtReport(groupDebts([order({ userId: 'u', fullName: '<b>x', weekId: 'a' })]), '');
     expect(r.html).toContain('&lt;b&gt;x');

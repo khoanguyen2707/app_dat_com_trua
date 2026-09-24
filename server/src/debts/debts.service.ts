@@ -17,7 +17,7 @@ export class DebtsService {
       where: { paymentStatus: { in: ['UNPAID', 'PENDING'] }, ...(userId ? { userId } : {}) },
       include: {
         week: { select: { label: true, unitPrice: true, startDate: true, createdAt: true } },
-        user: { select: { fullName: true } },
+        user: { select: { fullName: true, teamsEmail: true, email: true } },
       },
     });
     if (!orders.length) return [];
@@ -47,6 +47,7 @@ export class DebtsService {
       unitPrice: o.week.unitPrice,
       userId: o.userId,
       fullName: o.user.fullName,
+      email: o.user.teamsEmail || o.user.email || null,
       days: Object.fromEntries(DAY_KEYS.map((d) => [d, !!o[d]])) as Record<DayKey, boolean>,
       drinks: drinksByOrder.get(`${o.weekId}|${o.userId}`) ?? [],
       status: o.paymentStatus as DebtStatus,
@@ -67,6 +68,15 @@ export class DebtsService {
 
   /** Báo cáo nhắc nợ cho Power Automate (thứ 2 9h, thứ 6 15h). */
   async report() {
-    return buildDebtReport(await this.all(), this.config.get<string>('APP_URL')?.trim() || '');
+    const admins = await this.prisma.user.findMany({
+      where: { role: 'ADMIN', active: true },
+      select: { fullName: true, teamsEmail: true, email: true },
+      orderBy: { createdAt: 'asc' },
+    });
+    return buildDebtReport(
+      await this.all(),
+      this.config.get<string>('APP_URL')?.trim() || '',
+      admins.map((a) => ({ name: a.fullName, email: a.teamsEmail || a.email || null })),
+    );
   }
 }

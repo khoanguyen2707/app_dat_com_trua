@@ -11,6 +11,8 @@ export interface DebtOrderInput {
   unitPrice: number;
   userId: string;
   fullName: string;
+  /** Email Microsoft 365 để @mention trong Teams (teamsEmail, không có thì email đăng nhập). */
+  email?: string | null;
   days: Record<DayKey, boolean>;
   drinks: { name: string; qty: number; price: number }[];
   status: DebtStatus;
@@ -34,6 +36,7 @@ export interface DebtWeek {
 export interface Debtor {
   userId: string;
   fullName: string;
+  email?: string | null;
   weeks: DebtWeek[];
   total: number;
   /** Phần đã báo chuyển khoản, đang chờ admin xác nhận. */
@@ -72,7 +75,7 @@ export function groupDebts(orders: DebtOrderInput[]): Debtor[] {
     if (week.total <= 0) continue;
     let d = byUser.get(o.userId);
     if (!d) {
-      d = { userId: o.userId, fullName: o.fullName, weeks: [], total: 0, pendingTotal: 0 };
+      d = { userId: o.userId, fullName: o.fullName, email: o.email ?? null, weeks: [], total: 0, pendingTotal: 0 };
       byUser.set(o.userId, d);
     }
     d.weeks.push(week);
@@ -86,6 +89,14 @@ const vnd = (n: number) => n.toLocaleString('vi-VN') + 'đ';
 const shortLabel = (label: string) => label.replace(/\/\d{4}/g, '');
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+/** Một người cần @mention: flow thay `key` trong html bằng token @mention của Teams. */
+export interface DebtMention {
+  key: string;
+  name: string;
+  email: string;
+  role: 'debtor' | 'admin';
+}
+
 export interface DebtReport {
   hasDebt: boolean;
   debtorCount: number;
@@ -94,12 +105,20 @@ export interface DebtReport {
   payUrl: string;
   confirmUrl: string;
   text: string;
+  /** Tên người nợ / admin đã thay bằng placeholder `@@Mn@@` — flow thay bằng token @mention. */
   html: string;
+  /** Cùng nội dung nhưng tên để nguyên, dùng khi flow không tag được. */
+  htmlPlain: string;
+  mentions: DebtMention[];
   debtors: Debtor[];
 }
 
 /** Dựng báo cáo nhắc nợ cho Power Automate đăng lên Teams. */
-export function buildDebtReport(debtors: Debtor[], appUrl: string): DebtReport {
+export function buildDebtReport(
+  debtors: Debtor[],
+  appUrl: string,
+  admins: { name: string; email: string | null }[] = [],
+): DebtReport {
   const base = appUrl.replace(/\/+$/, '');
   const payUrl = base ? `${base}/#pay` : '';
   const confirmUrl = base ? `${base}/#pay-pending` : '';
@@ -117,18 +136,43 @@ export function buildDebtReport(debtors: Debtor[], appUrl: string): DebtReport {
   if (debtors.length && payUrl) textFoot.push(`👉 Thanh toán ngay: ${payUrl}`);
   if (pendingCount && confirmUrl) textFoot.push(`🔎 Admin kiểm tra ${pendingCount} khoản chờ xác nhận: ${confirmUrl}`);
 
-  const rows = debtors
-    .map(
-      (d) =>
-        `<li><b>${esc(d.fullName)}</b>: <b>${vnd(d.total)}</b><ul>${d.weeks
-          .map((w) => `<li>${esc(weekText(w))}</li>`)
-          .join('')}</ul></li>`,
-    )
-    .join('');
-  const htmlFoot: string[] = [];
-  if (debtors.length && payUrl) htmlFoot.push(`👉 <a href="${esc(payUrl)}">Thanh toán ngay</a>`);
-  if (pendingCount && confirmUrl)
-    htmlFoot.push(`🔎 <a href="${esc(confirmUrl)}">Admin kiểm tra ${pendingCount} khoản chờ xác nhận</a>`);
+  const mentions: DebtMention[] = [];
+  /** Tên đã escape, hoặc placeholder nếu người đó có email để tag. */
+  const tag = (name: string, email: string | null | undefined, role: DebtMention['role']) => {
+    if (!email) return esc(name);
+    const key = `@@M${mentions.length}@@`;
+    mentions.push({ key, name, email, role });
+    return key;
+  };
+
+  const buildHtml = (withTags: boolean) => {
+    const who = (name: string, email: string | null | undefined, role: DebtMention['role']) =>
+      withTags ? tag(name, email, role) : esc(name);
+    const rows = debtors
+      .map(
+        (d) =>
+          `<li><b>${who(d.fullName, d.email, 'debtor')}</b>: <b>${vnd(d.total)}</b><ul>${d.weeks
+            .map((w) => `<li>${esc(weekText(w))}</li>`)
+            .join('')}</ul></li>`,
+      )
+      .join('');
+    const foot: string[] = [];
+    if (debtors.length && payUrl) foot.push(`👉 <a href="${esc(payUrl)}">Thanh toán ngay</a>`);
+    if (debtors.length && admins.length) {
+      const names = admins.map((a) => who(a.name, a.email, 'admin')).join(', ');
+      foot.push(
+        pendingCount && confirmUrl
+          ? `🔎 ${names}: <a href="${esc(confirmUrl)}">kiểm tra ${pendingCount} khoản chờ xác nhận</a>`
+          : `cc ${names}`,
+      );
+    } else if (pendingCount && confirmUrl) {
+      foot.push(`🔎 <a href="${esc(confirmUrl)}">Admin kiểm tra ${pendingCount} khoản chờ xác nhận</a>`);
+    }
+    return [`<p><b>${esc(head)}</b></p>`, rows ? `<ul>${rows}</ul>` : '', ...foot.map((l) => `<p>${l}</p>`)].join('');
+  };
+
+  const htmlPlain = buildHtml(false);
+  const html = buildHtml(true);
 
   return {
     hasDebt: debtors.length > 0,
@@ -138,9 +182,9 @@ export function buildDebtReport(debtors: Debtor[], appUrl: string): DebtReport {
     payUrl,
     confirmUrl,
     text: [head, ...textLines, ...textFoot].join('\n'),
-    html: [`<p><b>${esc(head)}</b></p>`, rows ? `<ul>${rows}</ul>` : '', ...htmlFoot.map((l) => `<p>${l}</p>`)].join(
-      '',
-    ),
+    html,
+    htmlPlain,
+    mentions,
     debtors,
   };
 }

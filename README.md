@@ -222,7 +222,8 @@ Web và API deploy riêng nhau, nên có lúc một bên đã mới còn bên ki
 Gom mọi khoản **chưa được admin xác nhận** trên tất cả các tuần (`UNPAID` + `PENDING`, bỏ tuần 0đ) rồi đăng một bảng lên Teams channel chung: ai còn nợ, những tuần nào, bao nhiêu, khoản nào đã báo chuyển khoản nhưng chưa được xác nhận.
 
 - `GET /api/v1/debts/reminder`, header `x-pickup-token: <PICKUP_TOKEN>` (dùng chung token với lấy cơm / gửi đơn).
-- Trả `{ hasDebt, debtorCount, pendingCount, grandTotal, payUrl, confirmUrl, text, html, debtors }`.
+- Trả `{ hasDebt, debtorCount, pendingCount, grandTotal, payUrl, confirmUrl, text, html, htmlPlain, mentions, debtors }`.
+  - **@mention:** trong `html`, tên người nợ và admin có email (`teamsEmail`, trống thì `email`) được thay bằng placeholder `@@M0@@`, `@@M1@@`… `mentions` = `[{ key, name, email, role }]`. Flow lặp `mentions`, lấy token bằng **Get an @mention token for a user** (`email`) rồi `replace(key → token)`; lấy token lỗi thì thay bằng `name`. `htmlPlain` là bản không tag.
   - `payUrl` = `APP_URL/#pay` → mở thẳng tab **Thanh toán** của user (trả từng tuần hoặc tất cả bằng VietQR).
   - `confirmUrl` = `APP_URL/#pay-pending` → admin mở tab Thanh toán, bảng **Công nợ các tuần** lọc sẵn "Chờ xác nhận".
 - Đọc chỉ, không ghi gì → gọi thử bao nhiêu lần cũng được.
