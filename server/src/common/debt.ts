@@ -1,0 +1,146 @@
+import { DAY_KEYS, type DayKey } from './week-lock';
+
+export type DebtStatus = 'UNPAID' | 'PENDING';
+
+/** Một đơn (1 user × 1 tuần) chưa được admin xác nhận, đã gom đủ dữ liệu để tính tiền. */
+export interface DebtOrderInput {
+  weekId: string;
+  weekLabel: string;
+  /** Mốc sắp xếp tuần: startDate nếu có, không thì createdAt. */
+  weekSort: Date;
+  unitPrice: number;
+  userId: string;
+  fullName: string;
+  days: Record<DayKey, boolean>;
+  drinks: { name: string; qty: number; price: number }[];
+  status: DebtStatus;
+  reportedAt: Date | null;
+}
+
+export interface DebtWeek {
+  weekId: string;
+  weekLabel: string;
+  unitPrice: number;
+  days: Record<DayKey, boolean>;
+  servings: number;
+  foodTotal: number;
+  drinks: { name: string; qty: number; price: number }[];
+  drinksTotal: number;
+  total: number;
+  status: DebtStatus;
+  reportedAt: Date | null;
+}
+
+export interface Debtor {
+  userId: string;
+  fullName: string;
+  weeks: DebtWeek[];
+  total: number;
+  /** Phần đã báo chuyển khoản, đang chờ admin xác nhận. */
+  pendingTotal: number;
+}
+
+/** Tiền 1 tuần của 1 người: số suất × đơn giá + đồ uống. */
+export function toDebtWeek(o: DebtOrderInput): DebtWeek {
+  const servings = DAY_KEYS.reduce((a, d) => a + (o.days[d] ? 1 : 0), 0);
+  const foodTotal = servings * o.unitPrice;
+  const drinksTotal = o.drinks.reduce((a, d) => a + d.qty * d.price, 0);
+  return {
+    weekId: o.weekId,
+    weekLabel: o.weekLabel,
+    unitPrice: o.unitPrice,
+    days: o.days,
+    servings,
+    foodTotal,
+    drinks: o.drinks,
+    drinksTotal,
+    total: foodTotal + drinksTotal,
+    status: o.status,
+    reportedAt: o.reportedAt,
+  };
+}
+
+/**
+ * Gom các đơn chưa xác nhận thành danh sách người nợ.
+ * Bỏ tuần 0đ; tuần xếp cũ → mới; người xếp theo tổng nợ giảm dần.
+ */
+export function groupDebts(orders: DebtOrderInput[]): Debtor[] {
+  const sorted = [...orders].sort((a, b) => a.weekSort.getTime() - b.weekSort.getTime());
+  const byUser = new Map<string, Debtor>();
+  for (const o of sorted) {
+    const week = toDebtWeek(o);
+    if (week.total <= 0) continue;
+    let d = byUser.get(o.userId);
+    if (!d) {
+      d = { userId: o.userId, fullName: o.fullName, weeks: [], total: 0, pendingTotal: 0 };
+      byUser.set(o.userId, d);
+    }
+    d.weeks.push(week);
+    d.total += week.total;
+    if (week.status === 'PENDING') d.pendingTotal += week.total;
+  }
+  return [...byUser.values()].sort((a, b) => b.total - a.total || a.fullName.localeCompare(b.fullName));
+}
+
+const vnd = (n: number) => n.toLocaleString('vi-VN') + 'đ';
+const shortLabel = (label: string) => label.replace(/\/\d{4}/g, '');
+const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+export interface DebtReport {
+  hasDebt: boolean;
+  debtorCount: number;
+  pendingCount: number;
+  grandTotal: number;
+  payUrl: string;
+  confirmUrl: string;
+  text: string;
+  html: string;
+  debtors: Debtor[];
+}
+
+/** Dựng báo cáo nhắc nợ cho Power Automate đăng lên Teams. */
+export function buildDebtReport(debtors: Debtor[], appUrl: string): DebtReport {
+  const base = appUrl.replace(/\/+$/, '');
+  const payUrl = base ? `${base}/#pay` : '';
+  const confirmUrl = base ? `${base}/#pay-pending` : '';
+  const grandTotal = debtors.reduce((a, d) => a + d.total, 0);
+  const pendingCount = debtors.reduce((a, d) => a + d.weeks.filter((w) => w.status === 'PENDING').length, 0);
+
+  const weekText = (w: DebtWeek) =>
+    `${shortLabel(w.weekLabel)}: ${vnd(w.total)}${w.status === 'PENDING' ? ' (đã báo CK, chờ xác nhận)' : ''}`;
+
+  const head = debtors.length
+    ? `💰 Nhắc công nợ cơm trưa — ${debtors.length} người còn ${vnd(grandTotal)}`
+    : '🎉 Không còn ai nợ tiền cơm. Cảm ơn mọi người!';
+  const textLines = debtors.map((d) => `- ${d.fullName}: ${vnd(d.total)} — ${d.weeks.map(weekText).join('; ')}`);
+  const textFoot: string[] = [];
+  if (debtors.length && payUrl) textFoot.push(`👉 Thanh toán ngay: ${payUrl}`);
+  if (pendingCount && confirmUrl) textFoot.push(`🔎 Admin kiểm tra ${pendingCount} khoản chờ xác nhận: ${confirmUrl}`);
+
+  const rows = debtors
+    .map(
+      (d) =>
+        `<li><b>${esc(d.fullName)}</b>: <b>${vnd(d.total)}</b><ul>${d.weeks
+          .map((w) => `<li>${esc(weekText(w))}</li>`)
+          .join('')}</ul></li>`,
+    )
+    .join('');
+  const htmlFoot: string[] = [];
+  if (debtors.length && payUrl) htmlFoot.push(`👉 <a href="${esc(payUrl)}">Thanh toán ngay</a>`);
+  if (pendingCount && confirmUrl)
+    htmlFoot.push(`🔎 <a href="${esc(confirmUrl)}">Admin kiểm tra ${pendingCount} khoản chờ xác nhận</a>`);
+
+  return {
+    hasDebt: debtors.length > 0,
+    debtorCount: debtors.length,
+    pendingCount,
+    grandTotal,
+    payUrl,
+    confirmUrl,
+    text: [head, ...textLines, ...textFoot].join('\n'),
+    html: [`<p><b>${esc(head)}</b></p>`, rows ? `<ul>${rows}</ul>` : '', ...htmlFoot.map((l) => `<p>${l}</p>`)].join(
+      '',
+    ),
+    debtors,
+  };
+}

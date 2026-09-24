@@ -11,6 +11,7 @@ import { PaymentModule } from './payment/payment.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PickupModule } from './pickup/pickup.module';
 import { DispatchModule } from './dispatch/dispatch.module';
+import { DebtsModule } from './debts/debts.module';
 import { HealthModule } from './health/health.module';
 import { SeedModule } from './seed/seed.module';
 
@@ -31,6 +32,7 @@ import { SeedModule } from './seed/seed.module';
     NotificationsModule,
     PickupModule,
     DispatchModule,
+    DebtsModule,
     HealthModule,
     SeedModule,
   ],

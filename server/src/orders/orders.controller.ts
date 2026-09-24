@@ -4,7 +4,14 @@ import { Roles } from '@/common/decorators/roles.decorator';
 import { Role } from '@/common/enums/role.enum';
 import { AuthUser, CurrentUser } from '@/common/decorators/current-user.decorator';
 import { OrdersService } from './orders.service';
-import { ReportPaymentDto, SetDayDetailDto, SetPaymentStatusDto, UpsertOrderDto } from './dto/order.dto';
+import {
+  ReportPaymentBulkDto,
+  ReportPaymentDto,
+  SetDayDetailDto,
+  SetPaymentStatusBulkDto,
+  SetPaymentStatusDto,
+  UpsertOrderDto,
+} from './dto/order.dto';
 
 @ApiTags('orders')
 @ApiBearerAuth('JWT-auth')
@@ -28,6 +35,19 @@ export class OrdersController {
   @ApiOperation({ summary: 'Tôi báo / huỷ báo đã chuyển khoản (→ chờ admin xác nhận)' })
   reportMyPayment(@CurrentUser() user: AuthUser, @Body() dto: ReportPaymentDto) {
     return this.orders.reportPayment(user.id, dto);
+  }
+
+  @Patch('me/payment/bulk')
+  @ApiOperation({ summary: 'Tôi báo / huỷ báo đã chuyển khoản cho nhiều tuần (thanh toán tất cả)' })
+  reportMyPayments(@CurrentUser() user: AuthUser, @Body() dto: ReportPaymentBulkDto) {
+    return this.orders.reportPayments(user.id, dto);
+  }
+
+  @Roles(Role.ADMIN)
+  @Patch('payment/bulk')
+  @ApiOperation({ summary: 'Admin: đặt trạng thái thanh toán cho nhiều tuần của 1 thành viên + báo user' })
+  setPaymentStatusBulk(@Body() dto: SetPaymentStatusBulkDto) {
+    return this.orders.setPaymentStatusBulk(dto);
   }
 
   @Roles(Role.ADMIN)

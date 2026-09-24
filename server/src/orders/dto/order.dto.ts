@@ -1,6 +1,18 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsIn, IsInt, IsOptional, IsString, MaxLength, Min, ValidateNested } from 'class-validator';
+import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsArray,
+  IsBoolean,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 import { DAY_KEYS, type DayKey } from '@/common/week-lock';
 
 export class UpsertOrderDto {
@@ -36,6 +48,36 @@ export class ReportPaymentDto {
   @ApiProperty({ description: 'true = báo đã chuyển khoản; false = huỷ báo' })
   @IsBoolean()
   report: boolean;
+}
+
+/** User báo / huỷ báo đã chuyển khoản cho nhiều tuần một lúc ("Thanh toán tất cả"). */
+export class ReportPaymentBulkDto {
+  @ApiProperty({ type: [String] })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(60)
+  @IsString({ each: true })
+  weekIds: string[];
+
+  @ApiProperty({ description: 'true = báo đã chuyển khoản; false = huỷ báo' })
+  @IsBoolean()
+  report: boolean;
+}
+
+/** Admin đặt trạng thái thanh toán cho nhiều tuần của 1 thành viên. */
+export class SetPaymentStatusBulkDto {
+  @ApiProperty() @IsString() userId: string;
+
+  @ApiProperty({ type: [String] })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(60)
+  @IsString({ each: true })
+  weekIds: string[];
+
+  @ApiProperty({ enum: PAYMENT_STATUSES, example: 'PAID' })
+  @IsIn(PAYMENT_STATUSES)
+  status: (typeof PAYMENT_STATUSES)[number];
 }
 
 export class DrinkItemDto {

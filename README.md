@@ -217,6 +217,26 @@ Web và API deploy riêng nhau, nên có lúc một bên đã mới còn bên ki
 
 ---
 
+## 6d. Nhắc công nợ hàng tuần (thứ 2 9:00, thứ 6 15:00)
+
+Gom mọi khoản **chưa được admin xác nhận** trên tất cả các tuần (`UNPAID` + `PENDING`, bỏ tuần 0đ) rồi đăng một bảng lên Teams channel chung: ai còn nợ, những tuần nào, bao nhiêu, khoản nào đã báo chuyển khoản nhưng chưa được xác nhận.
+
+- `GET /api/v1/debts/reminder`, header `x-pickup-token: <PICKUP_TOKEN>` (dùng chung token với lấy cơm / gửi đơn).
+- Trả `{ hasDebt, debtorCount, pendingCount, grandTotal, payUrl, confirmUrl, text, html, debtors }`.
+  - `payUrl` = `APP_URL/#pay` → mở thẳng tab **Thanh toán** của user (trả từng tuần hoặc tất cả bằng VietQR).
+  - `confirmUrl` = `APP_URL/#pay-pending` → admin mở tab Thanh toán, bảng **Công nợ các tuần** lọc sẵn "Chờ xác nhận".
+- Đọc chỉ, không ghi gì → gọi thử bao nhiêu lần cũng được.
+
+**Flow Power Automate "Nhắc công nợ cơm trưa":**
+
+1. **Trigger** Recurrence: tần suất *Week*, múi giờ *(UTC+07:00) Bangkok, Hanoi, Jakarta*, ngày *Monday, Friday*, giờ *9, 15*, phút *0*. Recurrence không tách giờ theo từng ngày, nên thêm **Condition** `(dayOfWeek = 1 AND hour = 9) OR (dayOfWeek = 5 AND hour = 15)` với `dayOfWeek(convertFromUtc(utcNow(),'SE Asia Standard Time'))` và `int(formatDateTime(convertFromUtc(utcNow(),'SE Asia Standard Time'),'HH'))`. Cách khác gọn hơn: tạo 2 trigger Recurrence trong 2 flow giống hệt nhau.
+2. **HTTP** `GET {APP_API}/debts/reminder`, header `x-pickup-token`. Render free có thể đang ngủ → đặt retry policy *Exponential, 3 lần* và timeout ~2 phút.
+3. **Parse JSON** body.
+4. **Condition** `hasDebt` = true (muốn báo cả tuần sạch nợ thì bỏ bước này — `html` đã có sẵn câu "Không còn ai nợ").
+5. **Post message in a chat or channel** (Teams, Post as Flow bot, channel chung) — nội dung là `html`.
+
+---
+
 ## 7. Biến môi trường (server/.env)
 
 | Biến | Ý nghĩa |
@@ -227,7 +247,7 @@ Web và API deploy riêng nhau, nên có lúc một bên đã mới còn bên ki
 | `DEFAULT_PASSWORD` | Mật khẩu mặc định cho thành viên seed |
 | `SEED_DEMO` | `true` để seed mẫu (đặt `false` khi đã có dữ liệu thật) |
 | `CORS_ORIGIN` | Origin của frontend (vd `https://comtrua.vn`) |
-| `PICKUP_TOKEN` | Token bí mật để Power Automate gọi `POST /pickup/today` (bốc người đi lấy cơm) **và** `POST /dispatch/today` (nhắc gửi đơn). Bỏ trống = cả hai endpoint từ chối mọi request |
+| `PICKUP_TOKEN` | Token bí mật để Power Automate gọi `POST /pickup/today` (bốc người đi lấy cơm) **và** `POST /dispatch/today` (nhắc gửi đơn), `GET /debts/reminder` (nhắc công nợ). Bỏ trống = cả hai endpoint từ chối mọi request |
 | `MENU_WEBHOOK_URL` | URL trigger của flow Power Automate nhận thực đơn vừa đăng. Bỏ trống = tắt (vẫn đăng thực đơn bình thường, chỉ không báo Teams) |
 | `MENU_WEBHOOK_TOKEN` | Bí mật gửi kèm header `x-menu-token` để flow chặn request lạ |
 | `APP_URL` | Link app chèn vào tin nhắn Teams (vd `https://com-trua.vercel.app`) |
