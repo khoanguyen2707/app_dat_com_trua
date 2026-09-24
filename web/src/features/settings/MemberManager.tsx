@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
-import { MEMBER_COLORS } from '@/constants/config';
+import { MEMBER_COLORS, MIN_PASSWORD_LENGTH } from '@/constants/config';
 import { t } from '@/constants/strings';
 import type { PickupStat, Role, User } from '@/types';
-import { ChevronDown, Search } from 'lucide-react';
+import { Check, ChevronDown, Copy, KeyRound, Search, UserPlus, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Avatar, Button, confirmDialog, Field, Pill, toast } from '@/components/ui';
 
@@ -22,6 +22,16 @@ function shortDate(iso: string | null): string | null {
   const m = iso && /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
   return m ? `${+m[3]}/${+m[2]}` : null;
 }
+
+/** Mật khẩu tạm dễ đọc qua tin nhắn: bỏ các ký tự dễ nhầm (0/O, 1/l/I). */
+function genPassword(len = 8): string {
+  const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
+  const buf = crypto.getRandomValues(new Uint32Array(len));
+  return Array.from(buf, (n) => chars[n % chars.length]).join('');
+}
+
+type NewUser = { fullName: string; email: string; password: string; admin: boolean };
+const emptyNewUser = (): NewUser => ({ fullName: '', email: '', password: genPassword(), admin: false });
 
 /** Bỏ dấu tiếng Việt để tìm kiếm gõ không dấu vẫn ra ("huong" khớp "Hương"). */
 function fold(s: string): string {
@@ -88,6 +98,11 @@ export function MemberManager({ onChanged }: { onChanged: () => void }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [busy, setBusy] = useState(false);
+  /** Form tạo tài khoản — null = đang đóng. */
+  const [newUser, setNewUser] = useState<NewUser | null>(null);
+  /** Thông tin đăng nhập vừa tạo / vừa đặt lại, để admin chép gửi cho thành viên. */
+  const [creds, setCreds] = useState<{ name: string; email: string; password: string } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     api.users().then(setUsers).catch(() => {});
@@ -235,6 +250,62 @@ export function MemberManager({ onChanged }: { onChanged: () => void }) {
     }
   };
 
+  const create = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUser) return;
+    setBusy(true);
+    try {
+      const saved = await api.createUser({
+        fullName: newUser.fullName.trim(),
+        email: newUser.email.trim(),
+        password: newUser.password,
+        role: newUser.admin ? 'ADMIN' : 'USER',
+      });
+      setUsers((us) => [...us, saved]);
+      setCreds({ name: saved.fullName, email: saved.email, password: newUser.password });
+      setCopied(false);
+      setNewUser(null);
+      onChanged();
+      toast(t.member.created(saved.fullName), '✅');
+    } catch (err: any) {
+      toast(err.message || t.errors.save, '⚠️');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const resetPassword = async (u: User) => {
+    const ok = await confirmDialog({
+      title: t.member.confirmResetTitle,
+      message: t.member.confirmReset(u.fullName),
+      confirmLabel: t.member.resetBtn,
+    });
+    if (!ok) return;
+    const password = genPassword();
+    setBusy(true);
+    try {
+      await api.resetUserPassword(u.id, password);
+      setCreds({ name: u.fullName, email: u.email, password });
+      setCopied(false);
+      toast(t.member.resetDone(u.fullName), '🔑');
+    } catch (err: any) {
+      toast(err.message || t.errors.save, '⚠️');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const copyCreds = async () => {
+    if (!creds) return;
+    try {
+      await navigator.clipboard.writeText(t.member.credsText(creds.email, creds.password));
+      setCopied(true);
+      toast(t.member.copied, '📋');
+    } catch {
+      /* trình duyệt chặn clipboard — thông tin vẫn hiện trên màn để chép tay */
+    }
+  };
+
   const remove = async (u: User) => {
     if (u.id === me?.id) return toast(t.member.cannotDeleteSelf, '⚠️');
     const ok = await confirmDialog({
@@ -269,6 +340,89 @@ export function MemberManager({ onChanged }: { onChanged: () => void }) {
           {counts.noTeams > 0 && <span className="text-warn">{t.member.sumNoTeams(counts.noTeams)}</span>}
         </div>
       </div>
+
+      {creds && (
+        <div className="mt-3 flex items-start gap-3 rounded-ui-md border border-ok-line bg-ok-soft px-3 py-2.5 text-[13px]">
+          <KeyRound className="mt-0.5 size-4 shrink-0 text-ok" />
+          <div className="min-w-0 flex-1">
+            <b className="block">{creds.name}</b>
+            <span className="block truncate text-ink-2">{creds.email}</span>
+            <code className="mt-0.5 inline-block rounded bg-surface px-1.5 py-px text-[13px] font-semibold tracking-wide">
+              {creds.password}
+            </code>
+          </div>
+          <Button tiny onClick={copyCreds} title={t.member.copyCreds}>
+            {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+            {t.member.copyCreds}
+          </Button>
+          <button type="button" className="text-ink-4 hover:text-ink" onClick={() => setCreds(null)} aria-label={t.actions.cancel}>
+            <X className="size-4" />
+          </button>
+        </div>
+      )}
+
+      {newUser ? (
+        <form className="mt-3 rounded-ui-md border border-brand-line bg-brand-soft/40 px-3 pt-3" onSubmit={create}>
+          <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
+            <UserPlus className="size-4 text-brand" />
+            {t.member.addTitle}
+          </div>
+          <div className="grid gap-x-3 sm:grid-cols-2">
+            <Field label={t.member.fieldFullName}>
+              <input
+                autoFocus
+                required
+                value={newUser.fullName}
+                onChange={(e) => setNewUser({ ...newUser, fullName: e.target.value })}
+              />
+            </Field>
+            <Field label={t.member.fieldEmail}>
+              <input
+                type="email"
+                required
+                value={newUser.email}
+                onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+              />
+            </Field>
+          </div>
+          <Field label={t.member.fieldPassword}>
+            <div className="flex gap-2">
+              <input
+                className="flex-1"
+                required
+                minLength={MIN_PASSWORD_LENGTH}
+                value={newUser.password}
+                onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+              />
+              <Button type="button" tiny onClick={() => setNewUser({ ...newUser, password: genPassword() })}>
+                {t.member.genPassword}
+              </Button>
+            </div>
+          </Field>
+          <label className="mb-2 flex items-center gap-2 text-[13px]">
+            <input
+              type="checkbox"
+              checked={newUser.admin}
+              onChange={(e) => setNewUser({ ...newUser, admin: e.target.checked })}
+            />
+            {t.member.asAdmin}
+          </label>
+          <div className="text-[12px] text-ink-3">{t.member.addHint}</div>
+          <div className="flex justify-end gap-2 py-3">
+            <Button type="button" tiny onClick={() => setNewUser(null)}>
+              {t.actions.cancel}
+            </Button>
+            <Button variant="primary" tiny loading={busy}>
+              {t.member.createBtn}
+            </Button>
+          </div>
+        </form>
+      ) : (
+        <Button className="mt-3" tiny onClick={() => setNewUser(emptyNewUser())}>
+          <UserPlus className="size-3.5" />
+          {t.member.addBtn}
+        </Button>
+      )}
 
       <div className="relative my-3">
         <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-ink-4" />
@@ -420,6 +574,10 @@ export function MemberManager({ onChanged }: { onChanged: () => void }) {
                       title={lastAdmin ? t.member.lastAdminHint : undefined}
                     >
                       {t.actions.delete}
+                    </Button>
+                    <Button tiny onClick={() => resetPassword(u)} disabled={busy}>
+                      <KeyRound className="size-3.5" />
+                      {t.member.resetBtn}
                     </Button>
                     <div className="flex-1" />
                     <Button tiny onClick={() => toggleOpen(u)}>

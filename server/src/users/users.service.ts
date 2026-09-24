@@ -1,7 +1,11 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '@/prisma/prisma.service';
 import { Role } from '@/common/enums/role.enum';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { CreateUserDto } from './dto/create-user.dto';
+
+const PALETTE = ['#ff6b35', '#0a84ff', '#22c55e', '#7c5cff', '#ff9f0a', '#ec4899', '#06b6d4'];
 
 const SELECT = {
   id: true,
@@ -21,6 +25,34 @@ export class UsersService {
 
   findAll() {
     return this.prisma.user.findMany({ select: SELECT, orderBy: { createdAt: 'asc' } });
+  }
+
+  /**
+   * Chỉ admin tạo tài khoản: người lạ tự đăng ký thì không ai đòi được tiền cơm của họ.
+   */
+  async create(dto: CreateUserDto) {
+    const email = dto.email.trim().toLowerCase();
+    if (await this.prisma.user.findUnique({ where: { email }, select: { id: true } })) {
+      throw new ConflictException('Email này đã có tài khoản');
+    }
+    return this.prisma.user.create({
+      data: {
+        email,
+        fullName: dto.fullName.trim(),
+        password: await bcrypt.hash(dto.password, 10),
+        role: dto.role ?? Role.USER,
+        active: true,
+        color: PALETTE[Math.floor(Math.random() * PALETTE.length)],
+      },
+      select: SELECT,
+    });
+  }
+
+  /** Admin đặt lại mật khẩu khi thành viên quên — không có luồng quên mật khẩu qua email. */
+  async resetPassword(id: string, password: string) {
+    await this.ensure(id);
+    await this.prisma.user.update({ where: { id }, data: { password: await bcrypt.hash(password, 10) } });
+    return { message: 'Đã đặt lại mật khẩu' };
   }
 
   async update(id: string, dto: UpdateUserDto) {

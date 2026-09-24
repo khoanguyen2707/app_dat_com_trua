@@ -3,19 +3,12 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '@/common/decorators/public.decorator';
 import { AuthUser, CurrentUser } from '@/common/decorators/current-user.decorator';
 import { AuthService } from './auth.service';
-import { ChangePasswordDto, LoginDto, RefreshDto, RegisterDto } from './dto/auth.dto';
+import { ChangePasswordDto, LoginDto, RefreshDto } from './dto/auth.dto';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
-
-  @Public()
-  @Post('register')
-  @ApiOperation({ summary: 'Tự đăng ký tài khoản (quyền User)' })
-  register(@Body() dto: RegisterDto) {
-    return this.auth.register(dto);
-  }
 
   @Public()
   @Post('login')

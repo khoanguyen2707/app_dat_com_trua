@@ -3,8 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '@/prisma/prisma.service';
-import { Role } from '@/common/enums/role.enum';
-import { ChangePasswordDto, LoginDto, RegisterDto } from './dto/auth.dto';
+import { ChangePasswordDto, LoginDto } from './dto/auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -29,26 +28,6 @@ export class AuthService {
 
   private publicUser(u: { id: string; email: string; fullName: string; role: string; color: string | null }) {
     return { id: u.id, email: u.email, fullName: u.fullName, role: u.role, color: u.color };
-  }
-
-  async register(dto: RegisterDto) {
-    const exists = await this.prisma.user.findUnique({ where: { email: dto.email.toLowerCase() } });
-    if (exists) {
-      throw new BadRequestException('Email đã được đăng ký');
-    }
-    const hash = await bcrypt.hash(dto.password, 10);
-    const palette = ['#ff6b35', '#0a84ff', '#22c55e', '#7c5cff', '#ff9f0a', '#ec4899', '#14b8a6'];
-    const user = await this.prisma.user.create({
-      data: {
-        email: dto.email.toLowerCase(),
-        password: hash,
-        fullName: dto.fullName.trim(),
-        role: Role.USER,
-        active: true,
-        color: palette[Math.floor(Math.random() * palette.length)],
-      },
-    });
-    return { ...this.sign(user), user: this.publicUser(user) };
   }
 
   async login(dto: LoginDto) {
