@@ -63,18 +63,24 @@ export const t = {
   },
 
   login: {
-    subtitleLogin: "Đăng nhập để đăng ký suất ăn",
-    subtitleRegister: "Tạo tài khoản mới (quyền thành viên)",
-    tabLogin: "Đăng nhập",
-    tabRegister: "Đăng ký",
-    fullName: "Họ tên",
-    fullNamePlaceholder: "Nguyễn Anh Khoa",
+    heroTitle: `Cơm trưa
+văn phòng`,
+    heroLead: "Đặt suất trưa của bạn trước giờ chốt, cả nhóm gom một đơn gửi quán.",
+    steps: [
+      "Admin đăng thực đơn hôm nay",
+      "Bạn chọn món trước giờ chốt",
+      "Cuối tuần chuyển khoản một lần",
+    ],
+    ticketTitle: "Phiếu cơm",
+    ticketNo: (d: string) => d,
     email: "Email",
-    emailPlaceholder: "ban@email.com",
+    emailPlaceholder: "ban@congty.vn",
     password: "Mật khẩu",
-    passwordPlaceholder: "••••••",
+    passwordPlaceholder: "Nhập mật khẩu",
+    showPassword: "Hiện mật khẩu",
+    hidePassword: "Ẩn mật khẩu",
     submitLogin: "Đăng nhập",
-    submitRegister: "Tạo tài khoản",
+    noAccount: "Chưa có tài khoản? Nhờ admin nhóm tạo cho bạn — app không cho tự đăng ký để tiền cơm luôn có người chịu.",
   },
 
   tabs: {
@@ -408,6 +414,24 @@ export const t = {
 
   /** Quản lý thành viên trong Cài đặt (admin) */
   member: {
+    addBtn: "Thêm thành viên",
+    addTitle: "Tạo tài khoản mới",
+    addHint: "Gửi email và mật khẩu này cho thành viên. Họ đổi mật khẩu sau khi đăng nhập.",
+    fieldEmail: "Email đăng nhập",
+    fieldPassword: "Mật khẩu ban đầu",
+    genPassword: "Tạo ngẫu nhiên",
+    asAdmin: "Cấp quyền quản trị",
+    createBtn: "Tạo tài khoản",
+    created: (name: string) => `Đã tạo tài khoản cho ${name}`,
+    copied: "Đã chép thông tin đăng nhập",
+    copyCreds: "Chép thông tin đăng nhập",
+    credsText: (email: string, pw: string) => `Đăng nhập app cơm trưa
+Email: ${email}
+Mật khẩu: ${pw}`,
+    resetBtn: "Đặt lại mật khẩu",
+    confirmResetTitle: "Đặt lại mật khẩu",
+    confirmReset: (name: string) => `Tạo mật khẩu mới cho ${name}? Mật khẩu cũ sẽ không dùng được nữa.`,
+    resetDone: (name: string) => `Đã đặt lại mật khẩu cho ${name}`,
     searchPlaceholder: "Tìm theo tên hoặc email…",
     summary: (total: number) => `${total} thành viên`,
     sumLocked: (n: number) => `${n} đang khoá`,
