@@ -224,9 +224,9 @@ export const t = {
     foodSection: "Món ăn",
     drinkSection: "Đồ uống",
     todayTitle: "Thực đơn hôm nay",
-    catalogTitle: "Các món quán bán",
     notPostedYet:
-      "Quán chưa đăng thực đơn hôm nay. Dưới đây là toàn bộ món để bạn tham khảo.",
+      "Admin chưa đăng thực đơn hôm nay — đăng xong là đặt được ngay, trang tự cập nhật.",
+    waitingMenu: "Đang chờ thực đơn hôm nay",
     onePriceNote: (price: string) =>
       `${price} một suất, chọn bao nhiêu món cũng vậy`,
     drinkPriceNote: "tính tiền riêng theo ly",

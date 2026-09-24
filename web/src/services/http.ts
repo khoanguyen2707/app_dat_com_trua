@@ -16,7 +16,19 @@ export function setTokens(a: string | null, r: string | null) {
   else localStorage.removeItem(STORAGE.refresh);
 }
 
-async function tryRefresh(): Promise<boolean> {
+/**
+ * Nhiều request cùng dính 401 (vd lúc mở lại tab) chỉ được refresh MỘT lần: refresh
+ * token xoay vòng, gọi song song thì lần sau cầm token đã bị thay và đá người dùng ra.
+ */
+let refreshing: Promise<boolean> | null = null;
+function tryRefresh(): Promise<boolean> {
+  refreshing ??= doRefresh().finally(() => {
+    refreshing = null;
+  });
+  return refreshing;
+}
+
+async function doRefresh(): Promise<boolean> {
   try {
     const res = await fetch(BASE + '/auth/refresh', {
       method: 'POST',
@@ -76,7 +88,7 @@ async function doRequest<T>(path: string, options: RequestInit, retry: boolean):
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     const msg = Array.isArray(body.message) ? body.message.map((m: any) => m.message ?? m).join(', ') : body.message;
-    throw new Error(msg || t.errors.status(res.status));
+    throw Object.assign(new Error(msg || t.errors.status(res.status)), { status: res.status });
   }
   if (res.status === 204) return undefined as T;
   return res.json();

@@ -52,24 +52,24 @@ export function TodayMenuPanel({
   const date = today ? grid.dates?.[today] : null;
   const locked = today ? !!grid.lockedDays?.[today] : true;
   const me = grid.members.find((m) => m.userId === meId);
-  const canOrder = !!today && !locked && !!me;
+  const canOrder = !!today && !locked && !!me && !!grid.week.dayMenu?.[today]?.length;
 
-  /** dayMenu của hôm nay; null = admin chưa đăng, khi đó hiện cả danh mục. */
+  /** dayMenu của hôm nay; null = admin chưa đăng -> chưa cho đặt, chỉ báo chờ. */
   const posted = useMemo(() => {
     const ids = today ? grid.week.dayMenu?.[today] : null;
     return ids && ids.length ? new Set(ids) : null;
   }, [grid.week.dayMenu, today]);
 
-  const shown = posted ? dishes.filter((d) => posted.has(d.id)) : dishes;
-  const mains = shown.filter((d) => d.category !== 'DRINK');
-  const drinks = shown.filter((d) => d.category === 'DRINK');
+  const shown = useMemo(() => (posted ? dishes.filter((d) => posted.has(d.id)) : []), [dishes, posted]);
+  const mains = useMemo(() => shown.filter((d) => d.category !== 'DRINK'), [shown]);
+  const drinks = useMemo(() => shown.filter((d) => d.category === 'DRINK'), [shown]);
   const groups = useMemo(() => groupByEmoji(mains), [mains]);
 
   return (
     <>
       <Card>
         <CardHeader
-          title={posted ? t.menu.todayTitle : t.menu.catalogTitle}
+          title={t.menu.todayTitle}
           action={
             <div className="flex items-center gap-2 text-[13px]">
               {dayInfo && (
@@ -102,7 +102,9 @@ export function TodayMenuPanel({
         )}
 
         <CardBody flush>
-          {shown.length === 0 ? (
+          {!posted ? (
+            <EmptyState icon={<Clock />}>{t.menu.waitingMenu}</EmptyState>
+          ) : shown.length === 0 ? (
             <EmptyState icon={<UtensilsCrossed />}>{t.menu.empty}</EmptyState>
           ) : (
             <>

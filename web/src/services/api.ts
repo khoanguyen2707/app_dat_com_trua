@@ -15,7 +15,7 @@ export const api = {
     }),
 
   // weeks / grid
-  activeGrid: () => request<Grid>('/weeks/active'),
+  activeGrid: (silent = false) => request<Grid>('/weeks/active', {}, { silent }),
   weekGrid: (id: string) => request<Grid>(`/weeks/${id}/grid`),
   weeks: () => request<Week[]>('/weeks'),
   createWeek: (label: string, unitPrice: number, startDate?: string) =>
