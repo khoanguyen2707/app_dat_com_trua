@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
-import { Clock, CupSoda, Lock, Pencil, Plus, StickyNote } from 'lucide-react';
+import { Clock, CupSoda, ListOrdered, Lock, Pencil, Plus, StickyNote } from 'lucide-react';
 import type { DayKey, Dish, Grid, GridMember } from '@/types';
 import { DAYS } from '@/constants/config';
 import { t } from '@/constants/strings';
 import { cn } from '@/lib/cn';
 import { vnd } from '@/lib/format';
-import { Button, Card, CardBody, CardHeader, EmptyState } from '@/components/ui';
+import { Button, Card, CardBody, CardHeader, EmptyState, Modal } from '@/components/ui';
 import { DayDetailSheet } from '@/features/grid/DayDetailSheet';
 import { TodayMenuPanel } from '@/features/menu/TodayMenuPanel';
 
@@ -13,8 +13,9 @@ import { TodayMenuPanel } from '@/features/menu/TodayMenuPanel';
  * Màn đặt cơm của một thành viên.
  *
  * Luật nghiệp vụ là chỉ đặt được cho HÔM NAY và trước giờ chốt, nên hôm nay là
- * nhân vật chính: một thẻ lớn đặt/sửa ngay tại chỗ, ngay dưới là thực đơn hôm nay
- * (chạm món để đặt). Admin chưa đăng thực đơn thì chưa cho đặt. Sáu ngày còn lại
+ * nhân vật chính: một thẻ lớn đặt/sửa ngay tại chỗ. Thực đơn hôm nay gom vào một nút
+ * mở popup (chạm món để đặt) để không đẩy phần đặt cơm xuống. Admin chưa đăng thực
+ * đơn thì chưa cho đặt. Sáu ngày còn lại
  * chỉ để xem lại mình đã ăn gì — thành viên không cần bảng 13 dòng của cả nhóm.
  */
 export function MyOrderPanel({
@@ -29,6 +30,9 @@ export function MyOrderPanel({
   reload: () => Promise<void>;
 }) {
   const [editing, setEditing] = useState<DayKey | null>(null);
+  /** Món chạm từ popup thực đơn -> mở phiếu hôm nay với món đó chọn sẵn. */
+  const [preselect, setPreselect] = useState<string | undefined>();
+  const [menuOpen, setMenuOpen] = useState(false);
   const me = grid.members.find((m) => m.userId === meId);
   const dishMap = useMemo(() => new Map(dishes.map((d) => [d.id, d])), [dishes]);
 
@@ -85,7 +89,12 @@ export function MyOrderPanel({
           summary={summary(today)}
           note={me.notes?.[today]}
           hasMenu={!!grid.week.dayMenu?.[today]?.length}
-          onEdit={() => setEditing(today)}
+          menuCount={grid.week.dayMenu?.[today]?.length ?? 0}
+          onEdit={() => {
+            setPreselect(undefined);
+            setEditing(today);
+          }}
+          onOpenMenu={() => setMenuOpen(true)}
         />
       ) : (
         <Card>
@@ -95,8 +104,6 @@ export function MyOrderPanel({
           </CardBody>
         </Card>
       )}
-
-      {today && <TodayMenuPanel grid={grid} dishes={dishes} meId={meId} reload={reload} />}
 
       <Card>
         <CardHeader
@@ -117,7 +124,10 @@ export function MyOrderPanel({
                 <button
                   key={d.key}
                   className="flex w-full items-center gap-3 px-5 py-2.5 text-left hover:bg-subtle disabled:hover:bg-transparent"
-                  onClick={() => setEditing(d.key)}
+                  onClick={() => {
+                    setPreselect(undefined);
+                    setEditing(d.key);
+                  }}
                   disabled={!has}
                 >
                   <div className="w-24 shrink-0">
@@ -159,8 +169,26 @@ export function MyOrderPanel({
         </CardBody>
       </Card>
 
+      {menuOpen && today && (
+        <Modal open wide title={t.menu.todayTitle} onClose={() => setMenuOpen(false)}>
+          <TodayMenuPanel
+            grid={grid}
+            dishes={dishes}
+            meId={meId}
+            reload={reload}
+            onPick={(id) => {
+              setMenuOpen(false);
+              setPreselect(id);
+              setEditing(today);
+            }}
+          />
+        </Modal>
+      )}
+
       {editing && (
         <DayDetailSheet
+          key={`${editing}-${preselect ?? ''}`}
+          preselect={editing === today ? preselect : undefined}
           grid={grid}
           member={me}
           day={editing}
@@ -187,7 +215,9 @@ function TodayCard({
   summary,
   note,
   hasMenu,
+  menuCount,
   onEdit,
+  onOpenMenu,
 }: {
   me: GridMember;
   day: DayKey;
@@ -198,7 +228,9 @@ function TodayCard({
   summary: { food: (Dish | undefined)[]; drinks: number };
   note?: string;
   hasMenu: boolean;
+  menuCount: number;
   onEdit: () => void;
+  onOpenMenu: () => void;
 }) {
   const dayInfo = DAYS.find((d) => d.key === day);
   const ordered = me.days[day] || summary.drinks > 0;
@@ -250,7 +282,7 @@ function TodayCard({
         )}
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 flex flex-wrap gap-2">
         <Button
           variant={ordered || locked ? 'default' : 'primary'}
           onClick={onEdit}
@@ -269,6 +301,10 @@ function TodayCard({
               {t.me.orderCta}
             </>
           )}
+        </Button>
+        <Button onClick={onOpenMenu} disabled={!hasMenu}>
+          <ListOrdered className="size-4" />
+          {hasMenu ? t.me.viewMenu(menuCount) : t.menu.waitingMenu}
         </Button>
       </div>
     </section>
