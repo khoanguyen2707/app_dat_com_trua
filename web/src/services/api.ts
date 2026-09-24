@@ -1,12 +1,10 @@
-import type { AuthResult, DayDetail, DayKey, Dish, DishCategory, DispatchStatus, Grid, MenuApplyResult, MenuDiff, NotificationFeed, PaymentConfig, PaymentStatus, PickupStat, User, Week } from '@/types';
+import type { AuthResult, DayDetail, DayKey, Dish, DishCategory, DispatchStatus, Grid, MenuApplyResult, MenuDiff, NotificationFeed, PaymentConfig, PaymentStatus, PickupStat, Role, User, Week } from '@/types';
 import { request } from './http';
 
 export const api = {
   // auth
   login: (email: string, password: string) =>
     request<AuthResult>('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
-  register: (email: string, password: string, fullName: string) =>
-    request<AuthResult>('/auth/register', { method: 'POST', body: JSON.stringify({ email, password, fullName }) }),
   me: () => request<User>('/auth/me'),
   changePassword: (oldPassword: string, newPassword: string) =>
     request<{ message: string }>('/auth/change-password', {
@@ -84,5 +82,9 @@ export const api = {
   users: () => request<User[]>('/users'),
   updateUser: (id: string, data: Partial<User>) =>
     request<User>(`/users/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  createUser: (data: { email: string; fullName: string; password: string; role?: Role }) =>
+    request<User>('/users', { method: 'POST', body: JSON.stringify(data) }),
+  resetUserPassword: (id: string, password: string) =>
+    request<{ message: string }>(`/users/${id}/reset-password`, { method: 'POST', body: JSON.stringify({ password }) }),
   deleteUser: (id: string) => request<{ message: string }>(`/users/${id}`, { method: 'DELETE' }),
 };

@@ -27,16 +27,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setTokens(r.accessToken, r.refreshToken);
     setUser(r.user);
   };
-  const register = async (email: string, password: string, fullName: string) => {
-    const r = await api.register(email, password, fullName);
-    setTokens(r.accessToken, r.refreshToken);
-    setUser(r.user);
-  };
   const logout = () => {
     setTokens(null, null);
     setUser(null);
   };
   const refreshUser = async () => setUser(await api.me());
 
-  return <Ctx.Provider value={{ user, loading, login, register, logout, refreshUser }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ user, loading, login, logout, refreshUser }}>{children}</Ctx.Provider>;
 }

@@ -130,3 +130,38 @@
     outline-offset: 2px;
   }
 }
+
+/* Phiếu cơm ở màn đăng nhập: đường xé nét đứt + hai khuyết tròn ở mép. */
+.ticket-tear {
+  position: relative;
+  height: 0;
+  margin: 0 1.25rem;
+  border-top: 2px dashed var(--color-line-strong);
+}
+.ticket-tear::before,
+.ticket-tear::after {
+  content: '';
+  position: absolute;
+  top: -11px;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background: var(--color-bg);
+  box-shadow: inset 0 1px 2px rgb(33 30 27 / 0.08);
+}
+.ticket-tear::before {
+  left: calc(-1.25rem - 10px);
+}
+.ticket-tear::after {
+  right: calc(-1.25rem - 10px);
+}
+@keyframes ticket-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) rotate(-1.5deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
