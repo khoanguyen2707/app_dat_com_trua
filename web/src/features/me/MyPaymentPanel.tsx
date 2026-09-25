@@ -59,7 +59,9 @@ export function MyPaymentPanel({
   }
 
   const unpaid = debt.weeks.filter((w) => w.status === 'UNPAID');
-  const selected: DebtWeek[] = pick === 'all' ? unpaid : debt.weeks.filter((w) => w.weekId === pick);
+  // Tuần đang chọn có thể vừa được admin xác nhận (biến khỏi danh sách) → quay về trả tất cả.
+  const picked = pick === 'all' ? null : debt.weeks.find((w) => w.weekId === pick);
+  const selected: DebtWeek[] = picked ? [picked] : unpaid;
   const amount = selected.reduce((a, w) => a + w.total, 0);
   const name = noAccent(debt.fullName);
   const info =
@@ -111,7 +113,7 @@ export function MyPaymentPanel({
             {debt.pendingTotal > 0 && ` · ${t.me.pendingAmount(vnd(debt.pendingTotal))}`}
           </span>
           {unpaid.length > 1 && (
-            <Button tiny variant={pick === 'all' ? 'primary' : 'default'} onClick={() => setPick('all')}>
+            <Button tiny variant={!picked ? 'primary' : 'default'} onClick={() => setPick('all')}>
               {t.me.payAll}
             </Button>
           )}
@@ -154,7 +156,7 @@ export function MyPaymentPanel({
       <Card className="lg:sticky lg:top-[4.5rem]">
         <CardHeader
           title={
-            pick === 'all' ? t.me.payingAll(selected.length) : t.me.payingWeek(weekShort(selected[0]?.weekLabel ?? ''))
+            !picked ? t.me.payingAll(selected.length) : t.me.payingWeek(weekShort(selected[0]?.weekLabel ?? ''))
           }
         />
         <CardBody>
