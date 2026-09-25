@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/prisma/prisma.service';
 import { DAY_KEYS, type DayKey } from '@/common/week-lock';
+import { buildDebtCard, dropFreshWeek } from '@/common/debt-card';
 import { buildDebtReport, groupDebts, type DebtOrderInput, type DebtStatus } from '@/common/debt';
 
 @Injectable()
@@ -44,6 +45,7 @@ export class DebtsService {
       weekId: o.weekId,
       weekLabel: o.week.label,
       weekSort: o.week.startDate ?? o.week.createdAt,
+      weekStart: o.week.startDate,
       unitPrice: o.week.unitPrice,
       userId: o.userId,
       fullName: o.user.fullName,
@@ -67,16 +69,31 @@ export class DebtsService {
   }
 
   /** Báo cáo nhắc nợ cho Power Automate (thứ 2 9h, thứ 6 15h). */
-  async report() {
-    const admins = await this.prisma.user.findMany({
-      where: { role: 'ADMIN', active: true },
-      select: { fullName: true, teamsEmail: true, email: true },
-      orderBy: { createdAt: 'asc' },
+  /**
+   * Báo cáo nhắc nợ cho Power Automate (thứ 2 9h, thứ 6 15h).
+   * Thứ 2 bỏ tuần vừa bắt đầu. `card` = Adaptive Card đăng thẳng lên Teams (đã khai báo @mention);
+   * `html` giữ làm phương án dự phòng.
+   */
+  async report(now: Date = new Date()) {
+    const admins = (
+      await this.prisma.user.findMany({
+        where: { role: 'ADMIN', active: true },
+        select: { fullName: true, teamsEmail: true, email: true },
+        orderBy: { createdAt: 'asc' },
+      })
+    ).map((a) => ({ name: a.fullName, email: a.teamsEmail || a.email || null }));
+    const debtors = dropFreshWeek(await this.all(), now);
+    const report = buildDebtReport(debtors, this.config.get<string>('APP_URL')?.trim() || '', admins);
+    const card = buildDebtCard(debtors, {
+      payUrl: report.payUrl,
+      confirmUrl: report.confirmUrl,
+      admins,
+      now,
+      domains: {
+        internal: this.config.get<string>('TEAMS_INTERNAL_DOMAIN')?.trim() || 'wecare-i.com',
+        guest: this.config.get<string>('TEAMS_GUEST_DOMAIN')?.trim() || 'wecarei.onmicrosoft.com',
+      },
     });
-    return buildDebtReport(
-      await this.all(),
-      this.config.get<string>('APP_URL')?.trim() || '',
-      admins.map((a) => ({ name: a.fullName, email: a.teamsEmail || a.email || null })),
-    );
+    return { ...report, card };
   }
 }
