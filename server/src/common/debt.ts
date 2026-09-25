@@ -8,6 +8,8 @@ export interface DebtOrderInput {
   weekLabel: string;
   /** Mốc sắp xếp tuần: startDate nếu có, không thì createdAt. */
   weekSort: Date;
+  /** Thứ 2 của tuần (00:00 UTC, lịch VN); null với tuần cũ chưa có startDate. */
+  weekStart?: Date | null;
   unitPrice: number;
   userId: string;
   fullName: string;
@@ -22,6 +24,7 @@ export interface DebtOrderInput {
 export interface DebtWeek {
   weekId: string;
   weekLabel: string;
+  weekStart: Date | null;
   unitPrice: number;
   days: Record<DayKey, boolean>;
   servings: number;
@@ -51,6 +54,7 @@ export function toDebtWeek(o: DebtOrderInput): DebtWeek {
   return {
     weekId: o.weekId,
     weekLabel: o.weekLabel,
+    weekStart: o.weekStart ?? null,
     unitPrice: o.unitPrice,
     days: o.days,
     servings,

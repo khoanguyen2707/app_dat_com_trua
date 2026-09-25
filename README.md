@@ -226,6 +226,8 @@ Gom mọi khoản **chưa được admin xác nhận** trên tất cả các tu�
   - **@mention:** trong `html`, tên người nợ và admin có email (`teamsEmail`, trống thì `email`) được thay bằng placeholder `@@M0@@`, `@@M1@@`… `mentions` = `[{ key, name, email, role }]`. Flow lặp `mentions`, lấy token bằng **Get an @mention token for a user** (`email`) rồi `replace(key → token)`; lấy token lỗi thì thay bằng `name`. `htmlPlain` là bản không tag.
   - `payUrl` = `APP_URL/#pay` → mở thẳng tab **Thanh toán** của user (trả từng tuần hoặc tất cả bằng VietQR).
   - `confirmUrl` = `APP_URL/#pay-pending` → admin mở tab Thanh toán, bảng **Công nợ các tuần** lọc sẵn "Chờ xác nhận".
+- **`card`** = Adaptive Card dựng sẵn (tổng nợ, bảng người nợ / tuần / số tiền, nhãn ⚠ quá hạn, mục chờ xác nhận, nút *Thanh toán ngay* / *Admin xác nhận*). @mention khai báo sẵn trong `msteams.entities`: email guest (Gmail…) tự đổi sang UPN `ten_gmail.com#EXT#@<TEAMS_GUEST_DOMAIN>`, email `@<TEAMS_INTERNAL_DOMAIN>` và Object ID giữ nguyên. Flow đăng bằng **Post card in a chat or channel**; `html` giữ làm dự phòng.
+- **Thứ 2** bỏ tuần vừa bắt đầu (mới có một bữa). **Quá hạn** = tuần bắt đầu trước tuần trước mà chưa trả.
 - Đọc chỉ, không ghi gì → gọi thử bao nhiêu lần cũng được.
 
 **Flow Power Automate "Nhắc công nợ cơm trưa":**
@@ -252,6 +254,8 @@ Gom mọi khoản **chưa được admin xác nhận** trên tất cả các tu�
 | `MENU_WEBHOOK_URL` | URL trigger của flow Power Automate nhận thực đơn vừa đăng. Bỏ trống = tắt (vẫn đăng thực đơn bình thường, chỉ không báo Teams) |
 | `MENU_WEBHOOK_TOKEN` | Bí mật gửi kèm header `x-menu-token` để flow chặn request lạ |
 | `APP_URL` | Link app chèn vào tin nhắn Teams (vd `https://com-trua.vercel.app`) |
+| `TEAMS_INTERNAL_DOMAIN` | Tên miền nội bộ dùng thẳng làm id @mention (mặc định `wecare-i.com`) |
+| `TEAMS_GUEST_DOMAIN` | Tenant cho UPN guest `ten_gmail.com#EXT#@…` (mặc định `wecarei.onmicrosoft.com`) |
 
 ---
 
