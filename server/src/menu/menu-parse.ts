@@ -10,6 +10,8 @@
  * Cố ý KHÔNG gộp 2 món khác nhau (Mực rim ≠ Tôm rim); chỉ gợi ý "ngờ ngợ" khi gần giống.
  */
 
+import { clusters, nearest } from './dish-similarity';
+
 export type DishCat = 'MAIN' | 'DRINK';
 
 export interface CatalogDish {
@@ -28,6 +30,8 @@ export interface ParsedItem {
   match: 'existing' | 'new';
   dishId?: string; // có khi match === 'existing'
   maybeSameAs?: { id: string; name: string; score: number }; // new nhưng gần giống món có sẵn -> cảnh báo trùng
+  /** Tối đa 3 món có sẵn gần giống (cùng loại), điểm giảm dần; maybeSameAs = phần tử đầu. */
+  candidates?: { id: string; name: string; score: number }[];
 }
 
 export interface MenuDiff {
@@ -35,6 +39,8 @@ export interface MenuDiff {
   create: ParsedItem[]; // match === 'new'  -> sẽ tạo
   matched: ParsedItem[]; // match === 'existing' -> bán hôm nay
   hidden: CatalogDish[]; // có trong danh mục nhưng KHÔNG có hôm nay -> ẩn khỏi picker
+  /** Nhóm món MỚI trong cùng lần dán gần giống nhau (theo key) — admin phải chọn giữ tên nào. */
+  groups: string[][];
 }
 
 const DRINK_PRICE_MAX = 20000; // < ngưỡng này + không phải món ăn -> coi là đồ uống
@@ -131,34 +137,6 @@ function cleanName(line: string): string {
   return s;
 }
 
-/** Khoảng cách Levenshtein (cho gợi ý "ngờ ngợ"). */
-function levenshtein(a: string, b: string): number {
-  const m = a.length;
-  const n = b.length;
-  if (!m) return n;
-  if (!n) return m;
-  const dp = Array.from({ length: n + 1 }, (_, j) => j);
-  for (let i = 1; i <= m; i++) {
-    let prev = dp[0];
-    dp[0] = i;
-    for (let j = 1; j <= n; j++) {
-      const tmp = dp[j];
-      dp[j] = Math.min(dp[j] + 1, dp[j - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1));
-      prev = tmp;
-    }
-  }
-  return dp[n];
-}
-
-/** Độ giống 0..1 trên khoá khớp. */
-function similarity(a: string, b: string): number {
-  if (!a || !b) return 0;
-  const dist = levenshtein(a, b);
-  return 1 - dist / Math.max(a.length, b.length);
-}
-
-const NEAR_THRESHOLD = 0.82; // >= ngưỡng này coi là "ngờ ngợ có thể trùng"
-
 function guessCategory(key: string, price: number): DishCat {
   if (DRINK_KEYS.some((k) => key.includes(k))) return 'DRINK';
   if (price > 0 && price < DRINK_PRICE_MAX) return 'DRINK';
@@ -195,6 +173,7 @@ export function guessEmoji(name: string, category: DishCat): string {
 export function parseMenuText(text: string, catalog: CatalogDish[]): MenuDiff {
   const byKey = new Map<string, CatalogDish>();
   for (const d of catalog) byKey.set(matchKey(d.name), d);
+  const pool = catalog.map((d) => ({ id: d.id, name: d.name, key: matchKey(d.name), category: d.category }));
 
   const items: ParsedItem[] = [];
   const seen = new Set<string>(); // khử trùng lặp trong chính text
@@ -223,23 +202,34 @@ export function parseMenuText(text: string, catalog: CatalogDish[]): MenuDiff {
       });
       continue;
     }
-    // món mới: đoán category + tìm món gần giống để cảnh báo trùng
+    // món mới: đoán category + tìm tối đa 3 món có sẵn gần giống để cảnh báo trùng
     const category = guessCategory(key, price);
-    let best: { id: string; name: string; score: number } | undefined;
-    for (const d of catalog) {
-      const score = similarity(key, matchKey(d.name));
-      if (score >= NEAR_THRESHOLD && (!best || score > best.score)) best = { id: d.id, name: d.name, score };
-    }
-    items.push({ raw, name, key, price: category === 'DRINK' ? price : 0, category, match: 'new', maybeSameAs: best });
+    const candidates = nearest(key, category, pool).map(({ id, name, score }) => ({ id, name, score }));
+    items.push({
+      raw,
+      name,
+      key,
+      price: category === 'DRINK' ? price : 0,
+      category,
+      match: 'new',
+      maybeSameAs: candidates[0],
+      candidates,
+    });
   }
+
+  const created = items.filter((i) => i.match === 'new');
+  const groups = clusters(created.map((i) => ({ id: i.key, key: i.key, category: i.category }))).map((g) =>
+    g.map((x) => x.id),
+  );
 
   const todayKeys = new Set(items.map((i) => i.key));
   const hidden = catalog.filter((d) => !todayKeys.has(matchKey(d.name)));
 
   return {
     items,
-    create: items.filter((i) => i.match === 'new'),
+    create: created,
     matched: items.filter((i) => i.match === 'existing'),
     hidden,
+    groups,
   };
 }

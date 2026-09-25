@@ -1,4 +1,4 @@
-import type { AuthResult, DayDetail, DayKey, Debtor, Dish, DishCategory, DispatchStatus, Grid, MenuApplyResult, MenuDiff, NotificationFeed, PaymentConfig, PaymentStatus, PickupStat, Role, User, Week } from '@/types';
+import type { AuthResult, DayDetail, DayKey, Debtor, Dish, DishDuplicateGroup, DishCategory, DispatchStatus, Grid, MenuApplyResult, MenuDiff, NotificationFeed, PaymentConfig, PaymentStatus, PickupStat, Role, User, Week } from '@/types';
 import { request } from './http';
 
 export const api = {
@@ -63,6 +63,15 @@ export const api = {
   updateDish: (id: string, d: Partial<Dish>) =>
     request<Dish>(`/dishes/${id}`, { method: 'PATCH', body: JSON.stringify(d) }),
   deleteDish: (id: string) => request<{ message: string }>(`/dishes/${id}`, { method: 'DELETE' }),
+  // dọn trùng danh mục
+  dishDuplicates: () => request<DishDuplicateGroup[]>('/dishes/duplicates'),
+  mergeDishes: (keepId: string, mergeIds: string[], name?: string) =>
+    request<{ merged: number; movedItems: number; weeksTouched: number }>('/dishes/merge', {
+      method: 'POST',
+      body: JSON.stringify({ keepId, mergeIds, name }),
+    }),
+  markDishesDistinct: (ids: string[]) =>
+    request<{ ok: boolean }>('/dishes/distinct', { method: 'POST', body: JSON.stringify({ ids }) }),
 
   // thực đơn theo ngày (admin dán text → phân tích → áp dụng)
   parseMenu: (text: string) => request<MenuDiff>('/menu/parse', { method: 'POST', body: JSON.stringify({ text }) }),
