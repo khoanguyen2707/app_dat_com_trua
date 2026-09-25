@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Pencil, Plus, Search, Send, Trash2, UtensilsCrossed } from 'lucide-react';
+import { CopyCheck, Pencil, Plus, Search, Send, Trash2, UtensilsCrossed } from 'lucide-react';
 import { api } from '@/services/api';
 import type { Dish, Grid } from '@/types';
 import { t } from '@/constants/strings';
@@ -10,6 +10,7 @@ import { useDisclosure } from '@/hooks/useDisclosure';
 import { Button, Card, CardBody, CardHeader, confirmDialog, EmptyState, IconButton, toast } from '@/components/ui';
 import { DishModal } from './DishModal';
 import { DayMenuModal } from './DayMenuModal';
+import { DuplicatesModal } from './DuplicatesModal';
 
 export function MenuPanel({
   dishes,
@@ -28,6 +29,7 @@ export function MenuPanel({
   const [q, setQ] = useState('');
   const create = useDisclosure();
   const postMenu = useDisclosure();
+  const dedupe = useDisclosure();
   const modalOpen = create.open || editing !== null;
 
   const closeModal = () => {
@@ -43,9 +45,14 @@ export function MenuPanel({
       danger: true,
     });
     if (!ok) return;
-    await api.deleteDish(d.id);
-    await reload();
-    toast(t.menu.deleted, '🗑️');
+    try {
+      await api.deleteDish(d.id);
+      await reload();
+      toast(t.menu.deleted, '🗑️');
+    } catch (e: any) {
+      // Món đã có người đặt: server chặn xoá (mất đơn) → hướng admin sang Gộp.
+      toast(e.message || t.errors.short, '⚠️');
+    }
   };
 
   /** Lọc theo tên, bỏ dấu cả hai vế để gõ "com ga" vẫn ra "Cơm gà". */
@@ -130,6 +137,10 @@ export function MenuPanel({
                   <Send className="size-3.5" />
                   {t.menu.post.btn}
                 </Button>
+                <Button tiny onClick={dedupe.onOpen}>
+                  <CopyCheck className="size-3.5" />
+                  {t.menu.dedupe.openBtn}
+                </Button>
                 <Button tiny onClick={create.onOpen}>
                   <Plus className="size-3.5" />
                   {t.menu.addBtn}
@@ -171,6 +182,14 @@ export function MenuPanel({
           grid={grid}
           onClose={postMenu.onClose}
           onApplied={async () => {
+            await Promise.all([reload(), reloadGrid()]);
+          }}
+        />
+      )}
+      {dedupe.open && (
+        <DuplicatesModal
+          onClose={dedupe.onClose}
+          onChanged={async () => {
             await Promise.all([reload(), reloadGrid()]);
           }}
         />

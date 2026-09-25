@@ -18,19 +18,30 @@ const todayKey = (): DayKey => (['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'
  * khi chọn xong.
  */
 type Decision = 'undecided' | 'create' | 'reuse' | 'skip';
-type CreateState = { decision: Decision; category: DishCategory; price: number };
+type CreateState = { decision: Decision; category: DishCategory; price: number; reuseId?: string };
+/** Nhóm món mới gần giống nhau trong cùng lần dán: chưa chọn / khác nhau / key của tên giữ lại. */
+type GroupChoice = 'undecided' | 'distinct' | string;
 const catIcon = (c: DishCategory) => (c === 'DRINK' ? '🥤' : '🍚');
 
 /**
  * Admin dán "thực đơn hôm nay" → phân tích (tất định) → xem trước diff
  * (tạo mới / đã có / ẩn) → áp dụng cho 1 ngày. Món không có hôm nay bị ẩn khỏi picker.
  */
-export function DayMenuModal({ grid, onClose, onApplied }: { grid: Grid; onClose: () => void; onApplied: () => Promise<void> }) {
+export function DayMenuModal({
+  grid,
+  onClose,
+  onApplied,
+}: {
+  grid: Grid;
+  onClose: () => void;
+  onApplied: () => Promise<void>;
+}) {
   const [day, setDay] = useState<DayKey>(todayKey());
   const [text, setText] = useState('');
   const [diff, setDiff] = useState<MenuDiff | null>(null);
   const [createState, setCreateState] = useState<Record<string, CreateState>>({});
   const [matched, setMatched] = useState<Record<string, boolean>>({});
+  const [groupChoice, setGroupChoice] = useState<GroupChoice[]>([]);
   const [parsing, setParsing] = useState(false);
   const [applying, setApplying] = useState(false);
   const [notify, setNotify] = useState(true);
@@ -50,7 +61,7 @@ export function DayMenuModal({ grid, onClose, onApplied }: { grid: Grid; onClose
             i.key,
             {
               // nghi trùng -> chưa quyết; món mới rõ ràng -> tạo luôn như cũ
-              decision: i.maybeSameAs ? ('undecided' as Decision) : ('create' as Decision),
+              decision: i.candidates?.length || i.maybeSameAs ? ('undecided' as Decision) : ('create' as Decision),
               category: i.category,
               price: i.price > 0 ? i.price : i.category === 'MAIN' ? grid.week.unitPrice : 0,
             },
@@ -58,6 +69,7 @@ export function DayMenuModal({ grid, onClose, onApplied }: { grid: Grid; onClose
         ),
       );
       setMatched(Object.fromEntries(d.matched.map((i) => [i.dishId as string, true])));
+      setGroupChoice((d.groups ?? []).map(() => 'undecided'));
     } catch (e: any) {
       toast(e.message || t.errors.short, '⚠️');
     } finally {
@@ -69,10 +81,28 @@ export function DayMenuModal({ grid, onClose, onApplied }: { grid: Grid; onClose
   /** Món nghi trùng mà admin chọn "dùng món có sẵn" → bán món cũ, không tạo thêm. */
   const reuseIds = diff
     ? diff.create
-        .filter((i) => createState[i.key]?.decision === 'reuse' && i.maybeSameAs)
-        .map((i) => i.maybeSameAs!.id)
+        .filter((i) => createState[i.key]?.decision === 'reuse' && createState[i.key]?.reuseId)
+        .map((i) => createState[i.key].reuseId!)
     : [];
-  const undecided = diff ? diff.create.filter((i) => createState[i.key]?.decision === 'undecided').length : 0;
+  const undecidedGroups = groupChoice.filter((g) => g === 'undecided').length;
+  const undecided =
+    (diff ? diff.create.filter((i) => createState[i.key]?.decision === 'undecided').length : 0) + undecidedGroups;
+
+  /** Chọn giữ 1 tên trong nhóm gần giống → các tên còn lại bỏ qua; "khác nhau" → trả các món về như cũ. */
+  const chooseGroup = (gi: number, choice: GroupChoice) => {
+    const keys = diff?.groups?.[gi] ?? [];
+    setGroupChoice((g) => g.map((c, i) => (i === gi ? choice : c)));
+    setCreateState((m) => {
+      const next = { ...m };
+      for (const k of keys) {
+        const item = diff!.create.find((i) => i.key === k);
+        const fresh: Decision = item?.candidates?.length ? 'undecided' : 'create';
+        if (choice === 'distinct' || choice === k) next[k] = { ...next[k], decision: fresh, reuseId: undefined };
+        else next[k] = { ...next[k], decision: 'skip', reuseId: undefined };
+      }
+      return next;
+    });
+  };
   const sellCount = diff
     ? createCount + reuseIds.length + diff.matched.filter((i) => matched[i.dishId as string]).length
     : 0;
@@ -81,7 +111,11 @@ export function DayMenuModal({ grid, onClose, onApplied }: { grid: Grid; onClose
     if (!diff) return;
     const create = diff.create
       .filter((i) => createState[i.key]?.decision === 'create')
-      .map((i) => ({ name: i.name, category: createState[i.key].category, price: createState[i.key].price || undefined }));
+      .map((i) => ({
+        name: i.name,
+        category: createState[i.key].category,
+        price: createState[i.key].price || undefined,
+      }));
     // gộp món bán hôm nay: món cũ đã khớp + món cũ được chọn thay cho bản nghi trùng
     const dishIds = [
       ...diff.matched.filter((i) => matched[i.dishId as string]).map((i) => i.dishId as string),
@@ -154,6 +188,41 @@ export function DayMenuModal({ grid, onClose, onApplied }: { grid: Grid; onClose
             </div>
           )}
 
+          {(diff.groups ?? []).map((keys, gi) => {
+            const names = keys.map((k) => diff.create.find((i) => i.key === k)).filter(Boolean);
+            const choice = groupChoice[gi];
+            return (
+              <div
+                key={keys.join('|')}
+                className={cn(
+                  'mt-3 rounded-ui border px-3 py-2',
+                  choice === 'undecided' ? 'border-warn-line bg-warn-soft' : 'border-line',
+                )}
+              >
+                <div className="mb-1.5 text-[13px] font-medium">{t.menu.post.nearGroup}</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {names.map((i) => (
+                    <Button
+                      key={i!.key}
+                      tiny
+                      variant={choice === i!.key ? 'primary' : 'default'}
+                      onClick={() => chooseGroup(gi, i!.key)}
+                    >
+                      {t.menu.post.keepName(i!.name)}
+                    </Button>
+                  ))}
+                  <Button
+                    tiny
+                    variant={choice === 'distinct' ? 'primary' : 'default'}
+                    onClick={() => chooseGroup(gi, 'distinct')}
+                  >
+                    {t.menu.post.allDistinct}
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+
           {diff.create.length > 0 && (
             <div className="mt-4">
               <div className="mb-1 text-[13px] font-semibold">{t.menu.post.groupCreate(diff.create.length)}</div>
@@ -175,24 +244,27 @@ export function DayMenuModal({ grid, onClose, onApplied }: { grid: Grid; onClose
                   >
                     <div className="flex min-w-40 flex-1 flex-col">
                       <b className="text-[13px]">{i.name}</b>
-                      {i.maybeSameAs && (
-                        <span className="text-[12px] text-warn">
-                          {t.menu.post.nearWarn(i.maybeSameAs.name, Math.round(i.maybeSameAs.score * 100))}
+                      {(i.candidates ?? (i.maybeSameAs ? [i.maybeSameAs] : [])).map((c) => (
+                        <span key={c.id} className="text-[12px] text-warn">
+                          {t.menu.post.nearWarn(c.name, Math.round(c.score * 100))}
                         </span>
-                      )}
+                      ))}
                     </div>
 
                     {/* Nghi trùng: bắt chọn rõ ràng. Không có mặc định nào an toàn ở đây —
                         tạo bừa thì danh mục rác, gộp bừa thì hôm nay ăn nhầm món. */}
-                    {i.maybeSameAs ? (
+                    {i.candidates?.length || i.maybeSameAs ? (
                       <div className="flex shrink-0 flex-wrap gap-1.5">
-                        <Button
-                          tiny
-                          variant={s.decision === 'reuse' ? 'primary' : 'default'}
-                          onClick={() => patchCreate(i.key, { decision: 'reuse' })}
-                        >
-                          {t.menu.post.useExisting(i.maybeSameAs.name)}
-                        </Button>
+                        {(i.candidates ?? [i.maybeSameAs!]).map((c) => (
+                          <Button
+                            key={c.id}
+                            tiny
+                            variant={s.decision === 'reuse' && s.reuseId === c.id ? 'primary' : 'default'}
+                            onClick={() => patchCreate(i.key, { decision: 'reuse', reuseId: c.id })}
+                          >
+                            {t.menu.post.useExisting(c.name)}
+                          </Button>
+                        ))}
                         <Button
                           tiny
                           variant={s.decision === 'create' ? 'primary' : 'default'}
@@ -279,7 +351,10 @@ export function DayMenuModal({ grid, onClose, onApplied }: { grid: Grid; onClose
               <div className="mb-2 text-[12px] text-ink-3">{t.menu.post.groupHiddenHint}</div>
               <div className="flex flex-wrap gap-1.5">
                 {diff.hidden.map((d) => (
-                  <span key={d.id} className="rounded-ui border border-line bg-subtle px-2 py-1 text-[13px] text-ink-4 line-through">
+                  <span
+                    key={d.id}
+                    className="rounded-ui border border-line bg-subtle px-2 py-1 text-[13px] text-ink-4 line-through"
+                  >
                     {catIcon(d.category)} {d.name}
                   </span>
                 ))}

@@ -3,7 +3,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { Role } from '@/common/enums/role.enum';
 import { DishesService } from './dishes.service';
-import { CreateDishDto, UpdateDishDto } from './dto/dish.dto';
+import { CreateDishDto, MarkDistinctDto, MergeDishesDto, UpdateDishDto } from './dto/dish.dto';
 
 @ApiTags('dishes')
 @ApiBearerAuth('JWT-auth')
@@ -15,6 +15,27 @@ export class DishesController {
   @ApiOperation({ summary: 'Xem thực đơn' })
   findAll() {
     return this.dishes.findAll();
+  }
+
+  @Roles(Role.ADMIN)
+  @Get('duplicates')
+  @ApiOperation({ summary: 'Admin: cụm món nghi trùng (cùng loại, tên gần giống) kèm số lượt đặt' })
+  duplicates() {
+    return this.dishes.duplicates();
+  }
+
+  @Roles(Role.ADMIN)
+  @Post('merge')
+  @ApiOperation({ summary: 'Admin: gộp món trùng vào món giữ lại (chuyển suất đặt + thực đơn, không mất đơn)' })
+  merge(@Body() dto: MergeDishesDto) {
+    return this.dishes.merge(dto);
+  }
+
+  @Roles(Role.ADMIN)
+  @Post('distinct')
+  @ApiOperation({ summary: 'Admin: xác nhận các món là khác nhau → không báo trùng lại' })
+  markDistinct(@Body() dto: MarkDistinctDto) {
+    return this.dishes.markDistinct(dto);
   }
 
   @Roles(Role.ADMIN)
@@ -33,7 +54,7 @@ export class DishesController {
 
   @Roles(Role.ADMIN)
   @Delete(':id')
-  @ApiOperation({ summary: 'Admin: xoá món' })
+  @ApiOperation({ summary: 'Admin: xoá món (chặn nếu đã có người đặt — dùng gộp)' })
   remove(@Param('id') id: string) {
     return this.dishes.remove(id);
   }

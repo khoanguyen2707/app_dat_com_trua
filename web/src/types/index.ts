@@ -104,6 +104,8 @@ export interface MenuParsedItem {
   match: 'existing' | 'new';
   dishId?: string;
   maybeSameAs?: { id: string; name: string; score: number } | null;
+  /** Tối đa 3 món có sẵn gần giống (cùng loại). */
+  candidates?: { id: string; name: string; score: number }[];
 }
 
 /** Kết quả so text thực đơn với danh mục: tạo mới / đã có / ẩn hôm nay. */
@@ -112,6 +114,14 @@ export interface MenuDiff {
   create: MenuParsedItem[];
   matched: MenuParsedItem[];
   hidden: { id: string; name: string; category: DishCategory; price: number }[];
+  /** Nhóm món mới gần giống nhau trong cùng lần dán (theo key). */
+  groups?: string[][];
+}
+
+/** Một cụm món nghi trùng trong danh mục. */
+export interface DishDuplicateGroup {
+  category: DishCategory;
+  dishes: (Dish & { orderCount: number; lastOrderedAt: string | null })[];
 }
 
 /** Trạng thái bắn webhook Power Automate: đã gửi / bỏ qua (tắt hoặc chưa cấu hình) / lỗi. */

@@ -218,6 +218,23 @@ văn phòng`,
   },
 
   menu: {
+    dedupe: {
+      openBtn: "Kiểm tra trùng",
+      title: "Món trùng trong danh mục",
+      intro:
+        "Các cụm món cùng loại có tên gần giống nhau. Chọn tên đúng để giữ rồi Gộp — mọi suất đã đặt và thực đơn các tuần được chuyển sang món giữ lại, không mất đơn nào. Nếu đó là các món khác nhau thì bấm \"Là món khác nhau\" để không bị báo lại.",
+      empty: "Danh mục không còn món nào nghi trùng. 🎉",
+      orders: (n: number) => (n ? `${n} lượt đặt` : "chưa ai đặt"),
+      keep: "Giữ",
+      renameLabel: "Tên giữ lại",
+      mergeBtn: (n: number) => `Gộp ${n} món vào`,
+      distinctBtn: "Là món khác nhau",
+      confirmTitle: "Gộp món?",
+      confirmBody: (names: string, keep: string, orders: number) =>
+        `${names} sẽ được gộp vào "${keep}". ${orders} lượt đặt sẽ chuyển sang món này. Không hoàn tác được.`,
+      merged: (n: number, moved: number) => `Đã gộp ${n} món · chuyển ${moved} lượt đặt`,
+      markedDistinct: "Đã ghi nhận là các món khác nhau",
+    },
     title: "Thực đơn",
     addBtn: "Thêm món",
     emptyIcon: "🍽️",
@@ -278,11 +295,15 @@ văn phòng`,
       skipItem: "Bỏ qua",
       willCreate: "Sẽ tạo",
       undecided: (n: number) =>
-        `Còn ${n} món nghi trùng chưa chọn. Chọn xong mới áp dụng được — tạo nhầm là danh mục có thêm món rác nằm lại mãi.`,
+        `Còn ${n} mục nghi trùng chưa chọn. Chọn xong mới áp dụng được — tạo nhầm là danh mục có thêm món rác nằm lại mãi.`,
       groupHiddenHint:
         "Món trong danh mục nhưng không có hôm nay — sẽ bị ẩn khỏi picker ngày này (không xoá).",
       nearWarn: (name: string, pct: number) =>
         `Gần giống "${name}" (${pct}%) — kiểm tra kẻo trùng`,
+      nearGroup: "Các món này gần giống nhau — giữ tên nào?",
+      keepName: (name: string) => `Giữ "${name}"`,
+      allDistinct: "Là các món khác nhau",
+      undecidedGroups: (n: number) => `Còn ${n} nhóm món gần giống nhau chưa chọn.`,
       catMain: "Ăn",
       catDrink: "Uống",
       applyBtn: "Áp dụng",

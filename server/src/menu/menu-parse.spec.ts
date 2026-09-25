@@ -82,3 +82,25 @@ describe('parseMenuText — khử trùng lặp trong chính text dán vào', () 
     expect(d.items).toHaveLength(1);
   });
 });
+
+describe('trùng gần đúng', () => {
+  it('gom món mới gần giống nhau trong cùng lần dán thành một nhóm', () => {
+    const d = parse('Canh chua cá lóc\nCang chua ca loc\nRau muống xào');
+    expect(d.groups).toHaveLength(1);
+    expect(d.groups[0]).toHaveLength(2);
+  });
+
+  it('gợi ý tối đa 3 món có sẵn cùng loại', () => {
+    const d = parseMenuText('Ga kho sa ot', [
+      dish('Gà kho sả'),
+      dish('Gà kho sả ớt cay'),
+      dish('Gà kho xả'),
+      dish('Gà kho sã'),
+      dish('Ga kho sa', 'DRINK'),
+    ]);
+    const item = d.create[0];
+    expect(item.candidates!.length).toBeLessThanOrEqual(3);
+    expect(item.candidates!.every((c) => !c.id.includes('DRINK'))).toBe(true);
+    expect(item.maybeSameAs).toEqual(item.candidates![0]);
+  });
+});

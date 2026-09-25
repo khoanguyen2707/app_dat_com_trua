@@ -117,8 +117,22 @@ model Dish {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   orderItems  OrderItem[]
+  distinctA   DishDistinctPair[] @relation("DistinctA")
+  distinctB   DishDistinctPair[] @relation("DistinctB")
 
   @@map("dishes")
+}
+
+/// Cặp món admin đã xác nhận là KHÁC NHAU dù tên gần giống → không báo trùng lại. Luôn lưu aId < bId.
+model DishDistinctPair {
+  aId       String
+  bId       String
+  createdAt DateTime @default(now())
+  a         Dish     @relation("DistinctA", fields: [aId], references: [id], onDelete: Cascade)
+  b         Dish     @relation("DistinctB", fields: [bId], references: [id], onDelete: Cascade)
+
+  @@id([aId, bId])
+  @@map("dish_distinct_pairs")
 }
 
 /// Món/đồ uống cụ thể 1 user chọn cho 1 ngày trong tuần (mix nhiều món; nước có số lượng).
