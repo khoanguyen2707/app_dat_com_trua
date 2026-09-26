@@ -143,7 +143,7 @@ export function buildDebtCard(
       items: [
         row(
           [
-            [cell('🍱 CÔNG NỢ CƠM TRƯA', { weight: 'Bolder', size: 'Medium' })],
+            [cell('💰 CÔNG NỢ CƠM TRƯA', { weight: 'Bolder', size: 'Medium' })],
             [cell(dateLabel, { isSubtle: true, horizontalAlignment: 'Right' })],
           ].map((items, c) => [items, c === 0 ? 'stretch' : 'auto'] as [unknown[], string]),
         ),
