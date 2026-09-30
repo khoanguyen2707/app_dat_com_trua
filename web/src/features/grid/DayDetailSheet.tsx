@@ -3,7 +3,7 @@ import { api } from '@/services/api';
 import type { DayKey, Dish, Grid, GridMember } from '@/types';
 import { DAYS } from '@/constants/config';
 import { t } from '@/constants/strings';
-import { Check, Lock, Minus, Plus } from 'lucide-react';
+import { Check, Lock, Minus, Plus, Star } from 'lucide-react';
 
 /** Khớp với MaxLength của DTO phía server. */
 const NOTE_MAX = 200;
@@ -11,6 +11,8 @@ import { cn } from '@/lib/cn';
 import { vnd } from '@/lib/format';
 import { groupByEmoji } from '@/lib/dishGroup';
 import { Avatar, Button, IconButton, toast } from '@/components/ui';
+import { menuOfDay } from '@/lib/menu';
+import { invalidateMyTopDishes, useMyTopDishes } from '@/hooks/useMyTopDishes';
 import { DetailShell } from './DetailShell';
 
 export function DayDetailSheet({
@@ -41,12 +43,14 @@ export function DayDetailSheet({
   onSaved: () => Promise<void>;
 }) {
   // Thành viên chỉ đặt được ngày admin đã đăng thực đơn (server cũng chặn y vậy).
-  const hasMenu = !!grid.week.dayMenu?.[day]?.length;
+  const dayMenuIds = menuOfDay(grid, day);
+  const hasMenu = dayMenuIds.length > 0;
   const editable = isAdmin || (member.userId === meId && !locked && hasMenu);
   const dayInfo = DAYS.find((d) => d.key === day);
   const date = grid.dates?.[day];
 
   const dishMap = useMemo(() => new Map(dishes.map((d) => [d.id, d])), [dishes]);
+  const topCounts = useMyTopDishes();
   const priceOf = (id: string) => dishMap.get(id)?.price ?? 0;
 
   const current = member.items?.[day];
@@ -70,9 +74,8 @@ export function DayDetailSheet({
   // Lọc theo thực đơn ngày: ngày nào admin đã đăng menu thì chỉ hiện món đó
   // (vẫn giữ món đang được chọn để user còn thấy & bỏ ra được).
   const allowedSet = useMemo(() => {
-    const list = grid.week.dayMenu?.[day];
-    return list && list.length ? new Set(list) : null; // null = không giới hạn
-  }, [grid.week.dayMenu, day]);
+    return dayMenuIds.length ? new Set(dayMenuIds) : null; // null = không giới hạn
+  }, [dayMenuIds]);
   const mains = useMemo(
     () => dishes.filter((d) => d.category === 'MAIN' && (!allowedSet || allowedSet.has(d.id) || food.includes(d.id))),
     [dishes, allowedSet, food],
@@ -81,6 +84,17 @@ export function DayDetailSheet({
     () => dishes.filter((d) => d.category === 'DRINK' && (!allowedSet || allowedSet.has(d.id) || (qty[d.id] ?? 0) > 0)),
     [dishes, allowedSet, qty],
   );
+
+  /** Món chính hôm nay còn bán, xếp theo số lần tôi đã đặt; món ghim luôn đứng trước. */
+  const suggested = useMemo(() => {
+    const scored = mains
+      .map((d) => ({ d, score: (topCounts.get(d.id) ?? 0) + (d.pinned ? 0.5 : 0) }))
+      .filter((x) => x.score > 0)
+      .sort((a, b) => b.score - a.score || a.d.name.localeCompare(b.d.name, 'vi'));
+    return scored.slice(0, 4).map((x) => x.d);
+    // topCounts là Map dựng lại mỗi render nên phụ thuộc theo nội dung, không theo tham chiếu.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mains, [...topCounts].join()]);
 
   const chosenDrinks = Object.entries(qty).filter(([, n]) => n > 0);
   /** Quy tắc: đặt cơm thì bắt buộc chọn ít nhất 1 món → chặn Lưu nếu thiếu. */
@@ -104,6 +118,8 @@ export function DayDetailSheet({
 
   const save = async () => {
     if (needFood) return;
+    // Vừa đặt xong thì số liệu "hay đặt" đã cũ — bỏ cache để lần mở sau lấy lại.
+    invalidateMyTopDishes();
     setSaving(true);
     try {
       const detail = {
@@ -199,6 +215,35 @@ export function DayDetailSheet({
                 {needFood && (
                   <div className="mb-2 rounded-ui border border-warn-line bg-warn-soft px-3 py-2 text-[13px] text-warn">
                     {t.grid.detail.needFood}
+                  </div>
+                )}
+                {/* Lối tắt "hay đặt": món chính mình gọi nhiều nhất 90 ngày qua mà hôm nay
+                    còn bán. Chỉ hiện khi có ít nhất 2 gợi ý — một cái thì không đáng
+                    một hàng riêng, người ta tìm trong danh sách dưới cũng ra. */}
+                {suggested.length >= 2 && (
+                  <div className="mb-3 flex items-start gap-2">
+                    <span
+                      className="grid size-7 shrink-0 place-items-center rounded-ui border border-brand-line bg-brand-soft text-brand"
+                      title="Món bạn hay đặt"
+                    >
+                      <Star className="size-3.5" />
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {suggested.map((d) => (
+                        <button
+                          key={d.id}
+                          className={cn(
+                            'rounded-ui border px-2 py-1 text-[13px] transition-colors',
+                            food.includes(d.id)
+                              ? 'border-brand bg-brand-soft text-brand'
+                              : 'border-brand-line bg-surface hover:bg-brand-soft',
+                          )}
+                          onClick={() => toggleFood(d.id)}
+                        >
+                          {d.emoji} {d.name}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
                 {groupByEmoji(mains).map((g) => (

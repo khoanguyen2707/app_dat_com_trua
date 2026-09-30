@@ -4,6 +4,7 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { DAY_KEYS, type DayKey } from '@/common/week-lock';
 import { buildDebtCard, dropFreshWeek } from '@/common/debt-card';
 import { buildDebtReport, groupDebts, type DebtOrderInput, type DebtStatus } from '@/common/debt';
+import { evaluateGate, outstandingBeforeCurrentWeek, type DebtGate } from '@/common/debt-gate';
 
 @Injectable()
 export class DebtsService {
@@ -66,6 +67,34 @@ export class DebtsService {
   async mine(userId: string) {
     const [me] = groupDebts(await this.loadOrders(userId));
     return me ?? { userId, fullName: '', weeks: [], total: 0, pendingTotal: 0 };
+  }
+
+  /** Như `mine` nhưng kèm trạng thái khoá đặt cơm — payload cho màn hình của user. */
+  async mineWithGate(userId: string) {
+    const me = await this.mine(userId);
+    const config = await this.prisma.paymentConfig.findUnique({
+      where: { id: 'default' },
+      select: { debtLimit: true },
+    });
+    const limit = config?.debtLimit ?? 0;
+    const gate = limit > 0 ? evaluateGate(outstandingBeforeCurrentWeek(me), limit) : evaluateGate(0, 0);
+    return { ...me, ...gate };
+  }
+
+  /**
+   * Trạng thái khoá đặt cơm vì nợ của một user.
+   *
+   * Ngưỡng đọc từ PaymentConfig; chưa có bản ghi cấu hình hoặc ngưỡng <= 0 thì rule tắt
+   * và không ai bị khoá — mặc định an toàn, cấu hình hỏng không chặn người dùng đặt cơm.
+   */
+  async gate(userId: string): Promise<DebtGate> {
+    const config = await this.prisma.paymentConfig.findUnique({
+      where: { id: 'default' },
+      select: { debtLimit: true },
+    });
+    const limit = config?.debtLimit ?? 0;
+    if (limit <= 0) return evaluateGate(0, 0);
+    return evaluateGate(outstandingBeforeCurrentWeek(await this.mine(userId)), limit);
   }
 
   /** Báo cáo nhắc nợ cho Power Automate (thứ 2 9h, thứ 6 15h). */

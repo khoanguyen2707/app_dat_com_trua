@@ -37,9 +37,13 @@ export class DebtsController {
 
   @ApiBearerAuth('JWT-auth')
   @Get('me')
-  @ApiOperation({ summary: 'Các tuần tôi còn nợ (chưa được xác nhận), kèm chi tiết' })
+  @ApiOperation({
+    summary:
+      'Các tuần tôi còn nợ (chưa được xác nhận), kèm chi tiết và trạng thái khoá đặt cơm ' +
+      '(outstanding / debtLimit / locked).',
+  })
   mine(@CurrentUser() user: AuthUser) {
-    return this.debts.mine(user.id);
+    return this.debts.mineWithGate(user.id);
   }
 
   @ApiBearerAuth('JWT-auth')

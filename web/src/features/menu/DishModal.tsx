@@ -12,13 +12,14 @@ export function DishModal({ dish, onClose, onSaved }: { dish: Dish | null; onClo
   const [emoji, setEmoji] = useState(dish?.emoji ?? DISH_EMOJIS[0]);
   const [price, setPrice] = useState(dish?.price ?? DEFAULT_DISH_PRICE);
   const [category, setCategory] = useState<DishCategory>(dish?.category ?? 'MAIN');
+  const [pinned, setPinned] = useState(dish?.pinned ?? false);
   const [busy, setBusy] = useState(false);
 
   const save = async () => {
     if (!name.trim()) return toast(t.menu.nameRequired, '✏️');
     setBusy(true);
     try {
-      const payload = { name: name.trim(), description: desc.trim(), emoji, price: Number(price), category };
+      const payload = { name: name.trim(), description: desc.trim(), emoji, price: Number(price), category, pinned };
       if (dish) await api.updateDish(dish.id, payload);
       else await api.createDish(payload);
       toast(dish ? t.menu.saved : t.menu.added, '🍽️');
@@ -75,6 +76,22 @@ export function DishModal({ dish, onClose, onSaved }: { dish: Dish | null; onClo
       <Field label={t.menu.fieldPrice}>
         <input type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))} />
       </Field>
+      {/* Không bọc trong <Field>: Field ép mọi input con thành h-9 w-full, checkbox sẽ chiếm cả hàng. */}
+      <label className="mb-3.5 flex cursor-pointer items-start gap-2.5 rounded-ui border border-line bg-subtle px-3 py-2.5">
+        <input
+          type="checkbox"
+          className="mt-0.5 size-4 shrink-0 accent-[var(--color-brand)]"
+          checked={pinned}
+          onChange={(e) => setPinned(e.target.checked)}
+        />
+        <span className="flex min-w-0 flex-col text-[13px] leading-snug">
+          <b className="font-medium">📌 Ghim vào thực đơn hằng ngày</b>
+          <span className="text-[12px] text-ink-3">
+            Món này tự có mặt trong mọi ngày admin đã đăng thực đơn, khỏi phải chọn lại. Ngày chưa đăng thực đơn vẫn
+            đóng như bình thường.
+          </span>
+        </span>
+      </label>
       <div className="mt-4 flex justify-end gap-2">
         <Button onClick={onClose}>{t.actions.cancel}</Button>
         <Button variant="primary" onClick={save} loading={busy}>

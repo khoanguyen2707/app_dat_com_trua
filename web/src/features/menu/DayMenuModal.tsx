@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { api } from '@/services/api';
-import type { DayKey, DishCategory, Grid, MenuDiff } from '@/types';
+import type { DayKey, Dish, DishCategory, Grid, MenuDiff } from '@/types';
 import { DAYS } from '@/constants/config';
 import { t } from '@/constants/strings';
 import { cn } from '@/lib/cn';
@@ -29,13 +29,18 @@ const catIcon = (c: DishCategory) => (c === 'DRINK' ? '🥤' : '🍚');
  */
 export function DayMenuModal({
   grid,
+  dishes,
   onClose,
   onApplied,
 }: {
   grid: Grid;
+  /** Danh mục món — chỉ dùng để nhắc admin những món đang ghim. */
+  dishes: Dish[];
   onClose: () => void;
   onApplied: () => Promise<void>;
 }) {
+  // Món ghim do server tự cộng vào mọi ngày đã đăng; admin không cần dán lại vào text.
+  const pinnedDishes = dishes.filter((d) => d.pinned);
   const [day, setDay] = useState<DayKey>(todayKey());
   const [text, setText] = useState('');
   const [diff, setDiff] = useState<MenuDiff | null>(null);
@@ -359,6 +364,15 @@ export function DayMenuModal({
                   </span>
                 ))}
               </div>
+            </div>
+          )}
+
+          {pinnedDishes.length > 0 && (
+            <div className="mt-4 rounded-ui border border-brand-line bg-brand-soft px-3 py-2.5 text-[13px] text-brand">
+              <b>📌 Món ghim tự thêm vào ngày này</b>
+              <span className="block text-[12px]">
+                {pinnedDishes.map((d) => d.name).join(' · ')} — không cần dán vào thực đơn, hệ thống tự cộng.
+              </span>
             </div>
           )}
 

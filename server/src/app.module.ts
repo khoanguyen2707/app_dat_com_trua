@@ -8,6 +8,9 @@ import { OrdersModule } from './orders/orders.module';
 import { DishesModule } from './dishes/dishes.module';
 import { MenuModule } from './menu/menu.module';
 import { PaymentModule } from './payment/payment.module';
+import { StatsModule } from '@/stats/stats.module';
+import { PushModule } from '@/push/push.module';
+import { CutoffModule } from '@/cutoff/cutoff.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PickupModule } from './pickup/pickup.module';
 import { DispatchModule } from './dispatch/dispatch.module';
@@ -30,6 +33,9 @@ import { SeedModule } from './seed/seed.module';
     MenuModule,
     PaymentModule,
     NotificationsModule,
+    PushModule,
+    CutoffModule,
+    StatsModule,
     PickupModule,
     DispatchModule,
     DebtsModule,

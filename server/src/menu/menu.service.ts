@@ -1,9 +1,11 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
-import { DAY_KEYS, type DayKey } from '@/common/week-lock';
+import { CUTOFF_LABEL, computeTodayKey, DAY_KEYS, type DayKey } from '@/common/week-lock';
 import { guessEmoji, matchKey, parseMenuText, type CatalogDish } from './menu-parse';
 import { MenuWebhookService, type AnnouncedDish } from './menu-webhook.service';
 import { ApplyDayMenuDto } from './dto/menu.dto';
+import { mergePinned } from './pinned';
+import { NotificationsService } from '@/notifications/notifications.service';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -20,7 +22,47 @@ export class MenuService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly webhook: MenuWebhookService,
+    private readonly notifications: NotificationsService,
   ) {}
+
+  /**
+   * Báo cả nhóm khi thực đơn của HÔM NAY vừa được đăng.
+   *
+   * Chỉ báo cho đúng hôm nay: user chỉ đặt được cho hôm nay, báo thực đơn ngày khác
+   * chỉ gây nhiễu. Thông báo hỏng không được làm hỏng việc đăng thực đơn đã xong.
+   */
+  private async announceToMembers(week: { startDate: Date | null }, day: DayKey, ids: string[]): Promise<void> {
+    if (computeTodayKey(week.startDate) !== day) return;
+    const rows = await this.prisma.dish.findMany({
+      where: { id: { in: ids }, category: 'MAIN' },
+      select: { name: true },
+      orderBy: { name: 'asc' },
+    });
+    const names = rows
+      .slice(0, 3)
+      .map((d) => d.name)
+      .join(', ');
+    const more = rows.length > 3 ? `… và ${rows.length - 3} món nữa` : '';
+    const users = await this.prisma.user.findMany({ where: { active: true }, select: { id: true } });
+    await this.notifications
+      .createFor(
+        users.map((u) => u.id),
+        {
+          type: 'MENU_POSTED',
+          title: '📋 Thực đơn hôm nay đã có',
+          body: `${rows.length} món: ${names}${more}. Đặt cơm trước ${CUTOFF_LABEL} nhé!`.slice(0, 255),
+          url: '#order',
+          tag: `menu-${day}`,
+        },
+      )
+      .catch(() => undefined);
+  }
+
+  /** Id các món "luôn có" — cộng vào thực đơn mọi ngày admin đã đăng. */
+  private async pinnedIds(): Promise<string[]> {
+    const rows = await this.prisma.dish.findMany({ where: { pinned: true }, select: { id: true } });
+    return rows.map((d) => d.id);
+  }
 
   /** Lấy danh mục hiện có ở dạng CatalogDish (cho parser). */
   private async catalog(): Promise<CatalogDish[]> {
@@ -84,6 +126,10 @@ export class MenuService {
     dayMenu[dto.day] = availableIds;
     await this.prisma.week.update({ where: { id: week.id }, data: { dayMenu } });
 
+    // dayMenu lưu ĐÚNG lựa chọn của admin; món pinned chỉ gộp vào lúc đọc để admin
+    // gỡ ghim là món biến khỏi mọi ngày mà không phải sửa lại từng tuần.
+    const effectiveIds = mergePinned(availableIds, await this.pinnedIds());
+
     const webhook =
       dto.notify === false
         ? ({ status: 'skipped' } as const)
@@ -92,12 +138,21 @@ export class MenuService {
             day: dto.day,
             date: dateOfDay(week.startDate, dto.day),
             unitPrice: week.unitPrice,
-            ...(await this.announcedDishes(availableIds)),
+            ...(await this.announcedDishes(effectiveIds)),
             createdCount: createdIds.length,
-            hiddenCount: Math.max(0, (await this.prisma.dish.count()) - availableIds.length),
+            hiddenCount: Math.max(0, (await this.prisma.dish.count()) - effectiveIds.length),
           });
 
-    return { weekId: week.id, day: dto.day, availableIds, createdCount: createdIds.length, dayMenu, webhook };
+    await this.announceToMembers(week, dto.day, effectiveIds);
+
+    return {
+      weekId: week.id,
+      day: dto.day,
+      availableIds: effectiveIds,
+      createdCount: createdIds.length,
+      dayMenu,
+      webhook,
+    };
   }
 
   /** Món bán hôm nay, tách ăn/uống và giữ đúng thứ tự tên (để tin nhắn dễ đọc). */
@@ -118,10 +173,11 @@ export class MenuService {
    */
   async announce(day: DayKey, weekId: string | undefined, send: boolean) {
     const week = await this.findWeek(weekId);
-    const ids = ((week.dayMenu as Record<string, string[]> | null) ?? {})[day] ?? [];
-    if (ids.length === 0) {
+    const posted = ((week.dayMenu as Record<string, string[]> | null) ?? {})[day] ?? [];
+    if (posted.length === 0) {
       throw new BadRequestException(`Ngày ${day} chưa đăng thực đơn`);
     }
+    const ids = mergePinned(posted, await this.pinnedIds());
     const announcement = {
       weekId: week.id,
       day,

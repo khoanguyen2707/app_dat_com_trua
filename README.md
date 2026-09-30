@@ -240,6 +240,67 @@ Gom mọi khoản **chưa được admin xác nhận** trên tất cả các tu�
 
 ---
 
+## 6e. Món ghim 📌 và khoá đặt cơm khi nợ quá ngưỡng
+
+**Món ghim** — trong *Thực đơn → sửa món*, bật **📌 Ghim vào thực đơn hằng ngày**. Món đó tự có mặt trong thực đơn **mọi ngày admin đã đăng**, khỏi phải dán lại mỗi ngày (ví dụ "Cơm thập cẩm" bán quanh năm).
+
+- Ghim **không** mở ngày admin chưa đăng thực đơn: cổng "chờ admin đăng thực đơn rồi mới đặt được" vẫn thuộc về admin.
+- `week.dayMenu` trong DB chỉ lưu lựa chọn thô của admin; món ghim được gộp vào lúc đọc (`effectiveDayMenu`). Gỡ ghim là món biến khỏi mọi ngày, không phải sửa lại từng tuần.
+
+**Khoá đặt cơm** — *Thanh toán → Sửa → Ngưỡng khoá đặt cơm*. Ai nợ **vượt** ngưỡng (mặc định 200.000đ) thì không bật thêm ngày / thêm món được, cho tới khi admin xác nhận đã nhận tiền.
+
+- Nợ tính trên mọi tuần `UNPAID` + `PENDING`, **bỏ tuần đang chạy** (chưa tới hạn trả).
+- Bấm "đã chuyển khoản" (`PENDING`) **chưa** mở khoá — nếu không thì bấm khống là đặt tiếp được.
+- Vẫn **huỷ** được suất đã đặt khi đang bị khoá, và **admin đặt hộ** thì không bị chặn.
+- Xác nhận `PAID` xong, ai vừa tụt xuống dưới ngưỡng nhận thông báo *🔓 Đã mở lại đặt cơm*.
+- Đặt ngưỡng `0` = tắt rule.
+
+---
+
+## 6f. Thông báo đẩy (Web Push) + cài app vào máy (PWA)
+
+App có `manifest.webmanifest` + service worker nên **cài được vào màn hình chính** và nhận thông báo cả khi không mở app. Cố ý **không cache dữ liệu** (không chạy offline): thực đơn / đơn / công nợ đều là dữ liệu sống, cache chỉ sinh ra lỗi "thấy bản cũ sau khi deploy".
+
+**Bật ở máy chủ:** sinh cặp khoá rồi đặt vào env.
+
+```bash
+cd server && node -e "console.log(require('web-push').generateVAPIDKeys())"
+```
+
+Thiếu `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` thì module tự tắt — app chạy bình thường, chỉ còn chuông in-app.
+
+**Bật ở phía người dùng:** bấm 🔔 trên header → công tắc *Thông báo đẩy*.
+
+> **iPhone**: Safari chỉ gửi được thông báo khi app đã **Thêm vào Màn hình chính** (iOS 16.4+). App tự phát hiện và hiện hướng dẫn thay vì nút bật bấm không ăn gì.
+
+**Bốn sự kiện bắn push** (mọi thông báo in-app đều tự đẩy ra push — nối một chỗ ở `NotificationsService.createFor`):
+
+| Sự kiện | Kích hoạt |
+| --- | --- |
+| Thanh toán được xác nhận / trả lại | admin bấm xác nhận |
+| Được chọn đi lấy cơm hôm nay | `POST /pickup/today` |
+| Thực đơn hôm nay đã đăng | admin đăng thực đơn cho đúng hôm nay |
+| **Nhắc trước giờ chốt 10:15** | `POST /push/cutoff-reminder`, header `x-push-token` |
+
+**Flow Power Automate "Nhắc đặt cơm trước giờ chốt":** Recurrence *Week*, múi giờ *(UTC+07:00) Bangkok, Hanoi, Jakarta*, ngày *Monday–Friday*, giờ *9*, phút *45* → **HTTP** `POST {APP_API}/push/cutoff-reminder`, header `x-push-token: <PUSH_TOKEN>` (bỏ trống `PUSH_TOKEN` thì lùi về `PICKUP_TOKEN`). Retry *Exponential, 3 lần* vì Render free hay ngủ.
+
+- Chỉ nhắc người **chưa tick** ngày hôm nay, và chỉ khi hôm nay **đã có thực đơn** (mở app ra mà chưa đặt được thì nhắc vô nghĩa).
+- **Idempotent trong ngày**: gọi lại trả `{ skipped: "already-sent" }`, không bắn trùng.
+- Quá 10:15 trả `{ skipped: "past-cutoff" }`.
+- Endpoint trả `404`/`410` (gỡ app, xoá dữ liệu trình duyệt) thì subscription bị xoá tự động. Push hỏng **không bao giờ** làm hỏng nghiệp vụ gọi nó.
+
+---
+
+## 6g. Bảng "Hôm nay" (admin) & Thống kê của tôi (thành viên)
+
+**Admin — tab Bảng tuần**: một màn duy nhất cho buổi sáng — tổng số hộp, tiền cơm, trạng thái gửi quán, người đi lấy, breakdown *món nào mấy phần*, ai dặn gì, và nút **Copy đơn** sinh sẵn text dán cho quán (canh cột bằng khoảng trắng để Zalo/Teams hiện thẳng hàng, tổng số hộp nhắc ở cả đầu lẫn cuối).
+
+> Một người mix nhiều món vẫn chỉ **một hộp**, nên tổng số phần món có thể lớn hơn số hộp. Text ghi rõ dòng *"(cộng N phần cho M hộp — có hộp gồm nhiều món)"* để quán không cộng nhẩm rồi nấu dư.
+
+**Thành viên — tab Lịch sử**: số suất, tổng tiền, tỉ lệ đi ăn và số lượt đi lấy cơm theo tháng, kèm *món tôi ăn nhiều nhất*. Picker đặt món cũng xếp lại theo món hay đặt 90 ngày gần nhất (`GET /stats/my-top-dishes`).
+
+---
+
 ## 7. Biến môi trường (server/.env)
 
 | Biến | Ý nghĩa |
@@ -256,6 +317,9 @@ Gom mọi khoản **chưa được admin xác nhận** trên tất cả các tu�
 | `APP_URL` | Link app chèn vào tin nhắn Teams (vd `https://com-trua.vercel.app`) |
 | `TEAMS_INTERNAL_DOMAIN` | Tên miền nội bộ dùng thẳng làm id @mention (mặc định `wecare-i.com`) |
 | `TEAMS_GUEST_DOMAIN` | Tenant cho UPN guest `ten_gmail.com#EXT#@…` (mặc định `wecarei.onmicrosoft.com`) |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | Cặp khoá Web Push (`node -e "console.log(require('web-push').generateVAPIDKeys())"`). Bỏ trống = tắt push, app vẫn chạy |
+| `VAPID_SUBJECT` | `mailto:` liên hệ gửi kèm push (mặc định `mailto:admin@comtrua.vn`) |
+| `PUSH_TOKEN` | Token để Power Automate gọi `POST /push/cutoff-reminder`. Bỏ trống = lùi về dùng `PICKUP_TOKEN` |
 
 ---
 

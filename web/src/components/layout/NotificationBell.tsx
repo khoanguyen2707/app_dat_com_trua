@@ -5,6 +5,7 @@ import { Bell } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { timeAgo } from '@/lib/format';
 import { IconButton } from '@/components/ui';
+import { PushToggle } from '@/features/settings/PushToggle';
 
 /** Chuông thông báo ở header (cho cả admin & user) — poll + dropdown. */
 export function NotificationBell() {
@@ -41,6 +42,7 @@ export function NotificationBell() {
       {open && (
         <div className="absolute right-0 z-50 mt-1.5 w-80 overflow-hidden rounded-ui-md border border-line bg-surface shadow-lg">
           <div className="border-b border-line px-3 py-2 text-[13px] font-semibold">{t.notif.label}</div>
+          <PushToggle />
           {feed.items.length === 0 ? (
             <div className="px-3 py-8 text-center text-[13px] text-ink-3">{t.notif.empty}</div>
           ) : (

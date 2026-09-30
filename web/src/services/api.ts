@@ -1,4 +1,4 @@
-import type { AuthResult, DayDetail, DayKey, Debtor, Dish, DishDuplicateGroup, DishCategory, DispatchStatus, Grid, MenuApplyResult, MenuDiff, NotificationFeed, PaymentConfig, PaymentStatus, PickupStat, Role, User, Week } from '@/types';
+import type { AuthResult, DayDetail, DayKey, Debtor, Dish, DishDuplicateGroup, DishCategory, DispatchStatus, Grid, MenuApplyResult, MenuDiff, MyDebts, MyStats, MyTopDish, NotificationFeed, PaymentConfig, PaymentStatus, PickupStat, Role, TodayBoard, User, Week } from '@/types';
 import { request } from './http';
 
 export const api = {
@@ -41,7 +41,7 @@ export const api = {
   reportMyPayments: (weekIds: string[], report: boolean) =>
     request('/orders/me/payment/bulk', { method: 'PATCH', body: JSON.stringify({ weekIds, report }) }),
   // công nợ nhiều tuần
-  myDebts: () => request<Debtor>('/debts/me'),
+  myDebts: () => request<MyDebts>('/debts/me'),
   debts: () => request<Debtor[]>('/debts'),
   setPaymentStatusBulk: (userId: string, weekIds: string[], status: PaymentStatus) =>
     request('/orders/payment/bulk', { method: 'PATCH', body: JSON.stringify({ userId, weekIds, status }) }),
@@ -52,6 +52,21 @@ export const api = {
 
   setPaymentStatus: (weekId: string, userId: string, status: PaymentStatus) =>
     request('/orders/payment', { method: 'PATCH', body: JSON.stringify({ weekId, userId, status }) }),
+
+  // thống kê
+  myStats: (month?: string) => request<MyStats>(`/stats/me${month ? `?month=${month}` : ''}`),
+  myTopDishes: () => request<MyTopDish[]>('/stats/my-top-dishes', {}, { silent: true }),
+  todayBoard: (silent = false) => request<TodayBoard>('/stats/today', {}, { silent }),
+
+  // thông báo đẩy (Web Push)
+  vapidKey: () => request<{ enabled: boolean; publicKey: string }>('/push/vapid-key', {}, { silent: true }),
+  pushSubscribe: (sub: PushSubscriptionJSON, userAgent: string) =>
+    request('/push/subscribe', {
+      method: 'POST',
+      body: JSON.stringify({ endpoint: sub.endpoint, keys: sub.keys, userAgent }),
+    }),
+  pushUnsubscribe: (endpoint: string) =>
+    request('/push/subscribe', { method: 'DELETE', body: JSON.stringify({ endpoint }) }),
 
   // thông báo (chạy nền → silent, không hiện thanh tiến trình)
   notifications: () => request<NotificationFeed>('/notifications', {}, { silent: true }),

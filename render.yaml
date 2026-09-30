@@ -53,6 +53,18 @@ services:
       # Link app chèn vào tin nhắn Teams (= URL web tĩnh, KHÔNG có dấu / ở cuối).
       - key: APP_URL
         sync: false
+      # Thông báo đẩy (Web Push). Sinh cặp khoá bằng:
+      #   node -e "console.log(require('web-push').generateVAPIDKeys())"
+      # Bỏ trống = tắt push, app vẫn chạy bình thường (chỉ còn chuông in-app).
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
+        value: mailto:admin@comtrua.vn
+      # Token để Power Automate gọi POST /push/cutoff-reminder (nhắc trước giờ chốt).
+      - key: PUSH_TOKEN
+        sync: false
 
   # ---- Frontend React (static, free) ----
   - type: web

@@ -1,12 +1,14 @@
 import { useMemo, useState } from 'react';
 import { Clock, CupSoda, ListOrdered, Lock, Pencil, Plus, StickyNote } from 'lucide-react';
-import type { DayKey, Dish, Grid, GridMember } from '@/types';
+import type { DayKey, Dish, Grid, GridMember, MyDebts } from '@/types';
 import { DAYS } from '@/constants/config';
 import { t } from '@/constants/strings';
 import { cn } from '@/lib/cn';
 import { vnd } from '@/lib/format';
 import { Button, Card, CardBody, CardHeader, EmptyState, Modal } from '@/components/ui';
 import { DayDetailSheet } from '@/features/grid/DayDetailSheet';
+import { menuOfDay } from '@/lib/menu';
+import { DebtLockBanner } from '@/features/payment/DebtLockBanner';
 import { TodayMenuPanel } from '@/features/menu/TodayMenuPanel';
 
 /**
@@ -23,11 +25,17 @@ export function MyOrderPanel({
   dishes,
   meId,
   reload,
+  myDebts = null,
+  onPay,
 }: {
   grid: Grid;
   dishes: Dish[];
   meId: string;
   reload: () => Promise<void>;
+  /** Công nợ của tôi — dùng để hiện banner và chặn mở phiếu khi đang bị khoá. */
+  myDebts?: MyDebts | null;
+  /** Chuyển sang tab Thanh toán (nút trên banner). */
+  onPay?: () => void;
 }) {
   const [editing, setEditing] = useState<DayKey | null>(null);
   /** Món chạm từ popup thực đơn -> mở phiếu hôm nay với món đó chọn sẵn. */
@@ -76,8 +84,16 @@ export function MyOrderPanel({
 
   const restOfWeek = DAYS.filter((d) => d.key !== today);
 
+  /**
+   * Bị khoá vì nợ thì không mở phiếu để đặt thêm; ngày đã có suất vẫn mở được
+   * để còn huỷ. Server mới là nơi chặn thật — đây chỉ để không dẫn user vào ngõ cụt.
+   */
+  const blockedByDebt = (key: DayKey) => !!myDebts?.locked && !me.days[key] && !me.items?.[key]?.drinks.length;
+
   return (
     <>
+      <DebtLockBanner debts={myDebts} onPay={onPay} />
+
       {today ? (
         <TodayCard
           me={me}
@@ -88,8 +104,9 @@ export function MyOrderPanel({
           cost={dayCost(today)}
           summary={summary(today)}
           note={me.notes?.[today]}
-          hasMenu={!!grid.week.dayMenu?.[today]?.length}
-          menuCount={grid.week.dayMenu?.[today]?.length ?? 0}
+          hasMenu={menuOfDay(grid, today).length > 0}
+          menuCount={menuOfDay(grid, today).length}
+          debtLocked={blockedByDebt(today)}
           onEdit={() => {
             setPreselect(undefined);
             setEditing(today);
@@ -216,6 +233,7 @@ function TodayCard({
   note,
   hasMenu,
   menuCount,
+  debtLocked,
   onEdit,
   onOpenMenu,
 }: {
@@ -229,6 +247,8 @@ function TodayCard({
   note?: string;
   hasMenu: boolean;
   menuCount: number;
+  /** Nợ vượt ngưỡng và hôm nay chưa đặt gì → không cho mở phiếu đặt. */
+  debtLocked: boolean;
   onEdit: () => void;
   onOpenMenu: () => void;
 }) {
@@ -286,7 +306,7 @@ function TodayCard({
         <Button
           variant={ordered || locked ? 'default' : 'primary'}
           onClick={onEdit}
-          disabled={!locked && !ordered && !hasMenu}
+          disabled={(!locked && !ordered && !hasMenu) || debtLocked}
         >
           {locked ? (
             t.me.viewCta
@@ -302,7 +322,7 @@ function TodayCard({
             </>
           )}
         </Button>
-        <Button onClick={onOpenMenu} disabled={!hasMenu}>
+        <Button onClick={onOpenMenu} disabled={!hasMenu || debtLocked}>
           <ListOrdered className="size-4" />
           {hasMenu ? t.me.viewMenu(menuCount) : t.menu.waitingMenu}
         </Button>

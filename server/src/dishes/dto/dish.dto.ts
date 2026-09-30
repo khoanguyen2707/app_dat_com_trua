@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
-import { ArrayMinSize, IsArray, IsIn, IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import { ArrayMinSize, IsArray, IsBoolean, IsIn, IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 
 const CATEGORIES = ['MAIN', 'DRINK'] as const;
 
@@ -30,6 +30,14 @@ export class CreateDishDto {
   @IsOptional()
   @IsIn(CATEGORIES)
   category?: (typeof CATEGORIES)[number];
+
+  @ApiPropertyOptional({
+    example: false,
+    description: 'Món "luôn có": tự xuất hiện trong thực đơn mọi ngày admin đã đăng',
+  })
+  @IsOptional()
+  @IsBoolean()
+  pinned?: boolean;
 }
 
 export class UpdateDishDto extends PartialType(CreateDishDto) {}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type SetStateAction } from 'react';
 import { api } from '@/services/api';
-import type { Dish, Grid, PaymentConfig, Week } from '@/types';
+import type { Dish, Grid, MyDebts, PaymentConfig, Week } from '@/types';
 
 /** Chu kỳ làm mới nền khi tab đang mở — đủ để thấy thực đơn admin vừa đăng. */
 const POLL_MS = 60_000;
@@ -27,6 +27,8 @@ export function useDashboardData() {
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [payment, setPayment] = useState<PaymentConfig | null>(null);
   const [weeks, setWeeks] = useState<Week[]>([]);
+  /** Công nợ của chính tôi + trạng thái khoá đặt cơm (null = chưa tải xong). */
+  const [myDebts, setMyDebts] = useState<MyDebts | null>(null);
   const [loading, setLoading] = useState(true);
 
   /** Số thứ tự lần ghi grid gần nhất; response mang số cũ hơn thì bỏ. */
@@ -55,6 +57,10 @@ export function useDashboardData() {
   }, []);
   const reloadPayment = useCallback(async () => setPayment(await api.payment()), []);
   const reloadWeeks = useCallback(async () => setWeeks(await api.weeks()), []);
+  const reloadMyDebts = useCallback(async () => {
+    const next = await api.myDebts();
+    setMyDebts((prev) => (prev && same(prev, next) ? prev : next));
+  }, []);
 
   /** Ghi đè grid ở local (optimistic) — đồng thời vô hiệu các response grid đang bay. */
   const mutateGrid = useCallback((v: SetStateAction<Grid | null>) => {
@@ -63,8 +69,8 @@ export function useDashboardData() {
   }, []);
 
   const reloadAll = useCallback(
-    () => Promise.allSettled([reloadGrid(), reloadDishes(), reloadPayment(), reloadWeeks()]),
-    [reloadGrid, reloadDishes, reloadPayment, reloadWeeks],
+    () => Promise.allSettled([reloadGrid(), reloadDishes(), reloadPayment(), reloadWeeks(), reloadMyDebts()]),
+    [reloadGrid, reloadDishes, reloadPayment, reloadWeeks, reloadMyDebts],
   );
 
   useEffect(() => {
@@ -72,7 +78,8 @@ export function useDashboardData() {
     Promise.allSettled([reloadGrid(), reloadDishes()]).finally(() => setLoading(false));
     reloadPayment().catch(() => {});
     reloadWeeks().catch(() => {});
-  }, [reloadGrid, reloadDishes, reloadPayment, reloadWeeks]);
+    reloadMyDebts().catch(() => {});
+  }, [reloadGrid, reloadDishes, reloadPayment, reloadWeeks, reloadMyDebts]);
 
   useEffect(() => {
     /** Làm mới nền: không thanh tiến trình, bỏ qua nếu đang có request grid khác. */
@@ -80,6 +87,7 @@ export function useDashboardData() {
       if (document.visibilityState !== 'visible' || gridInflight.current > 0) return;
       loadGrid(true);
       reloadDishes().catch(() => {});
+      reloadMyDebts().catch(() => {});
     };
     const onFocus = () => {
       if (Date.now() - lastSync.current > FOCUS_MIN_GAP_MS) refresh();
@@ -92,13 +100,14 @@ export function useDashboardData() {
       document.removeEventListener('visibilitychange', onFocus);
       window.removeEventListener('focus', onFocus);
     };
-  }, [loadGrid, reloadDishes]);
+  }, [loadGrid, reloadDishes, reloadMyDebts]);
 
   return {
     grid,
     dishes,
     payment,
     weeks,
+    myDebts,
     loading,
     /** Ghi đè grid ở local ngay lập tức (cho optimistic update, không gọi mạng). */
     mutateGrid,
@@ -106,6 +115,7 @@ export function useDashboardData() {
     reloadDishes,
     reloadPayment,
     reloadWeeks,
+    reloadMyDebts,
     reloadAll,
   };
 }

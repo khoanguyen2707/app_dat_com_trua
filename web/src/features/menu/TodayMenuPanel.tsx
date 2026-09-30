@@ -5,6 +5,7 @@ import { DAYS } from '@/constants/config';
 import { t } from '@/constants/strings';
 import { cn } from '@/lib/cn';
 import { vnd } from '@/lib/format';
+import { menuOfDay } from '@/lib/menu';
 import { groupByEmoji } from '@/lib/dishGroup';
 import { Card, CardBody, CardHeader, EmptyState } from '@/components/ui';
 import { DayDetailSheet } from '@/features/grid/DayDetailSheet';
@@ -58,13 +59,13 @@ export function TodayMenuPanel({
   const date = today ? grid.dates?.[today] : null;
   const locked = today ? !!grid.lockedDays?.[today] : true;
   const me = grid.members.find((m) => m.userId === meId);
-  const canOrder = !!today && !locked && !!me && !!grid.week.dayMenu?.[today]?.length;
+  const canOrder = !!today && !locked && !!me && menuOfDay(grid, today).length > 0;
 
   /** dayMenu của hôm nay; null = admin chưa đăng -> chưa cho đặt, chỉ báo chờ. */
   const posted = useMemo(() => {
-    const ids = today ? grid.week.dayMenu?.[today] : null;
+    const ids = menuOfDay(grid, today);
     return ids && ids.length ? new Set(ids) : null;
-  }, [grid.week.dayMenu, today]);
+  }, [grid, today]);
 
   const shown = useMemo(() => (posted ? dishes.filter((d) => posted.has(d.id)) : []), [dishes, posted]);
   const mains = useMemo(() => shown.filter((d) => d.category !== 'DRINK'), [shown]);

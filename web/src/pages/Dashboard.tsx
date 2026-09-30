@@ -11,14 +11,15 @@ import { TopBar } from '@/components/layout/TopBar';
 import { TabBar } from '@/components/layout/TabBar';
 import { HeroStats } from '@/components/layout/HeroStats';
 import { GridPanel } from '@/features/grid/GridPanel';
-import { TodayOrders } from '@/features/grid/TodayOrders';
 import { MenuPanel } from '@/features/menu/MenuPanel';
 import { PaymentPanel } from '@/features/payment/PaymentPanel';
 import { DebtsPanel } from '@/features/payment/DebtsPanel';
 import { OverviewPanel } from '@/features/stats/OverviewPanel';
+import { TodayPanel } from '@/features/stats/TodayPanel';
 import { MyOrderPanel } from '@/features/me/MyOrderPanel';
 import { MyPaymentPanel } from '@/features/me/MyPaymentPanel';
 import { MyHistoryPanel } from '@/features/me/MyHistoryPanel';
+import { MyStatsPanel } from '@/features/me/MyStatsPanel';
 import { SettingsModal } from '@/features/settings/SettingsModal';
 import { ChangePasswordModal } from '@/features/settings/ChangePasswordModal';
 
@@ -51,8 +52,20 @@ export function Dashboard() {
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
-  const { grid, dishes, payment, weeks, loading, mutateGrid, reloadGrid, reloadDishes, reloadPayment, reloadWeeks } =
-    useDashboardData();
+  const {
+    grid,
+    dishes,
+    payment,
+    weeks,
+    myDebts,
+    loading,
+    mutateGrid,
+    reloadGrid,
+    reloadDishes,
+    reloadPayment,
+    reloadWeeks,
+    reloadMyDebts,
+  } = useDashboardData();
   const settings = useDisclosure();
   const password = useDisclosure();
 
@@ -86,7 +99,7 @@ export function Dashboard() {
             <>
               <HeroStats grid={grid} />
 
-              {tab === 'grid' && <TodayOrders grid={grid} dishes={dishes} />}
+              {tab === 'grid' && <TodayPanel reloadGrid={reloadGrid} />}
               {tab === 'grid' && (
                 <GridPanel
                   grid={grid}
@@ -127,10 +140,29 @@ export function Dashboard() {
           ) : (
             /* Thành viên: chỉ suất cơm của chính mình, không có bảng tuần lẫn thống kê. */
             <>
-              {tab === 'order' && <MyOrderPanel grid={grid} dishes={dishes} meId={user!.id} reload={reloadGrid} />}
-              {tab === 'pay' && payment && (
-                <MyPaymentPanel grid={grid} payment={payment} meId={user!.id} reload={reloadGrid} />
+              {tab === 'order' && (
+                <MyOrderPanel
+                  grid={grid}
+                  dishes={dishes}
+                  meId={user!.id}
+                  reload={async () => {
+                    await Promise.all([reloadGrid(), reloadMyDebts()]);
+                  }}
+                  myDebts={myDebts}
+                  onPay={() => setTab('pay')}
+                />
               )}
+              {tab === 'pay' && payment && (
+                <MyPaymentPanel
+                  grid={grid}
+                  payment={payment}
+                  meId={user!.id}
+                  reload={async () => {
+                    await Promise.all([reloadGrid(), reloadMyDebts()]);
+                  }}
+                />
+              )}
+              {tab === 'hist' && <MyStatsPanel />}
               {tab === 'hist' && (
                 <MyHistoryPanel
                   weeks={weeks}

@@ -90,6 +90,14 @@ export function MenuPanel({
                   )}
                 >
                   <span className="text-[13px]">{d.name}</span>
+                  {d.pinned && (
+                    <span
+                      className="rounded-full bg-brand-soft px-1.5 text-[11px] leading-5 text-brand"
+                      title="Món ghim — luôn có trong thực đơn mọi ngày đã đăng"
+                    >
+                      📌
+                    </span>
+                  )}
                   {/* Món ăn ăn theo suất nên giá không nói lên điều gì; chỉ đồ uống mới tính riêng. */}
                   {d.category === 'DRINK' && (
                     <span className="tnum text-[13px] font-medium text-drink">{vnd(d.price)}</span>
@@ -121,31 +129,38 @@ export function MenuPanel({
       <CardHeader
         title={t.menu.title}
         action={
-          <div className="flex items-center gap-2">
-            <div className="relative">
+          /* Ô tìm + 3 nút: ở 390px nhồi một hàng sẽ tràn khỏi card. Cho xuống dòng,
+             ô tìm chiếm trọn hàng đầu còn các nút giãn đều hàng dưới. */
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap">
+            <div className="relative w-full sm:w-auto">
               <Search className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-ink-4" />
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder={t.menu.searchPlaceholder}
-                className="h-7 w-44 rounded-ui border border-line bg-surface pl-7 pr-2 text-[13px] outline-none focus:border-brand"
+                className="h-7 w-full rounded-ui border border-line bg-surface pl-7 pr-2 text-[13px] outline-none focus:border-brand sm:w-44"
               />
             </div>
             {isAdmin && (
-              <>
-                <Button tiny variant="primary" onClick={postMenu.onOpen}>
+              <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:flex-nowrap">
+                <Button
+                  tiny
+                  variant="primary"
+                  onClick={postMenu.onOpen}
+                  className="whitespace-nowrap"
+                >
                   <Send className="size-3.5" />
                   {t.menu.post.btn}
                 </Button>
-                <Button tiny onClick={dedupe.onOpen}>
+                <Button tiny onClick={dedupe.onOpen} className="whitespace-nowrap">
                   <CopyCheck className="size-3.5" />
                   {t.menu.dedupe.openBtn}
                 </Button>
-                <Button tiny onClick={create.onOpen}>
+                <Button tiny onClick={create.onOpen} className="whitespace-nowrap">
                   <Plus className="size-3.5" />
                   {t.menu.addBtn}
                 </Button>
-              </>
+              </div>
             )}
           </div>
         }
@@ -180,6 +195,7 @@ export function MenuPanel({
       {postMenu.open && (
         <DayMenuModal
           grid={grid}
+          dishes={dishes}
           onClose={postMenu.onClose}
           onApplied={async () => {
             await Promise.all([reload(), reloadGrid()]);

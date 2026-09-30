@@ -12,6 +12,7 @@ import {
   weekRollover,
   type DayKey,
 } from '@/common/week-lock';
+import { mergePinnedIntoDayMenu } from '@/menu/pinned';
 
 const DAYS = DAY_KEYS;
 
@@ -166,8 +167,18 @@ export class WeeksService {
     const totalFood = totalServings * week.unitPrice;
     const totalDrinks = members.reduce((a, m) => a + m.drinksTotal, 0);
 
+    // `week.dayMenu` giữ NGUYÊN lựa chọn của admin (màn đăng thực đơn ghi đè lên nó).
+    // `effectiveDayMenu` là thứ user thấy trong picker: đã cộng thêm món ghim. Tách đôi để
+    // admin lưu thực đơn không vô tình ghi cứng món ghim vào tuần.
+    const pinnedDishes = await this.prisma.dish.findMany({ where: { pinned: true }, select: { id: true } });
+    const effectiveDayMenu = mergePinnedIntoDayMenu(
+      week.dayMenu as Record<string, string[]> | null,
+      pinnedDishes.map((d) => d.id),
+    );
+
     return {
       week,
+      effectiveDayMenu,
       members,
       totals: { perDay, totalServings, totalFood, totalDrinks, totalMoney: totalFood + totalDrinks },
       lockedDays: computeLockedDays(week.startDate),

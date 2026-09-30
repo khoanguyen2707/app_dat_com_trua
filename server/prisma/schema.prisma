@@ -42,6 +42,7 @@ model User {
   orders     Order[]
   orderItems OrderItem[]
   notifications Notification[]
+  pushSubscriptions PushSubscription[]
   pickups    PickupAssignment[]
   dispatches DailyDispatch[]
 
@@ -106,6 +107,35 @@ model Notification {
   @@map("notifications")
 }
 
+/// Một thiết bị/trình duyệt đã bật thông báo đẩy. Một user có nhiều thiết bị.
+/// `endpoint` là URL push service do trình duyệt cấp — dùng làm khoá duy nhất.
+model PushSubscription {
+  id         String   @id @default(cuid())
+  userId     String
+  endpoint   String   @unique
+  p256dh     String   @db.VarChar(255)
+  auth       String   @db.VarChar(255)
+  userAgent  String?  @db.VarChar(255)
+  createdAt  DateTime @default(now())
+  /// Lần cuối trình duyệt xác nhận subscription còn sống (mỗi lần mở app).
+  lastSeenAt DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscriptions")
+}
+
+/// Trạng thái đã nhắc "sắp tới giờ chốt" trong một ngày — chống bắn trùng khi
+/// Power Automate gọi lại. Tách khỏi DailyDispatch vì đó là việc gửi đơn cho quán.
+model CutoffReminder {
+  date      String   @id @db.VarChar(10) // "YYYY-MM-DD" theo lịch VN
+  sentAt    DateTime @default(now())
+  /// Số người thực sự nhận được nhắc (để xem lại khi nghi ngờ flow chạy sai).
+  notified  Int      @default(0)
+
+  @@map("cutoff_reminders")
+}
+
 /// Thực đơn món ăn + đồ uống (admin quản lý)
 model Dish {
   id          String       @id @default(cuid())
@@ -114,6 +144,8 @@ model Dish {
   emoji       String?      @db.VarChar(10)
   price       Int          @default(25000)
   category    DishCategory @default(MAIN)
+  /// Món "luôn có": tự xuất hiện trong thực đơn mọi ngày admin ĐÃ đăng (không mở ngày chưa đăng).
+  pinned      Boolean      @default(false)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   orderItems  OrderItem[]
@@ -196,6 +228,8 @@ model PaymentConfig {
   bankBin       String   @default("970423") @db.VarChar(20)
   accountNumber String   @default("10001002966") @db.VarChar(50)
   accountHolder String   @default("NGUYEN ANH KHOA") @db.VarChar(150)
+  /// Nợ vượt ngưỡng này (đồng) thì khoá đặt cơm. 0 = tắt rule.
+  debtLimit     Int      @default(200000)
   updatedAt     DateTime @updatedAt
 
   @@map("payment_config")

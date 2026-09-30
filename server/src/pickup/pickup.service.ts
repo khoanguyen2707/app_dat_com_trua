@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
+import { NotificationsService } from '@/notifications/notifications.service';
 import type { AssignPickupDto } from './dto/assign-pickup.dto';
 import {
   CUTOFF_LABEL,
@@ -92,7 +93,28 @@ export function compareCandidates(
 
 @Injectable()
 export class PickupService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
+
+  /**
+   * Báo cho người vừa được chốt đi lấy cơm (chuông in-app + push).
+   *
+   * Trước đây chỉ có @mention bên Teams, ai không mở Teams thì không biết. Không để
+   * lỗi thông báo làm hỏng việc chốt lượt — lượt đã ghi vào DB rồi.
+   */
+  private async announcePickup(userId: string, date: string): Promise<void> {
+    await this.notifications
+      .createFor([userId], {
+        type: 'PICKUP_ASSIGNED',
+        title: '🛵 Hôm nay bạn đi lấy cơm',
+        body: `Bạn được chọn đi lấy cơm ngày ${date}. Nhớ ghé quán đúng giờ nhé!`,
+        url: '#order',
+        tag: `pickup-${date}`,
+      })
+      .catch(() => undefined);
+  }
 
   private format(user: PickedUser, date: string, alreadyAssigned: boolean): PickupResult {
     return {
@@ -289,6 +311,7 @@ export class PickupService {
       if (again) return this.format(again.user, date, true);
       throw new Error('Không ghi được lượt lấy cơm');
     }
+    await this.announcePickup(chosen.id, date);
     return this.format(chosen, date, false);
   }
 
