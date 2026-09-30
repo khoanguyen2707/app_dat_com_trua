@@ -1,4 +1,4 @@
-import { BarChart3, CalendarDays, CreditCard, History, ListOrdered, UtensilsCrossed } from 'lucide-react';
+import { BarChart3, CalendarDays, CreditCard, History, ListOrdered, Sun, UtensilsCrossed } from 'lucide-react';
 import type { DayKey } from '@/types';
 import { t } from './strings';
 
@@ -54,6 +54,10 @@ export const BANKS: { name: string; bin: string }[] = [
  * lo suất cơm của chính mình nên không có bảng tuần lẫn thống kê.
  */
 export const ADMIN_TABS = [
+  // "Hôm nay" đứng đầu: buổi sáng admin cần chốt đơn gửi quán, không phải dò cả tuần.
+  // Tách khỏi Bảng tuần vì hai màn trả lời hai câu hỏi khác nhau và gộp lại thì phải
+  // cuộn qua bảng điều hành mới tới được lưới đăng ký.
+  { key: 'today', icon: Sun, label: t.tabs.today },
   { key: 'grid', icon: CalendarDays, label: t.tabs.grid },
   { key: 'menu', icon: ListOrdered, label: t.tabs.menu },
   { key: 'pay', icon: CreditCard, label: t.tabs.pay },

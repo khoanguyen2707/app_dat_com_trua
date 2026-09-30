@@ -293,9 +293,20 @@ Thiếu `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` thì module tự tắt — app ch
 
 ## 6g. Bảng "Hôm nay" (admin) & Thống kê của tôi (thành viên)
 
-**Admin — tab Bảng tuần**: một màn duy nhất cho buổi sáng — tổng số hộp, tiền cơm, trạng thái gửi quán, người đi lấy, breakdown *món nào mấy phần*, ai dặn gì, và nút **Copy đơn** sinh sẵn text dán cho quán (canh cột bằng khoảng trắng để Zalo/Teams hiện thẳng hàng, tổng số hộp nhắc ở cả đầu lẫn cuối).
+**Admin — tab Hôm nay** (tab riêng, mở mặc định): một màn cho buổi sáng — tổng số hộp, tiền cơm, trạng thái gửi quán, người đi lấy, tổng hợp *món nào mấy phần*, danh sách *ai ăn gì*, và khối **Đơn gửi quán** có nút **Copy** ngay góc trên bên phải.
 
-> Một người mix nhiều món vẫn chỉ **một hộp**, nên tổng số phần món có thể lớn hơn số hộp. Text ghi rõ dòng *"(cộng N phần cho M hộp — có hộp gồm nhiều món)"* để quán không cộng nhẩm rồi nấu dư.
+Đơn gửi quán liệt kê **theo từng hộp của từng người**, không gom theo món:
+
+```
+TỪNG HỘP
+  1. Cơm sườn  — ít cơm, không hành
+  2. Cơm gà chiên mắm + Trứng chiên
+  3. Cơm thập cẩm
+```
+
+Một người chọn nhiều món thì cả mấy món đó nằm chung **một hộp** (nối bằng `+`). Gom theo món sẽ mất thông tin món nào đi với món nào, và tổng số phần lại nhiều hơn số hộp khiến quán nấu dư. Số dòng chính là số hộp.
+
+**Không có tên người trong đơn gửi quán** — quán chỉ cần biết mỗi hộp gồm gì và dặn gì. Hộp nào của ai là việc chia cơm nội bộ, xem ở mục **Ai ăn gì** trên màn hình.
 
 **Thành viên — tab Lịch sử**: số suất, tổng tiền, tỉ lệ đi ăn và số lượt đi lấy cơm theo tháng, kèm *món tôi ăn nhiều nhất*. Picker đặt món cũng xếp lại theo món hay đặt 90 ngày gần nhất (`GET /stats/my-top-dishes`).
 

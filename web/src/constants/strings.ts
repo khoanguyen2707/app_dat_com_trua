@@ -86,6 +86,7 @@ văn phòng`,
   tabs: {
     order: "Đặt cơm",
     overview: "Tổng kết",
+    today: "Hôm nay",
     grid: "Bảng tuần",
     menu: "Thực đơn",
     pay: "Thanh toán",

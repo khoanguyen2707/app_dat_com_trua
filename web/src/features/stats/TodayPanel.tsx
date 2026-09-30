@@ -106,20 +106,15 @@ export function TodayPanel({ reloadGrid }: { reloadGrid: () => Promise<void> }) 
       <CardHeader
         title="Hôm nay"
         action={
-          /* Dưới sm hai nút dàn hết chiều ngang trên một hàng riêng — nhồi cạnh tiêu đề
-             ở 390px làm chữ trong nút xuống dòng và mất cả tiêu đề. */
-          <div className="flex flex-wrap gap-2">
-            <Button tiny onClick={copy} disabled={board.servings === 0} className="whitespace-nowrap">
-              <ClipboardCopy className="size-3.5" />
-              Copy đơn
+          /* Nút Copy nằm ngay trên khối "Đơn gửi quán" ở dưới, cạnh thứ nó copy —
+             ở đây chỉ giữ hành động chốt của cả màn. */
+          !board.dispatch.sent &&
+          board.servings > 0 && (
+            <Button tiny variant="primary" onClick={markSent} loading={busy} className="whitespace-nowrap">
+              <Send className="size-3.5" />
+              Đã gửi quán
             </Button>
-            {!board.dispatch.sent && board.servings > 0 && (
-              <Button tiny variant="primary" onClick={markSent} loading={busy} className="whitespace-nowrap">
-                <Send className="size-3.5" />
-                Đã gửi quán
-              </Button>
-            )}
-          </div>
+          )
         }
       />
       <CardBody>
@@ -192,7 +187,9 @@ export function TodayPanel({ reloadGrid }: { reloadGrid: () => Promise<void> }) 
                 cột ra rộng hơn card và Card overflow-hidden cắt mất phần bên phải —
                 mất luôn cột số phần của danh sách món. */}
             <div className="min-w-0">
-              <div className="mb-2 text-[13px] font-semibold text-ink-2">Món chính</div>
+              {/* Tổng hợp theo món chỉ để admin ước lượng; đơn gửi quán bên phải mới là
+                  bản liệt kê theo từng hộp. */}
+              <div className="mb-2 text-[13px] font-semibold text-ink-2">Tổng hợp món</div>
               <Lines rows={board.mains} />
               {board.drinks.length > 0 && (
                 <>
@@ -203,7 +200,13 @@ export function TodayPanel({ reloadGrid }: { reloadGrid: () => Promise<void> }) 
             </div>
 
             <div className="min-w-0">
-              <div className="mb-2 text-[13px] font-semibold text-ink-2">Đơn gửi quán</div>
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="text-[13px] font-semibold text-ink-2">Đơn gửi quán</span>
+                <Button tiny onClick={copy} className="whitespace-nowrap">
+                  <ClipboardCopy className="size-3.5" />
+                  Copy
+                </Button>
+              </div>
               {/* Hiện luôn text đã định dạng: copy hỏng (trình duyệt chặn clipboard,
                   hoặc trang chưa https) thì vẫn bôi đen chép tay được. */}
               <pre className="max-h-80 overflow-auto whitespace-pre rounded-ui border border-line bg-subtle p-3 font-mono text-[12px] leading-relaxed">

@@ -4,8 +4,12 @@
  * Hàm thuần, không chạm DB: định dạng là thứ sẽ phải chỉnh nhiều lần theo ý quán, nên
  * phải sửa và kiểm thử được mà không cần dựng cả app.
  *
- * Canh cột bằng khoảng trắng chứ không dùng bảng markdown — Zalo không render bảng,
- * còn khoảng trắng thì chỗ nào cũng hiện đúng.
+ * Liệt kê theo HỘP của từng người, không gom theo món: một người chọn nhiều món thì cả
+ * mấy món đó nằm chung MỘT hộp, gom theo món sẽ mất thông tin món nào đi với món nào và
+ * tổng số phần lại nhiều hơn số hộp.
+ *
+ * Canh cột bằng khoảng trắng chứ không dùng bảng markdown — Zalo không render bảng, còn
+ * khoảng trắng thì chỗ nào cũng hiện đúng.
  */
 
 export interface OrderLine {
@@ -13,26 +17,24 @@ export interface OrderLine {
   qty: number;
 }
 
-export interface OrderNote {
-  fullName: string;
-  /** Món người đó đặt trong ngày, để quán biết ghi chú gắn vào hộp nào. */
+/**
+ * Một hộp cơm = một người ăn.
+ *
+ * Cố ý KHÔNG mang tên người: quán chỉ cần biết mỗi hộp gồm món gì và dặn gì. Việc hộp
+ * nào của ai là chuyện chia cơm nội bộ, nằm ở danh sách "Ai ăn gì" trên màn hình.
+ */
+export interface OrderBox {
+  /** Các món trong hộp này. Rỗng = có đăng ký ăn nhưng chưa chọn món. */
   dishes: string[];
+  /** Dặn riêng cho hộp này, vd "ít cơm, không hành". */
   note: string;
 }
 
 export interface OrderTextInput {
   /** Ngày dương lịch theo lịch VN, "YYYY-MM-DD". */
   date: string;
-  /**
-   * Số HỘP cơm cần nấu = số người ăn.
-   *
-   * Phải truyền vào, không được suy từ tổng các dòng món: một người mix nhiều món vẫn
-   * chỉ một hộp, nên cộng số phần món lại sẽ ra nhiều hơn số hộp và quán nấu dư.
-   */
-  boxes: number;
-  mains: OrderLine[];
+  boxes: OrderBox[];
   drinks: OrderLine[];
-  notes: OrderNote[];
 }
 
 const WEEKDAY = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
@@ -61,47 +63,40 @@ export function tallyLines(lines: OrderLine[]): OrderLine[] {
 }
 
 export function buildOrderText(input: OrderTextInput): string {
-  const mains = tallyLines(input.mains);
-  const drinks = tallyLines(input.drinks);
   const boxes = input.boxes;
-  const portions = total(mains);
+  const drinks = tallyLines(input.drinks);
   const cups = total(drinks);
+  const head = `🍱 ĐƠN CƠM TRƯA — ${formatVnDate(input.date)}`;
 
-  if (!boxes && !cups) {
-    return `🍱 ĐƠN CƠM TRƯA — ${formatVnDate(input.date)}\nHôm nay chưa có ai đặt.`;
+  if (!boxes.length && !cups) {
+    return `${head}\nHôm nay chưa có ai đặt.`;
   }
 
-  // Bề rộng cột số lấy theo số lớn nhất để dấu × thẳng hàng.
-  const width = Math.max(...[...mains, ...drinks].map((l) => String(l.qty).length), 1);
-  const item = (l: OrderLine) => `  ${String(l.qty).padStart(width)} × ${l.name}`;
+  const out: string[] = [head, `Tổng: ${boxes.length} hộp`, ''];
 
-  const out: string[] = [`🍱 ĐƠN CƠM TRƯA — ${formatVnDate(input.date)}`, `Tổng: ${boxes} hộp`, ''];
-
-  if (mains.length) {
-    out.push('MÓN CHÍNH', ...mains.map(item));
-    // Cộng các dòng món ra nhiều hơn số hộp nghĩa là có người gọi nhiều món trong cùng
-    // một hộp. Phải nói thẳng, nếu không quán cộng nhẩm rồi nấu dư.
-    if (portions > boxes) {
-      out.push(`  (cộng ${portions} phần cho ${boxes} hộp — có hộp gồm nhiều món)`);
-    }
-    out.push('');
-  }
-  if (input.notes.length) {
-    const nameWidth = Math.max(...input.notes.map((n) => n.fullName.length));
+  if (boxes.length) {
+    // Số thứ tự canh phải để quán đếm hộp bằng mắt không sót.
+    const numWidth = String(boxes.length).length;
     out.push(
-      'GHI CHÚ RIÊNG',
-      ...input.notes.map((n) => {
-        const dishes = n.dishes.length ? ` (${n.dishes.join(', ')})` : '';
-        return `  • ${n.fullName.padEnd(nameWidth)}${dishes}: ${n.note}`;
+      'TỪNG HỘP',
+      ...boxes.map((b, i) => {
+        const no = String(i + 1).padStart(numWidth);
+        // Nhiều món trong một hộp nối bằng " + " để thấy rõ chúng đi CÙNG nhau,
+        // khác hẳn dấu phẩy giữa hai hộp khác nhau.
+        const dishes = b.dishes.length ? b.dishes.join(' + ') : '(chưa chọn món)';
+        const note = b.note ? `  — ${b.note}` : '';
+        return `  ${no}. ${dishes}${note}`;
       }),
       '',
     );
   }
+
   if (drinks.length) {
-    out.push('ĐỒ UỐNG', ...drinks.map(item), '');
+    const width = Math.max(...drinks.map((d) => String(d.qty).length));
+    out.push('ĐỒ UỐNG', ...drinks.map((d) => `  ${String(d.qty).padStart(width)} × ${d.name}`), '');
   }
 
   // Nhắc lại tổng ở cuối: quán đọc vội dễ sót con số ở đầu.
-  out.push(`Tổng cộng ${boxes} hộp cơm${cups ? ` + ${cups} nước` : ''}.`);
+  out.push(`Tổng cộng ${boxes.length} hộp cơm${cups ? ` + ${cups} nước` : ''}.`);
   return out.join('\n');
 }

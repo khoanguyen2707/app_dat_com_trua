@@ -38,7 +38,7 @@ export function Dashboard() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
   const [link] = useState(readHashLink);
-  const [tab, setTab] = useState<TabKey>(link?.tab ?? (isAdmin ? 'grid' : 'order'));
+  const [tab, setTab] = useState<TabKey>(link?.tab ?? (isAdmin ? 'today' : 'order'));
   const [pendingOnly, setPendingOnly] = useState(!!link?.pendingOnly);
 
   // Bấm link lần nữa khi app đang mở (cùng tab trình duyệt)
@@ -99,7 +99,7 @@ export function Dashboard() {
             <>
               <HeroStats grid={grid} />
 
-              {tab === 'grid' && <TodayPanel reloadGrid={reloadGrid} />}
+              {tab === 'today' && <TodayPanel reloadGrid={reloadGrid} />}
               {tab === 'grid' && (
                 <GridPanel
                   grid={grid}

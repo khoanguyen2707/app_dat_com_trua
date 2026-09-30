@@ -11,7 +11,7 @@ import {
 } from '@/common/week-lock';
 import { minutesLeftForShop } from '@/common/dispatch-window';
 import { mergePinned } from '@/menu/pinned';
-import { buildOrderText, type OrderNote } from '@/common/order-text';
+import { buildOrderText, type OrderBox } from '@/common/order-text';
 
 const DAY_MS = 86_400_000;
 
@@ -220,11 +220,23 @@ export class StatsService {
       drinksByUser.set(it.userId, [...(drinksByUser.get(it.userId) ?? []), `${it.dish.name} ×${it.qty}`]);
     }
 
-    const notes: OrderNote[] = eating
+    // Một hộp = một người ăn. Xếp theo tên để hai lần đọc ra cùng thứ tự, nhưng tên
+    // KHÔNG đi vào đơn gửi quán — quán chỉ cần biết mỗi hộp gồm gì.
+    const eatersSorted = [...eating].sort((a, b) =>
+      (a.user.fullName as string).localeCompare(b.user.fullName as string, 'vi'),
+    );
+    const noteOf = (o: any) => (((o.notes as Record<string, string> | null) ?? {})[todayKey] ?? '').trim();
+    const orderBoxes: OrderBox[] = eatersSorted.map((o) => ({
+      dishes: dishesByUser.get(o.userId as string) ?? [],
+      note: noteOf(o),
+    }));
+
+    // Dành cho màn hình (có tên) — khác với `orderBoxes` gửi quán (không tên).
+    const notes = eatersSorted
       .map((o) => ({
         fullName: o.user.fullName as string,
         dishes: dishesByUser.get(o.userId as string) ?? [],
-        note: (((o.notes as Record<string, string> | null) ?? {})[todayKey] ?? '').trim(),
+        note: noteOf(o),
       }))
       .filter((n) => !!n.note);
 
@@ -283,10 +295,8 @@ export class StatsService {
       ],
       orderText: buildOrderText({
         date,
-        boxes: eating.length,
-        mains: mainList.map((m) => ({ name: m.name, qty: m.qty })),
+        boxes: orderBoxes,
         drinks: drinkList.map((d) => ({ name: d.name, qty: d.qty })),
-        notes,
       }),
     };
   }
