@@ -3,10 +3,16 @@
  *
  * Luật (user thường — admin luôn sửa được mọi ngày):
  *  - Ngày đã qua (so với hôm nay): khoá.
- *  - Hôm nay: khoá nếu đã quá GIỜ CHỐT (10:15 sáng giờ VN).
+ *  - Hôm nay: khoá khi admin đã bấm "đã gửi đơn cho quán", hoặc khi quá GIỜ QUÁN
+ *    ĐÓNG (10:30 giờ VN) mà vẫn chưa ai bấm.
  *  - Ngày tương lai: khoá — KHÔNG cho đặt cơm/nước trước.
- *  => User chỉ đặt được cho HÔM NAY, trước giờ chốt.
+ *  => User đặt được cho HÔM NAY cho tới khi đơn thực sự sang quán.
  *  - Tuần chưa có startDate: không khoá ngày nào (trả về toàn false).
+ *
+ * Cố ý KHÔNG khoá ở giờ chốt 10:15 nữa: mốc cứng đó lệch với lúc đơn thực sự được
+ * gửi, nên user bị khoá sớm trong khi đơn còn sửa được, hoặc tưởng còn sửa được
+ * trong khi quán đã nhận. Mốc 10:30 chỉ còn là lưới an toàn cho hôm nào quên bấm —
+ * không có nó thì quên bấm là mở đặt tới nửa đêm.
  *
  * startDate được lưu là 00:00 UTC của ngày Thứ 2 (theo lịch VN), nên mọi so sánh
  * đều quy về "số ngày canon" = Date.UTC(năm, tháng, ngày) để tránh lệch múi giờ.
@@ -56,24 +62,51 @@ function startDayNumber(startDate: Date): number {
   return Date.UTC(s.getUTCFullYear(), s.getUTCMonth(), s.getUTCDate());
 }
 
-/** Các ngày bị khoá đối với user thường tại thời điểm hiện tại. */
-export function computeLockedDays(startDate: Date | null | undefined, now: Date = new Date()): Record<DayKey, boolean> {
-  const locked = Object.fromEntries(DAY_KEYS.map((d) => [d, false])) as Record<DayKey, boolean>;
-  if (!startDate) return locked;
+/**
+ * Vì sao một ngày bị khoá — để thông báo nói đúng chuyện đã xảy ra.
+ *
+ * 'sent' và 'deadline' đều chỉ rơi vào cột HÔM NAY: 'sent' là admin đã gửi đơn,
+ * 'deadline' là quá giờ quán đóng mà chưa ai bấm.
+ */
+export type LockReason = 'past' | 'future' | 'sent' | 'deadline';
+
+/**
+ * Lý do khoá của từng ngày (null = còn sửa được), đối với user thường.
+ *
+ * @param todaySent Admin đã bấm "đã gửi đơn cho quán" cho NGÀY HÔM NAY chưa. Chỉ áp
+ *   vào cột thật sự là hôm nay, nên xem lại tuần cũ không bị khoá lây.
+ */
+export function computeDayLocks(
+  startDate: Date | null | undefined,
+  now: Date = new Date(),
+  todaySent = false,
+): Record<DayKey, LockReason | null> {
+  const reasons = Object.fromEntries(DAY_KEYS.map((d) => [d, null])) as Record<DayKey, LockReason | null>;
+  if (!startDate) return reasons;
 
   const start = startDayNumber(startDate);
   const today = vnDayNumber(now);
-  const nowMinutes = vnMinutes(now);
+  const pastDeadline = vnMinutes(now) >= SHOP_DEADLINE_MINUTES;
 
   DAY_KEYS.forEach((key, i) => {
     const dayNum = start + i * DAY_MS;
-    if (dayNum < today)
-      locked[key] = true; // đã qua
-    else if (dayNum === today)
-      locked[key] = nowMinutes >= CUTOFF_MINUTES; // hôm nay: quá giờ chốt thì khoá
-    else locked[key] = true; // tương lai: không cho đặt trước
+    if (dayNum < today) reasons[key] = 'past';
+    else if (dayNum > today)
+      reasons[key] = 'future'; // tương lai: không cho đặt trước
+    else if (todaySent) reasons[key] = 'sent';
+    else if (pastDeadline) reasons[key] = 'deadline';
   });
-  return locked;
+  return reasons;
+}
+
+/** Các ngày bị khoá đối với user thường tại thời điểm hiện tại. */
+export function computeLockedDays(
+  startDate: Date | null | undefined,
+  now: Date = new Date(),
+  todaySent = false,
+): Record<DayKey, boolean> {
+  const reasons = computeDayLocks(startDate, now, todaySent);
+  return Object.fromEntries(DAY_KEYS.map((d) => [d, !!reasons[d]])) as Record<DayKey, boolean>;
 }
 
 /** Số phút đã trôi qua kể từ 00:00 theo giờ VN (để so với CUTOFF_MINUTES). */
@@ -172,4 +205,23 @@ export function computeDayDates(startDate: Date | null | undefined): Record<DayK
     out[key] = `${d.getUTCDate()}/${d.getUTCMonth() + 1}`;
   });
   return out;
+}
+
+/**
+ * Câu thông báo khi user cố sửa một ngày đã khoá.
+ *
+ * Đặt cạnh LockReason để FE và BE không trôi ra hai cách nói khác nhau về cùng
+ * một trạng thái.
+ */
+export function lockReasonMessage(day: DayKey, reason: LockReason): string {
+  switch (reason) {
+    case 'sent':
+      return 'Đơn cơm hôm nay đã gửi cho quán — không sửa được nữa, nhờ admin nếu cần đổi.';
+    case 'deadline':
+      return `Quán đã ngừng nhận đơn (${SHOP_DEADLINE_LABEL}) — chỉ admin sửa được.`;
+    case 'past':
+      return `${DAY_LABEL[day]} đã qua — chỉ admin sửa được.`;
+    case 'future':
+      return `${DAY_LABEL[day]} chưa tới — chỉ đặt được cho hôm nay.`;
+  }
 }

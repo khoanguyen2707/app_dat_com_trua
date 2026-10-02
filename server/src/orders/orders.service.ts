@@ -1,7 +1,15 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { NotificationsService } from '@/notifications/notifications.service';
-import { CUTOFF_LABEL, computeLockedDays, DAY_KEYS, DAY_LABEL, type DayKey } from '@/common/week-lock';
+import {
+  computeDayLocks,
+  DAY_KEYS,
+  DAY_LABEL,
+  type DayKey,
+  type LockReason,
+  lockReasonMessage,
+} from '@/common/week-lock';
+import { isTodayDispatchSent } from '@/common/dispatch-sent';
 import { DebtsService } from '@/debts/debts.service';
 import { debtLockMessage } from '@/common/debt-gate';
 import { mergePinned } from '@/menu/pinned';
@@ -49,10 +57,13 @@ export class OrdersService {
     };
   }
 
-  private lockError(day: DayKey): ForbiddenException {
-    return new ForbiddenException(
-      `${DAY_LABEL[day]} đã chốt (quá hạn ${CUTOFF_LABEL} hoặc đã qua) — chỉ admin sửa được.`,
-    );
+  private lockError(day: DayKey, reason: LockReason): ForbiddenException {
+    return new ForbiddenException(lockReasonMessage(day, reason));
+  }
+
+  /** Lý do khoá từng ngày cho user thường, đã tính cả việc đơn hôm nay đã gửi quán chưa. */
+  private async dayLocks(startDate: Date | null): Promise<Record<DayKey, LockReason | null>> {
+    return computeDayLocks(startDate, new Date(), await isTodayDispatchSent(this.prisma));
   }
 
   private noMenuError(day: DayKey): ForbiddenException {
@@ -81,7 +92,7 @@ export class OrdersService {
     const days = this.days(dto);
 
     if (enforceLock) {
-      const locked = computeLockedDays(week.startDate);
+      const locked = await this.dayLocks(week.startDate);
       const current: any = await this.prisma.order.findUnique({
         where: { weekId_userId: { weekId: dto.weekId, userId } },
       });
@@ -91,8 +102,9 @@ export class OrdersService {
       let addingDay = false;
       for (const key of DAY_KEYS) {
         const prev = current ? !!current[key] : false;
-        if (locked[key] && days[key] !== prev) {
-          throw this.lockError(key);
+        const reason = locked[key];
+        if (reason && days[key] !== prev) {
+          throw this.lockError(key, reason);
         }
         // Bật thêm ngày chưa có thực đơn thì chặn; tắt đi thì luôn cho.
         if (days[key] && !prev) {
@@ -149,8 +161,11 @@ export class OrdersService {
       throw new NotFoundException('Không tìm thấy tuần');
     }
     const day = dto.day;
-    if (enforceLock && computeLockedDays(week.startDate)[day]) {
-      throw this.lockError(day);
+    if (enforceLock) {
+      const reason = (await this.dayLocks(week.startDate))[day];
+      if (reason) {
+        throw this.lockError(day, reason);
+      }
     }
 
     // Khử trùng dishId: cùng một món chọn hai lần vẫn chỉ là một phần trong hộp, để lọt

@@ -163,7 +163,7 @@ export function DayDetailSheet({
             {!editable && (
               <div className="mt-3 flex items-center gap-2 rounded-ui border border-brand-line bg-brand-soft px-3 py-2 text-[13px] text-brand">
                 <Lock className="size-3.5 shrink-0" />
-                {t.grid.detail.lockedView}
+                {grid.lockReasons?.[day] === 'sent' ? t.grid.detail.lockedSent : t.grid.detail.lockedView}
               </div>
             )}
 

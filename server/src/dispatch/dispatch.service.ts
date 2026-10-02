@@ -9,6 +9,7 @@ import {
   pickAssignee,
   type DispatchLevel,
 } from '@/common/dispatch-window';
+import { isTodayDispatchSent } from '@/common/dispatch-sent';
 
 /** Một người cần được @mention trong tin nhắn Teams. */
 export type Mention = { name: string; email: string | null; role: 'pickup' | 'admin' };
@@ -72,6 +73,11 @@ export class DispatchService {
       include: { sentBy: { select: { fullName: true } } },
     });
     return { date, sentAt: row.sentAt, sentBy: row.sentBy?.fullName ?? null };
+  }
+
+  /** Đơn hôm nay đã gửi quán chưa — cùng một định nghĩa với cổng khoá đặt cơm. */
+  isTodaySent() {
+    return isTodayDispatchSent(this.prisma);
   }
 
   /** Bỏ đánh dấu (bấm nhầm). */

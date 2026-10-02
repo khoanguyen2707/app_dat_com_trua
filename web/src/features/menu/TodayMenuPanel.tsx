@@ -3,6 +3,7 @@ import { Clock, CupSoda, Info, Lock, UtensilsCrossed } from 'lucide-react';
 import type { DayKey, Dish, Grid } from '@/types';
 import { DAYS } from '@/constants/config';
 import { t } from '@/constants/strings';
+import { todayLockLabel } from '@/lib/lock';
 import { cn } from '@/lib/cn';
 import { vnd } from '@/lib/format';
 import { menuOfDay } from '@/lib/menu';
@@ -57,7 +58,8 @@ export function TodayMenuPanel({
   const today = grid.todayKey ?? null;
   const dayInfo = DAYS.find((d) => d.key === today);
   const date = today ? grid.dates?.[today] : null;
-  const locked = today ? !!grid.lockedDays?.[today] : true;
+  const todayLock = todayLockLabel(grid, today);
+  const locked = todayLock.locked;
   const me = grid.members.find((m) => m.userId === meId);
   const canOrder = !!today && !locked && !!me && menuOfDay(grid, today).length > 0;
 
@@ -193,8 +195,7 @@ export function TodayMenuPanel({
                   )}
                 >
                   {locked ? <Lock className="size-3" /> : <Clock className="size-3" />}
-                  {grid.cutoff &&
-                    (locked ? t.me.closedToday(grid.cutoff.label) : t.me.openUntil(grid.cutoff.label))}
+                  {todayLock.label}
                 </span>
               )}
             </div>

@@ -3,6 +3,7 @@ import { Clock, CupSoda, ListOrdered, Lock, Pencil, Plus, StickyNote } from 'luc
 import type { DayKey, Dish, Grid, GridMember, MyDebts } from '@/types';
 import { DAYS } from '@/constants/config';
 import { t } from '@/constants/strings';
+import { todayLockLabel } from '@/lib/lock';
 import { cn } from '@/lib/cn';
 import { vnd } from '@/lib/format';
 import { Button, Card, CardBody, CardHeader, EmptyState, Modal } from '@/components/ui';
@@ -47,6 +48,7 @@ export function MyOrderPanel({
   const locked = grid.lockedDays ?? ({} as Record<DayKey, boolean>);
   const dates = grid.dates ?? ({} as Record<DayKey, string | null>);
   const today = grid.todayKey ?? null;
+  const todayLock = todayLockLabel(grid, today);
 
   if (!me) return null;
 
@@ -99,8 +101,8 @@ export function MyOrderPanel({
           me={me}
           day={today}
           date={dates[today] ?? ''}
-          locked={!!locked[today]}
-          cutoff={grid.cutoff?.label}
+          locked={todayLock.locked}
+          lockLabel={todayLock.label}
           cost={dayCost(today)}
           summary={summary(today)}
           note={me.notes?.[today]}
@@ -227,7 +229,7 @@ function TodayCard({
   day,
   date,
   locked,
-  cutoff,
+  lockLabel,
   cost,
   summary,
   note,
@@ -241,7 +243,8 @@ function TodayCard({
   day: DayKey;
   date: string;
   locked: boolean;
-  cutoff?: string;
+  /** Câu mô tả trạng thái khoá (đã gửi quán / quán đóng / đã khoá). */
+  lockLabel: string;
   cost: number;
   summary: { food: (Dish | undefined)[]; drinks: number };
   note?: string;
@@ -271,7 +274,7 @@ function TodayCard({
           )}
         >
           {locked ? <Lock className="size-3" /> : <Clock className="size-3" />}
-          {cutoff && (locked ? t.me.closedToday(cutoff) : t.me.openUntil(cutoff))}
+          {lockLabel}
         </span>
       </div>
 

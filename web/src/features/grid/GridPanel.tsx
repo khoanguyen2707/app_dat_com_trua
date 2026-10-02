@@ -194,7 +194,7 @@ export function GridPanel({
               items={[
                 t.grid.guide.order(vnd(week.unitPrice)),
                 t.grid.guide.detail(isMobile ? t.grid.guide.whereMobile : t.grid.guide.whereDesktop),
-                ...(grid.cutoff ? [t.grid.guide.today(grid.cutoff.label)] : []),
+                ...(grid.shopDeadline ? [t.grid.guide.today(grid.shopDeadline.label)] : []),
                 t.grid.guide.cancel,
                 t.grid.guide.colors,
                 isAdmin ? t.grid.guide.admin : t.grid.guide.member,

@@ -1,3 +1,10 @@
+/**
+ * Vì sao một ngày bị khoá với user thường.
+ *
+ * 'sent' = admin đã gửi đơn cho quán, 'deadline' = quá giờ quán đóng mà chưa ai bấm.
+ */
+export type LockReason = 'past' | 'future' | 'sent' | 'deadline';
+
 export type Role = 'ADMIN' | 'USER';
 export type DayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 export type DishCategory = 'MAIN' | 'DRINK';
@@ -172,14 +179,20 @@ export interface Grid {
     totalDrinks?: number;
     totalMoney: number;
   };
-  /** Ngày bị khoá với user thường (đã qua, hoặc hôm nay đã quá giờ chốt). */
+  /** Ngày bị khoá với user thường (đã qua/chưa tới, hoặc hôm nay đơn đã sang quán). */
   lockedDays?: Record<DayKey, boolean>;
+  /** Vì sao từng ngày bị khoá; null = còn sửa được. */
+  lockReasons?: Record<DayKey, LockReason | null>;
+  /** Đơn cơm hôm nay đã gửi cho quán chưa — thứ quyết định khoá cột hôm nay. */
+  dispatchSent?: boolean;
   /** Cột nào của tuần này là hôm nay (lịch VN); null khi xem tuần khác. */
   todayKey?: DayKey | null;
   /** Nhãn ngày dương lịch "d/M" cho mỗi cột. */
   dates?: Record<DayKey, string | null>;
-  /** Giờ chốt đặt cơm trong ngày. */
+  /** Giờ chốt đặt cơm trong ngày (mốc nhắc, không còn là mốc khoá). */
   cutoff?: { minutes: number; label: string };
+  /** Giờ quán ngừng nhận đơn — lưới an toàn khi hôm đó không ai bấm "đã gửi". */
+  shopDeadline?: { minutes: number; label: string };
   /**
    * Thực đơn user thực sự thấy = dayMenu của admin + các món ghim.
    * Dùng cái này cho picker; `week.dayMenu` là lựa chọn thô của admin (màn đăng thực đơn).

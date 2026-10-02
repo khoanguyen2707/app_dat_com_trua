@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeTodayKey, currentWeekStart, nextWeekLabel, weekRollover } from './week-lock';
+import { computeDayLocks, computeTodayKey, currentWeekStart, nextWeekLabel, weekRollover } from './week-lock';
 
 /** 00:00 UTC của một ngày dương lịch — cùng dạng với cột startDate trong DB. */
 const day = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
@@ -70,5 +70,46 @@ describe('computeTodayKey', () => {
 
   it('trả null khi hôm nay nằm ngoài tuần đang xem', () => {
     expect(computeTodayKey(day('2026-06-15'), vn('2026-09-23'))).toBeNull();
+  });
+});
+
+describe('computeDayLocks', () => {
+  // Tuần 21/9/2026 (thứ 2) — "hôm nay" trong các ca dưới là thứ 4 23/9.
+  const week = day('2026-09-21');
+
+  it('không khoá ngày nào khi tuần chưa có startDate', () => {
+    const locks = computeDayLocks(null, vn('2026-09-23', '14:00'), true);
+    expect(Object.values(locks).every((r) => r === null)).toBe(true);
+  });
+
+  it('mở cột hôm nay khi chưa gửi quán và chưa tới giờ quán đóng', () => {
+    expect(computeDayLocks(week, vn('2026-09-23', '10:29'), false).wed).toBeNull();
+  });
+
+  it('vẫn mở sau giờ chốt cũ 10:15 — mốc đó không còn khoá nữa', () => {
+    expect(computeDayLocks(week, vn('2026-09-23', '10:20'), false).wed).toBeNull();
+  });
+
+  it('khoá ngay khi admin đã gửi đơn cho quán, dù còn sớm', () => {
+    expect(computeDayLocks(week, vn('2026-09-23', '08:00'), true).wed).toBe('sent');
+  });
+
+  it('khoá theo lưới an toàn khi quá giờ quán đóng mà chưa ai bấm đã gửi', () => {
+    expect(computeDayLocks(week, vn('2026-09-23', '10:30'), false).wed).toBe('deadline');
+  });
+
+  it('mở lại khi admin bỏ đánh dấu, miễn là chưa tới giờ quán đóng', () => {
+    expect(computeDayLocks(week, vn('2026-09-23', '10:00'), false).wed).toBeNull();
+  });
+
+  it('ngày đã qua và ngày tương lai luôn khoá, kèm lý do riêng', () => {
+    const locks = computeDayLocks(week, vn('2026-09-23', '09:00'), false);
+    expect(locks.tue).toBe('past');
+    expect(locks.thu).toBe('future');
+  });
+
+  it('đã gửi đơn hôm nay không khoá lây sang cột cùng thứ của tuần khác', () => {
+    // Xem lại tuần 14/9: cột thứ 4 là 16/9 — đã qua, nên là 'past' chứ không phải 'sent'.
+    expect(computeDayLocks(day('2026-09-14'), vn('2026-09-23', '09:00'), true).wed).toBe('past');
   });
 });

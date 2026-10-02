@@ -5,14 +5,18 @@ import {
   CUTOFF_LABEL,
   CUTOFF_MINUTES,
   computeDayDates,
+  computeDayLocks,
   computeLockedDays,
   computeTodayKey,
   DAY_KEYS,
   nextWeekLabel,
+  SHOP_DEADLINE_LABEL,
+  SHOP_DEADLINE_MINUTES,
   weekRollover,
   type DayKey,
 } from '@/common/week-lock';
 import { mergePinnedIntoDayMenu } from '@/menu/pinned';
+import { isTodayDispatchSent } from '@/common/dispatch-sent';
 
 const DAYS = DAY_KEYS;
 
@@ -171,6 +175,8 @@ export class WeeksService {
     // `effectiveDayMenu` là thứ user thấy trong picker: đã cộng thêm món ghim. Tách đôi để
     // admin lưu thực đơn không vô tình ghi cứng món ghim vào tuần.
     const pinnedDishes = await this.prisma.dish.findMany({ where: { pinned: true }, select: { id: true } });
+    const now = new Date();
+    const dispatchSent = await isTodayDispatchSent(this.prisma, now);
     const effectiveDayMenu = mergePinnedIntoDayMenu(
       week.dayMenu as Record<string, string[]> | null,
       pinnedDishes.map((d) => d.id),
@@ -181,10 +187,16 @@ export class WeeksService {
       effectiveDayMenu,
       members,
       totals: { perDay, totalServings, totalFood, totalDrinks, totalMoney: totalFood + totalDrinks },
-      lockedDays: computeLockedDays(week.startDate),
-      todayKey: computeTodayKey(week.startDate),
+      lockedDays: computeLockedDays(week.startDate, now, dispatchSent),
+      // Kèm lý do để FE nói đúng chuyện ("đã gửi quán" vs "đã qua"), `lockedDays`
+      // giữ lại cho các client chưa đọc field này.
+      lockReasons: computeDayLocks(week.startDate, now, dispatchSent),
+      dispatchSent,
+      todayKey: computeTodayKey(week.startDate, now),
       dates: computeDayDates(week.startDate),
       cutoff: { minutes: CUTOFF_MINUTES, label: CUTOFF_LABEL },
+      // Mốc quán ngừng nhận đơn — lưới an toàn khi hôm đó không ai bấm "đã gửi".
+      shopDeadline: { minutes: SHOP_DEADLINE_MINUTES, label: SHOP_DEADLINE_LABEL },
     };
   }
 
