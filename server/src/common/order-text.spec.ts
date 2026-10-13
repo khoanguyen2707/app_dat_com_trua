@@ -35,6 +35,10 @@ describe('tallyLines', () => {
   });
 });
 
+/** Chỉ lấy các dòng hộp đã đánh số, để khẳng định đúng thứ tự in ra. */
+const numberedLines = (text: string) =>
+  text.split(/\r?\n/).filter((l) => /^\s+\d+\. /.test(l));
+
 describe('buildOrderText', () => {
   const input: OrderTextInput = {
     date: '2026-09-30',
@@ -56,7 +60,7 @@ describe('buildOrderText', () => {
     const text = buildOrderText(input);
     expect(text).toContain('TỪNG HỘP');
     expect(text).not.toContain('MÓN CHÍNH');
-    expect(text).toContain('1. Cơm sườn');
+    expect(text).toContain('. Cơm sườn');
   });
 
   it('KHÔNG lộ tên người đặt cho quán', () => {
@@ -72,6 +76,49 @@ describe('buildOrderText', () => {
     const text = buildOrderText(input);
     expect(text).toContain('Tổng: 3 hộp');
     expect(text).not.toContain('Tổng: 4 hộp');
+  });
+
+  it('in các hộp theo tên món A-Z, đánh số lại từ 1', () => {
+    const text = buildOrderText({
+      ...input,
+      boxes: [
+        { dishes: ['Tôm rim'], note: '' },
+        { dishes: ['Cá ngừ kho'], note: '' },
+        { dishes: ['Sườn nướng'], note: '' },
+        { dishes: ['Cơm thập cẩm'], note: '' },
+        { dishes: ['Mực rim', 'Tôm rim'], note: '' },
+      ],
+    });
+    expect(numberedLines(text)).toEqual([
+      '  1. Cá ngừ kho',
+      '  2. Cơm thập cẩm',
+      '  3. Mực rim + Tôm rim',
+      '  4. Sườn nướng',
+      '  5. Tôm rim',
+    ]);
+  });
+
+  it('hộp chưa chọn món xếp cuối, không chen giữa các món', () => {
+    const text = buildOrderText({
+      ...input,
+      boxes: [
+        { dishes: [], note: '' },
+        { dishes: ['Tôm rim'], note: '' },
+        { dishes: ['Cá ngừ kho'], note: '' },
+      ],
+    });
+    expect(numberedLines(text)).toEqual([
+      '  1. Cá ngừ kho',
+      '  2. Tôm rim',
+      '  3. (chưa chọn món)',
+    ]);
+  });
+
+  it('không sửa mảng boxes của người gọi', () => {
+    const boxes = input.boxes;
+    const before = boxes.map((b) => b.dishes.join('+'));
+    buildOrderText(input);
+    expect(boxes.map((b) => b.dishes.join('+'))).toEqual(before);
   });
 
   it('ghi chú đi kèm ngay hộp của người đó', () => {

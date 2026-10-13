@@ -8,6 +8,9 @@
  * mấy món đó nằm chung MỘT hộp, gom theo món sẽ mất thông tin món nào đi với món nào và
  * tổng số phần lại nhiều hơn số hộp.
  *
+ * Các hộp in ra theo thứ tự A-Z của tên món để quán dò theo mắt cho nhanh — vẫn là
+ * từng hộp riêng, không gộp số lượng, chỉ đổi vị trí rồi đánh số lại từ 1.
+ *
  * Canh cột bằng khoảng trắng chứ không dùng bảng markdown — Zalo không render bảng, còn
  * khoảng trắng thì chỗ nào cũng hiện đúng.
  */
@@ -62,8 +65,27 @@ export function tallyLines(lines: OrderLine[]): OrderLine[] {
     .sort((a, b) => b.qty - a.qty || a.name.localeCompare(b.name, 'vi'));
 }
 
+/** Nhãn món của một hộp, cũng là thứ quán đọc và là khoá sắp xếp. */
+function boxLabel(box: OrderBox): string {
+  // Nhiều món trong một hộp nối bằng " + " để thấy rõ chúng đi CÙNG nhau,
+  // khác hẳn dấu phẩy giữa hai hộp khác nhau.
+  return box.dishes.length ? box.dishes.join(' + ') : '(chưa chọn món)';
+}
+
+/**
+ * Xếp các hộp theo tên món A-Z (so sánh theo tiếng Việt nên Cá < Cơm < Mực < Sườn < Tôm).
+ * Hộp chưa chọn món dồn xuống cuối: quán không cần dò chúng, còn mình thì cần thấy ngay.
+ */
+export function sortBoxesByDish(boxes: OrderBox[]): OrderBox[] {
+  return [...boxes].sort((a, b) => {
+    const pending = Number(!a.dishes.length) - Number(!b.dishes.length);
+    if (pending) return pending;
+    return boxLabel(a).localeCompare(boxLabel(b), 'vi');
+  });
+}
+
 export function buildOrderText(input: OrderTextInput): string {
-  const boxes = input.boxes;
+  const boxes = sortBoxesByDish(input.boxes);
   const drinks = tallyLines(input.drinks);
   const cups = total(drinks);
   const head = `🍱 ĐƠN CƠM TRƯA — ${formatVnDate(input.date)}`;
@@ -81,11 +103,8 @@ export function buildOrderText(input: OrderTextInput): string {
       'TỪNG HỘP',
       ...boxes.map((b, i) => {
         const no = String(i + 1).padStart(numWidth);
-        // Nhiều món trong một hộp nối bằng " + " để thấy rõ chúng đi CÙNG nhau,
-        // khác hẳn dấu phẩy giữa hai hộp khác nhau.
-        const dishes = b.dishes.length ? b.dishes.join(' + ') : '(chưa chọn món)';
         const note = b.note ? `  — ${b.note}` : '';
-        return `  ${no}. ${dishes}${note}`;
+        return `  ${no}. ${boxLabel(b)}${note}`;
       }),
       '',
     );
