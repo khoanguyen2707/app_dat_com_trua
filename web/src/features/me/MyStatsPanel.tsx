@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { CalendarCheck, Bike, Wallet, UtensilsCrossed } from 'lucide-react';
 import { api } from '@/services/api';
+import { useCached } from '@/hooks/useCached';
 import type { MyStats } from '@/types';
 import { vnd } from '@/lib/format';
 import { Card, CardBody, CardHeader, EmptyState, Spinner } from '@/components/ui';
@@ -39,21 +40,9 @@ function Stat({ icon, label, value, hint }: { icon: React.ReactNode; label: stri
 export function MyStatsPanel() {
   const months = useMemo(() => recentMonths(), []);
   const [month, setMonth] = useState(months[0].value);
-  const [data, setData] = useState<MyStats | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let alive = true;
-    setLoading(true);
-    api
-      .myStats(month)
-      .then((d) => alive && setData(d))
-      .catch(() => alive && setData(null))
-      .finally(() => alive && setLoading(false));
-    return () => {
-      alive = false;
-    };
-  }, [month]);
+  /* Key theo tháng: xem lại tháng đã mở thì hiện liền, không chờ request nữa. */
+  const fetchMonth = useCallback((silent: boolean) => api.myStats(month, silent), [month]);
+  const { data, loading } = useCached<MyStats>(`myStats:${month}`, fetchMonth);
 
   return (
     <Card>

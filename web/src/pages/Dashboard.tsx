@@ -154,9 +154,8 @@ export function Dashboard() {
               )}
               {tab === 'pay' && payment && (
                 <MyPaymentPanel
-                  grid={grid}
                   payment={payment}
-                  meId={user!.id}
+                  debt={myDebts}
                   reload={async () => {
                     await Promise.all([reloadGrid(), reloadMyDebts()]);
                   }}

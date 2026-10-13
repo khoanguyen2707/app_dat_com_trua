@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronDown, History, Wallet } from 'lucide-react';
 import { api } from '@/services/api';
+import { getCached, invalidateCached, peekCached } from '@/hooks/useCached';
 import type { DayKey, Dish, Grid, GridMember, PaymentConfig, Week } from '@/types';
 import { DAYS } from '@/constants/config';
 import { t } from '@/constants/strings';
@@ -12,6 +13,30 @@ import { PaymentStatusChip } from '@/features/payment/PaymentStatusChip';
 
 /** Bao nhiêu tuần nạp một lượt — đủ cho vài tháng mà không bắn hàng chục request. */
 const PAGE = 12;
+
+const gridKey = (weekId: string) => `weekGrid:${weekId}`;
+
+/**
+ * Chỉ tuần đã đóng mới được cache. Tuần đang chạy đổi suốt (đặt thêm ngày, admin xác
+ * nhận thanh toán) nên luôn phải lấy bản mới, không thì hàng đầu danh sách đứng im.
+ */
+const fetchGrid = (w: Week) =>
+  w.isActive ? api.weekGrid(w.id, true) : getCached(gridKey(w.id), (silent) => api.weekGrid(w.id, silent));
+
+/**
+ * Lấy lại các tuần đã nạp ở lần mount trước. Nặng nhất ở panel này là N request (mỗi
+ * tuần một cái), nên mất state local đồng nghĩa bắn lại cả N — trong khi tuần đã đóng
+ * thì grid gần như không đổi.
+ */
+function cachedGrids(weeks: Week[]): Record<string, Grid> {
+  const out: Record<string, Grid> = {};
+  for (const w of weeks) {
+    if (w.isActive) continue;
+    const hit = peekCached<Grid>(gridKey(w.id));
+    if (hit) out[w.id] = hit;
+  }
+  return out;
+}
 
 /**
  * Lịch sử của riêng một thành viên.
@@ -33,11 +58,15 @@ export function MyHistoryPanel({
   payment: PaymentConfig | null;
   reload: () => Promise<void>;
 }) {
-  const [grids, setGrids] = useState<Record<string, Grid>>({});
+  /* Khởi tạo từ cache: đổi tab rồi quay lại không phải nạp lại N tuần đã xem. */
+  const [grids, setGrids] = useState<Record<string, Grid>>(() => cachedGrids(weeks));
   /* Tuần cũ còn nợ vẫn phải trả được — nếu không, món nợ quá hạn thành ngõ cụt. */
   const [paying, setPaying] = useState<{ week: Week; me: GridMember } | null>(null);
   const [shown, setShown] = useState(PAGE);
-  const [loading, setLoading] = useState(true);
+  /* Chỉ chờ khi trang đầu còn tuần chưa có trong cache — có đủ thì vẽ luôn, khỏi spinner. */
+  const [loading, setLoading] = useState(
+    () => weeks.slice(0, PAGE).some((w) => w.isActive || !peekCached<Grid>(gridKey(w.id))),
+  );
   const [openId, setOpenId] = useState<string | null>(null);
 
   const dishMap = useMemo(() => new Map(dishes.map((d) => [d.id, d])), [dishes]);
@@ -48,7 +77,7 @@ export function MyHistoryPanel({
     const loaded = await Promise.all(
       list.map(async (w) => {
         try {
-          return [w.id, await api.weekGrid(w.id)] as const;
+          return [w.id, await fetchGrid(w)] as const;
         } catch {
           return null; // một tuần lỗi không được làm hỏng cả trang
         }
@@ -178,7 +207,9 @@ export function MyHistoryPanel({
           onClose={() => setPaying(null)}
           onPaid={async () => {
             setPaying(null);
-            setGrids({}); // buộc nạp lại để trạng thái trên hàng đổi theo
+            // Bỏ cả state lẫn cache: còn cache thì hàng vẫn hiện trạng thái trước khi trả.
+            invalidateCached(gridKey(paying.week.id));
+            setGrids({});
             await reload();
           }}
         />

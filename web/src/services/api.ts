@@ -14,7 +14,7 @@ export const api = {
 
   // weeks / grid
   activeGrid: (silent = false) => request<Grid>('/weeks/active', {}, { silent }),
-  weekGrid: (id: string) => request<Grid>(`/weeks/${id}/grid`),
+  weekGrid: (id: string, silent = false) => request<Grid>(`/weeks/${id}/grid`, {}, { silent }),
   weeks: () => request<Week[]>('/weeks'),
   createWeek: (label: string, unitPrice: number, startDate?: string) =>
     request<Week>('/weeks', {
@@ -42,7 +42,7 @@ export const api = {
     request('/orders/me/payment/bulk', { method: 'PATCH', body: JSON.stringify({ weekIds, report }) }),
   // công nợ nhiều tuần
   myDebts: (silent = false) => request<MyDebts>('/debts/me', {}, { silent }),
-  debts: () => request<Debtor[]>('/debts'),
+  debts: (silent = false) => request<Debtor[]>('/debts', {}, { silent }),
   setPaymentStatusBulk: (userId: string, weekIds: string[], status: PaymentStatus) =>
     request('/orders/payment/bulk', { method: 'PATCH', body: JSON.stringify({ userId, weekIds, status }) }),
   // gửi đơn cho quán
@@ -54,7 +54,7 @@ export const api = {
     request('/orders/payment', { method: 'PATCH', body: JSON.stringify({ weekId, userId, status }) }),
 
   // thống kê
-  myStats: (month?: string) => request<MyStats>(`/stats/me${month ? `?month=${month}` : ''}`),
+  myStats: (month?: string, silent = false) => request<MyStats>(`/stats/me${month ? `?month=${month}` : ''}`, {}, { silent }),
   myTopDishes: () => request<MyTopDish[]>('/stats/my-top-dishes', {}, { silent: true }),
   todayBoard: (silent = false) => request<TodayBoard>('/stats/today', {}, { silent }),
 

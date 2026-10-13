@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Copy, Wallet } from 'lucide-react';
 import { api } from '@/services/api';
-import type { Debtor, DebtWeek, Grid, PaymentConfig } from '@/types';
+import type { DebtWeek, MyDebts, PaymentConfig } from '@/types';
 import { t } from '@/constants/strings';
 import { DAYS } from '@/constants/config';
 import { cn } from '@/lib/cn';
@@ -16,34 +16,22 @@ type Pick = 'all' | string;
 /**
  * Thanh toán của riêng một thành viên: mọi tuần còn nợ (chưa được admin xác nhận),
  * chi tiết từng tuần, QR trả từng tuần hoặc trả tất cả một lần.
+ *
+ * Công nợ nhận qua props, KHÔNG tự gọi `/debts/me`: Dashboard đã giữ sẵn `myDebts` cho
+ * cả tab Đặt cơm, panel này tự tải nữa thì mỗi lần vào tab là một request trùng và một
+ * nhịp spinner, trong khi `reload` của Dashboard vẫn làm mới đúng con số đó.
  */
 export function MyPaymentPanel({
-  grid,
   payment,
-  meId,
+  debt,
   reload,
 }: {
-  grid: Grid;
   payment: PaymentConfig;
-  meId: string;
+  debt: MyDebts | null;
   reload: () => Promise<void>;
 }) {
-  const [debt, setDebt] = useState<Debtor | null>(null);
   const [pick, setPick] = useState<Pick>('all');
   const [busy, setBusy] = useState(false);
-
-  const load = useCallback(async () => {
-    try {
-      setDebt(await api.myDebts());
-    } catch (e: any) {
-      toast(e.message || t.errors.short, '⚠️');
-    }
-  }, []);
-
-  // grid đổi (đặt thêm suất, admin xác nhận…) thì tải lại công nợ
-  useEffect(() => {
-    load();
-  }, [load, grid, meId]);
 
   if (!debt) return <Spinner />;
 
@@ -82,7 +70,7 @@ export function MyPaymentPanel({
       );
       toast(r ? t.payment.reportedToast : t.payment.reportCancelledToast, r ? '📤' : '↩️');
       if (r) setPick('all');
-      await Promise.all([load(), reload()]);
+      await reload();
     } catch (e: any) {
       toast(e.message || t.errors.short, '⚠️');
     } finally {

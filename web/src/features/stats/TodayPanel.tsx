@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Bike, ClipboardCopy, CupSoda, Send, StickyNote, CheckCircle2, CircleDashed } from 'lucide-react';
 import { api } from '@/services/api';
-import type { TodayBoard } from '@/types';
+import { useCached } from '@/hooks/useCached';
 import { vnd } from '@/lib/format';
 import { Button, Card, CardBody, CardHeader, EmptyState, Spinner, toast } from '@/components/ui';
 
@@ -33,24 +33,13 @@ function Lines({ rows }: { rows: { dishId: string; name: string; emoji: string |
  * Tự làm mới mỗi phút vì đây là màn hình người ta để mở trong lúc chờ mọi người đặt.
  */
 export function TodayPanel({ reloadGrid }: { reloadGrid: () => Promise<void> }) {
-  const [board, setBoard] = useState<TodayBoard | null>(null);
-  const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-
-  const load = useCallback(async (silent = false) => {
-    try {
-      setBoard(await api.todayBoard(silent));
-    } catch {
-      setBoard(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  /* Qua cache: vào lại tab là thấy ngay bảng vừa xem, số mới về sau ở nền. */
+  const { data: board, loading, refresh: load } = useCached('todayBoard', api.todayBoard);
 
   useEffect(() => {
-    void load();
     const timer = window.setInterval(() => {
-      if (document.visibilityState === 'visible') void load(true);
+      if (document.visibilityState === 'visible') void load();
     }, 60_000);
     return () => window.clearInterval(timer);
   }, [load]);
@@ -69,7 +58,7 @@ export function TodayPanel({ reloadGrid }: { reloadGrid: () => Promise<void> }) 
     setBusy(true);
     try {
       await api.markDispatchSent();
-      await Promise.all([load(true), reloadGrid()]);
+      await Promise.all([load(), reloadGrid()]);
       toast('Đã ghi nhận gửi quán.', '✅');
     } catch (e: any) {
       toast(e?.message || 'Không ghi được.', '⚠️');

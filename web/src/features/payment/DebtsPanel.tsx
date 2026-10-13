@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Check, CheckCheck } from 'lucide-react';
 import { api } from '@/services/api';
+import { useCached } from '@/hooks/useCached';
 import type { Debtor, DebtWeek, Grid } from '@/types';
 import { t } from '@/constants/strings';
 import { cn } from '@/lib/cn';
@@ -21,21 +22,18 @@ export function DebtsPanel({
   pendingOnly?: boolean;
   reloadGrid: () => Promise<void>;
 }) {
-  const [debtors, setDebtors] = useState<Debtor[] | null>(null);
   const [pendingOnly, setPendingOnly] = useState(!!initialPendingOnly);
   const [busy, setBusy] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
-  const load = useCallback(async () => {
-    try {
-      setDebtors(await api.debts());
-    } catch (e: any) {
-      toast(e.message || t.errors.short, '⚠️');
-    }
-  }, []);
+  /* Vào lại tab là thấy ngay danh sách cũ; bản mới về ở nền, không spinner. */
+  const { data: debtors, refresh: load } = useCached<Debtor[]>('debts', api.debts, {
+    onError: (e: any) => toast(e?.message || t.errors.short, '⚠️'),
+  });
 
+  // grid đổi (admin vừa xác nhận, ai đó vừa đặt thêm) thì số nợ cũ không còn đúng.
   useEffect(() => {
-    load();
+    void load();
   }, [load, grid]);
 
   useEffect(() => {
@@ -54,7 +52,7 @@ export function DebtsPanel({
         'PAID',
       );
       toast(t.payment.confirmedAllToast(weeks.length), '✅');
-      await Promise.all([load(), reloadGrid()]);
+      await Promise.all([load(false), reloadGrid()]);
     } catch (e: any) {
       toast(e.message || t.errors.short, '⚠️');
     } finally {
