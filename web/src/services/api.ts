@@ -41,7 +41,7 @@ export const api = {
   reportMyPayments: (weekIds: string[], report: boolean) =>
     request('/orders/me/payment/bulk', { method: 'PATCH', body: JSON.stringify({ weekIds, report }) }),
   // công nợ nhiều tuần
-  myDebts: () => request<MyDebts>('/debts/me'),
+  myDebts: (silent = false) => request<MyDebts>('/debts/me', {}, { silent }),
   debts: () => request<Debtor[]>('/debts'),
   setPaymentStatusBulk: (userId: string, weekIds: string[], status: PaymentStatus) =>
     request('/orders/payment/bulk', { method: 'PATCH', body: JSON.stringify({ userId, weekIds, status }) }),
@@ -73,7 +73,7 @@ export const api = {
   markNotificationsRead: () => request<{ ok: boolean }>('/notifications/read', { method: 'PATCH' }, { silent: true }),
 
   // dishes
-  dishes: () => request<Dish[]>('/dishes'),
+  dishes: (silent = false) => request<Dish[]>('/dishes', {}, { silent }),
   createDish: (d: Partial<Dish>) => request<Dish>('/dishes', { method: 'POST', body: JSON.stringify(d) }),
   updateDish: (id: string, d: Partial<Dish>) =>
     request<Dish>(`/dishes/${id}`, { method: 'PATCH', body: JSON.stringify(d) }),

@@ -50,17 +50,20 @@ export function useDashboardData() {
     }
   }, []);
 
-  const reloadGrid = useCallback(() => loadGrid(false), [loadGrid]);
-  const reloadDishes = useCallback(async () => {
-    const next = await api.dishes();
+  const loadDishes = useCallback(async (silent: boolean) => {
+    const next = await api.dishes(silent);
     setDishes((prev) => (same(prev, next) ? prev : next));
   }, []);
-  const reloadPayment = useCallback(async () => setPayment(await api.payment()), []);
-  const reloadWeeks = useCallback(async () => setWeeks(await api.weeks()), []);
-  const reloadMyDebts = useCallback(async () => {
-    const next = await api.myDebts();
+  const loadMyDebts = useCallback(async (silent: boolean) => {
+    const next = await api.myDebts(silent);
     setMyDebts((prev) => (prev && same(prev, next) ? prev : next));
   }, []);
+
+  const reloadGrid = useCallback(() => loadGrid(false), [loadGrid]);
+  const reloadDishes = useCallback(() => loadDishes(false), [loadDishes]);
+  const reloadPayment = useCallback(async () => setPayment(await api.payment()), []);
+  const reloadWeeks = useCallback(async () => setWeeks(await api.weeks()), []);
+  const reloadMyDebts = useCallback(() => loadMyDebts(false), [loadMyDebts]);
 
   /** Ghi đè grid ở local (optimistic) — đồng thời vô hiệu các response grid đang bay. */
   const mutateGrid = useCallback((v: SetStateAction<Grid | null>) => {
@@ -82,12 +85,17 @@ export function useDashboardData() {
   }, [reloadGrid, reloadDishes, reloadPayment, reloadWeeks, reloadMyDebts]);
 
   useEffect(() => {
-    /** Làm mới nền: không thanh tiến trình, bỏ qua nếu đang có request grid khác. */
+    /**
+     * Làm mới nền: bỏ qua nếu đang có request grid khác.
+     *
+     * CẢ BA request đều phải silent. Chỉ một cái không silent là đủ để toast
+     * "Đang xử lý…" nháy lên mỗi lần quay lại tab, dù dữ liệu y nguyên.
+     */
     const refresh = () => {
       if (document.visibilityState !== 'visible' || gridInflight.current > 0) return;
       loadGrid(true);
-      reloadDishes().catch(() => {});
-      reloadMyDebts().catch(() => {});
+      loadDishes(true).catch(() => {});
+      loadMyDebts(true).catch(() => {});
     };
     const onFocus = () => {
       if (Date.now() - lastSync.current > FOCUS_MIN_GAP_MS) refresh();
@@ -100,7 +108,7 @@ export function useDashboardData() {
       document.removeEventListener('visibilitychange', onFocus);
       window.removeEventListener('focus', onFocus);
     };
-  }, [loadGrid, reloadDishes, reloadMyDebts]);
+  }, [loadGrid, loadDishes, loadMyDebts]);
 
   return {
     grid,
