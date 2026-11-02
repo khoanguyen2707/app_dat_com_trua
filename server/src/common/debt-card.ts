@@ -65,7 +65,7 @@ type Mentioned = { name: string; email: string | null };
  */
 export function buildDebtCard(
   debtors: Debtor[],
-  opts: { payUrl: string; confirmUrl: string; admins: Mentioned[]; domains: TeamsDomains; now?: Date },
+  opts: { payUrl: string; confirmUrl: string; admins: Mentioned[]; domains: TeamsDomains; now?: Date; debtLimit?: number },
 ) {
   const now = opts.now ?? new Date();
   const entities: { type: 'mention'; text: string; mentioned: { id: string; name: string } }[] = [];
@@ -190,11 +190,22 @@ export function buildDebtCard(
     });
   }
 
+  const limit = opts.debtLimit ?? 0;
   body.push(
-    cell('Vui lòng thanh toán trước cuối tuần. Mở app để quét VietQR — trả từng tuần hoặc tất cả một lần.', {
+    cell('Vui lòng thanh toán trước cuối tuần.', { isSubtle: true, size: 'Small', spacing: 'Medium' }),
+    // Ngưỡng 0 = rule khoá đang tắt → không doạ khoá.
+    ...(limit > 0
+      ? [
+          cell(
+            `Nếu công nợ vượt quá ${vnd(limit)} thì sẽ bị khoá đặt cơm cho đến khi thanh toán công nợ.`,
+            { color: 'Attention', size: 'Small', weight: 'Bolder', spacing: 'Small' },
+          ),
+        ]
+      : []),
+    cell('Mở app để quét VietQR — trả từng tuần hoặc tất cả một lần.', {
       isSubtle: true,
       size: 'Small',
-      spacing: 'Medium',
+      spacing: 'Small',
     }),
   );
   if (opts.admins.length) {

@@ -113,7 +113,12 @@ export class DebtsService {
     ).map((a) => ({ name: a.fullName, email: a.teamsEmail || a.email || null }));
     const debtors = dropFreshWeek(await this.all(), now);
     const report = buildDebtReport(debtors, this.config.get<string>('APP_URL')?.trim() || '', admins);
+    const config = await this.prisma.paymentConfig.findUnique({
+      where: { id: 'default' },
+      select: { debtLimit: true },
+    });
     const card = buildDebtCard(debtors, {
+      debtLimit: config?.debtLimit ?? 0,
       payUrl: report.payUrl,
       confirmUrl: report.confirmUrl,
       admins,
